@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" role="img" aria-label="Your logo placeholder">
+  <rect width="220" height="64" rx="8" fill="#EEF2F7"/>
+  <rect x="1" y="1" width="218" height="62" rx="7" fill="none" stroke="#C4CDD9" stroke-dasharray="4 4"/>
+  <text x="110" y="38" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#5B6B7F" text-anchor="middle">YOUR LOGO</text>
+</svg>

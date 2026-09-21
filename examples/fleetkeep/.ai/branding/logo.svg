@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64" viewBox="0 0 220 64" role="img" aria-label="Northwind Systems — FleetKeep">
+  <rect width="220" height="64" rx="8" fill="#0B5D51"/>
+  <path d="M20 40h6a6 6 0 0 0 12 0h12a6 6 0 0 0 12 0h4V26a4 4 0 0 0-4-4H44l-4-8H24a4 4 0 0 0-4 4z" fill="none" stroke="#45AF9B" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="32" cy="40" r="3.5" fill="#F2A007"/>
+  <circle cx="56" cy="40" r="3.5" fill="#F2A007"/>
+  <text x="84" y="30" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF">FleetKeep</text>
+  <text x="84" y="46" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="500" fill="#9AD3C8" letter-spacing="1.2">NORTHWIND SYSTEMS</text>
+</svg>

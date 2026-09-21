@@ -1,0 +1,26 @@
+# Branding
+
+Controls the branded header that every artifact-generating agent prepends to the Markdown
+documents it produces — requirement specs, user stories, test specs, technical specs, and
+review / security / release reports. The header template lives at
+`.ai/templates/artifact-header.md`; this file supplies its values.
+
+## Values
+
+| Setting | Value |
+|---------|-------|
+| Company name | **Northwind Systems** |
+| Product name | **FleetKeep** |
+| Logo | `.ai/branding/logo.svg` — placeholder mark; replace with the official Northwind Systems logo (PNG recommended for broadest rendering) |
+| Primary color | `#0B5D51` (FleetKeep deep teal — matches the Mantine `brand` scale in `src/Web/src/theme/theme.ts`) |
+| Footer | `© Northwind Systems — Confidential` |
+
+## Notes
+
+- Artifacts carry **both** the vendor brand (Northwind Systems) and the product name (FleetKeep),
+  because FleetKeep artifacts are shared with tenant stakeholders during UAT.
+- Markdown renders `![alt](path)` in GitHub, GitLab, and MkDocs. PNG is the most portable
+  format; SVG renders in MkDocs and locally (GitHub may sanitize inline SVG in some views).
+- These values are text/branding only. Behavioral toggles (type-check, lint, protected
+  branches, design-token checks) live in `.claude/hooks/hooks.env`.
+- To change branding, edit this file and `.ai/templates/artifact-header.md`.

@@ -1,0 +1,15 @@
+# Normalize everything to LF in the repository.
+# The hooks in .claude/hooks/ are bash scripts: a CRLF line ending breaks the shebang
+# and `set -euo pipefail` on Linux/macOS clones, so LF is enforced, not merely preferred.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.md   text eol=lf
+*.env  text eol=lf
+*.json text eol=lf
+*.svg  text eol=lf
+
+# Binary-safe
+*.png binary
+*.jpg binary
+*.pdf binary

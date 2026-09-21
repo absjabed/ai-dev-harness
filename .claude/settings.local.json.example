@@ -1,0 +1,7 @@
+{
+  "_comment": "Per-developer local overrides. Copy to settings.local.json (git-ignored) and edit. Claude Code also writes this file itself as you grant permissions.",
+  "permissions": {
+    "allow": []
+  },
+  "enabledMcpjsonServers": []
+}

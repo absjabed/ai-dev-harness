@@ -1,0 +1,32 @@
+# .gitignore for THIS TEMPLATE REPO — do not copy it into a project.
+#
+# A project that adopts the harness needs its own rules. The one line it must have is
+# `.worktrees/` (the epic path of /workflows:feature builds there). A project should
+# NOT ignore `.ai/features/` — that workflow commits planning artifacts onto the epic
+# branch, because worktrees only see committed files.
+
+# Per-developer Claude Code state — never commit
+.claude/settings.local.json
+.claude/agent-memory/
+
+# Isolated worktrees used by the epic path of /workflows:feature
+.worktrees/
+
+# Work products a configured project would produce; this template ships only the skeletons
+.ai/features/*
+!.ai/features/TEMPLATE.md
+.ai/reports/
+.ai/releases/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Tooling
+.playwright-mcp/
+node_modules/
