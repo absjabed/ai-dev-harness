@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Harness Guide</title>
+<style>
+:root{
+  --bg:#ffffff; --surface:#f7f9fb; --surface-2:#eef2f6; --text:#101a24; --muted:#5b6b7f;
+  --border:#dde4ec; --accent:#0b5d51; --accent-soft:#e6f4f1; --warn-bg:#fef3c7; --warn-text:#92400e;
+  --danger:#b91c1c; --ok:#166534; --code-bg:#f1f5f9; --shadow:0 1px 2px rgba(16,26,36,.06),0 8px 24px rgba(16,26,36,.06);
+  --mono:ui-monospace,'Cascadia Mono','SF Mono',Consolas,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1120; --surface:#111c33; --surface-2:#16233d; --text:#e2e8f0; --muted:#94a3b8;
+    --border:#2b3a52; --accent:#45af9b; --accent-soft:#0f2b28; --warn-bg:#3b2f10; --warn-text:#fbbf24;
+    --danger:#f87171; --ok:#4ade80; --code-bg:#0f1a2e; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;font-size:16px}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:0;max-width:1400px;margin:0 auto}
+nav{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:28px 20px;border-right:1px solid var(--border);background:var(--surface)}
+nav h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:22px 0 8px}
+nav h2:first-child{margin-top:0}
+nav a{display:block;padding:5px 10px;margin:1px -10px;color:var(--text);text-decoration:none;border-radius:6px;font-size:.88rem}
+nav a:hover{background:var(--surface-2);color:var(--accent)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.brand .mark{width:34px;height:34px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:#fff;font-weight:700;font-size:.82rem;flex:none}
+.brand strong{font-size:1rem;letter-spacing:-.01em}
+.brand span{display:block;font-size:.72rem;color:var(--muted);font-weight:400}
+main{padding:44px 48px 90px;min-width:0}
+h1{font-size:2.1rem;line-height:1.2;margin:0 0 .4rem;letter-spacing:-.02em}
+.lede{font-size:1.08rem;color:var(--muted);margin:0 0 2rem;max-width:68ch}
+h2{font-size:1.45rem;margin:3rem 0 .9rem;padding-top:.6rem;letter-spacing:-.015em;border-top:1px solid var(--border)}
+h3{font-size:1.08rem;margin:1.9rem 0 .6rem}
+p,li{max-width:80ch}
+code{font-family:var(--mono);font-size:.855em;background:var(--code-bg);padding:.12em .38em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.855rem;line-height:1.55}
+pre code{background:none;border:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem;display:block;overflow-x:auto}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+tbody tr:hover{background:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:1.1rem 0;box-shadow:var(--shadow)}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:14px 18px;margin:1.1rem 0}
+.callout.warn{border-left-color:var(--warn-text);background:var(--warn-bg);color:var(--warn-text)}
+.callout p{margin:.3rem 0}
+.callout strong{color:inherit}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:1.1rem 0}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.tile h4{margin:0 0 .3rem;font-size:.95rem}
+.tile p{margin:0;font-size:.87rem;color:var(--muted)}
+.pill{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--border);white-space:nowrap}
+.pill.block{background:var(--warn-bg);color:var(--warn-text)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:1.2rem 0}
+.steps>li{counter-increment:s;position:relative;padding:0 0 1.5rem 3rem;border-left:2px solid var(--border);margin-left:14px}
+.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps>li::before{content:counter(s);position:absolute;left:-15px;top:-2px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.steps h3{margin:0 0 .4rem}
+footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.84rem}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:1rem 0;font-family:var(--mono);font-size:.82rem}
+.flow span{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+.flow em{color:var(--muted);font-style:normal}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  main{padding:28px 16px 60px}
+  h1{font-size:1.65rem}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">
+    <div class="mark">AI</div>
+    <div><strong>AI Harness</strong><span>Setup &amp; component guide</span></div>
+  </div>
+  <h2>Start here</h2>
+  <a href="#what">What it is</a>
+  <a href="#why">Why use it</a>
+  <a href="#prereq">Prerequisites</a>
+  <a href="#setup">Setup in 4 steps</a>
+  <a href="#first">Your first feature</a>
+  <h2>Components</h2>
+  <a href="#layers">The two layers</a>
+  <a href="#commands">Commands</a>
+  <a href="#personas">Agent personas</a>
+  <a href="#subagents">Sub-agents</a>
+  <a href="#hooks">Hooks &amp; guardrails</a>
+  <a href="#workflows">Workflows</a>
+  <a href="#standards">Standards &amp; templates</a>
+  <a href="#memory">Memory</a>
+  <a href="#scope">Scope model</a>
+  <a href="#artifacts">Where artifacts land</a>
+  <h2>Reference</h2>
+  <a href="#trouble">Troubleshooting</a>
+  <a href="#cheat">Cheat sheet</a>
+</nav>
+
+<main>
+<h1>AI Harness</h1>
+<p class="lede">A governed AI development lifecycle for Claude Code. Copy it into a repo, answer one
+interview, and specialist agents deliver features through the same gates, standards and guardrails
+every time.</p>
+
+<h2 id="what">What it is</h2>
+<p>The harness replaces ad-hoc prompting with a delivery model: specs before code, a human approving
+at every gate, and automated checks that run whether or not the model cooperates. It is a
+<strong>template</strong> — every project-specific value is a <code>{{TOKEN}}</code> or a
+<code>[FILL IN]</code> block until you configure it.</p>
+<div class="grid">
+  <div class="tile"><h4>16 agent personas</h4><p>BA, architect, designer, developer, QA, reviewer, security, DevOps, PM, release, orchestrator, critic and more.</p></div>
+  <div class="tile"><h4>26 slash commands</h4><p>Studios, specialists, workflows, utilities and harness maintenance.</p></div>
+  <div class="tile"><h4>8 automated hooks</h4><p>Block force pushes and protected-branch pushes, type-check and lint after edits, warn on sensitive files.</p></div>
+  <div class="tile"><h4>Resumable workflows</h4><p><code>STATE.md</code> records phase, tasks and decisions, so a fresh session picks up exactly where the last one stopped.</p></div>
+</div>
+
+<h2 id="why">Why use it</h2>
+<p>AI can already write the code. What it does badly, left unsupervised, is everything around the
+code: knowing this project's conventions, proving the change works, and stopping before something
+irreversible. That gap is what the harness closes — each mechanism below answers a specific failure
+mode, not a slogan.</p>
+
+<table>
+<thead><tr><th>Without a harness</th><th>What the harness does</th></tr></thead>
+<tbody>
+<tr><td>You re-explain the stack, conventions and domain every session — and the answers drift</td><td>The filled <code>.ai/config/</code> and <code>.ai/context/</code> are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt</td></tr>
+<tr><td>Output quality depends on how well you phrased today's prompt</td><td>Personas and playbooks fix the <em>method</em>. <code>/agents:review</code> applies the same severity vocabulary on a Friday as on a Monday</td></tr>
+<tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>Reviewer and security scanner run <strong>in parallel, read-only</strong>, on the diff. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget</td></tr>
+<tr><td>"Tests pass" — but nobody checks whether tests exist for that scope</td><td>Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened</td></tr>
+<tr><td>One bad command — a force push, a hard reset, a deploy to prod — undoes a day</td><td>Hooks <strong>hard-block</strong> them at the tool call, before the model's intent matters</td></tr>
+<tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads rejected patterns before proposing, so a "no" stays a no</td></tr>
+<tr><td>A long session loses the thread, and the next one starts cold</td><td><code>STATE.md</code> records phase, tasks and decisions; re-running resumes and re-verifies each "done" phase's artifact before trusting it</td></tr>
+<tr><td>Parallel work on one feature collides in the working tree</td><td>The epic path gives each sub-feature its own git worktree, merged in dependency order</td></tr>
+<tr><td>Every repo grows its own private way of working with AI</td><td>The same harness, the same commands, the same gates across projects. A joiner learns it once</td></tr>
+</tbody>
+</table>
+
+<h3>What it costs</h3>
+<p>Ceremony. The full path — <code>/ba</code> → <code>/qa</code> → <code>/workflows:feature</code>
+with five STOP gates — is built for work that deserves a spec. For a typo or a one-line fix that
+overhead is real and not worth paying: use <code>/agents:dev</code> or
+<code>/workflows:bugfix</code> instead. The harness also can't make a codebase testable, and it
+won't catch a bad decision you approve at a gate. It removes the failures that come from
+forgetting, not the ones that come from judgment.</p>
+
+<h2 id="prereq">Prerequisites</h2>
+<table>
+<thead><tr><th>Need</th><th>Why it matters</th></tr></thead>
+<tbody>
+<tr><td><strong>Claude Code</strong> at the repo root</td><td>Commands, sub-agents and hooks are discovered per repo from <code>.claude/</code></td></tr>
+<tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All eight hooks are <code>.sh</code>. Without bash they fail quietly and every guardrail is off while looking installed</td></tr>
+<tr><td><strong>git</strong></td><td>Branch guards, changelog/standup commands, and the epic path's worktrees</td></tr>
+<tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian and a Figma bridge. Authenticate once with <code>/mcp</code>; everything degrades gracefully when absent</td></tr>
+</tbody>
+</table>
+<pre><code>bash -c 'echo bash-ok' &amp;&amp; git --version</code></pre>
+
+<h2 id="setup">Setup in 4 steps</h2>
+<ol class="steps">
+<li>
+  <h3>Copy the harness in</h3>
+  <p>From a clone of the template repo, copy into your project root:</p>
+  <pre><code>.ai/  .claude/  .mcp.json  CLAUDE.md  COMMANDS.md  README.md</code></pre>
+  <p>Optionally bring <code>examples/fleetkeep/</code> for reference while configuring.</p>
+  <div class="callout warn"><p><strong>Don't copy the template's <code>.gitignore</code>.</strong>
+  Your project needs <code>.worktrees/</code> ignored — and must <em>not</em> ignore
+  <code>.ai/features/</code>, because the epic path commits planning artifacts for worktrees to read.</p></div>
+</li>
+<li>
+  <h3>Run <code>/init-project</code></h3>
+  <p>It interviews you across identity, repo topology, stack, commands, conventions, version control,
+  security, design system, risk profile and branding — then fills every skeleton and writes
+  <code>.claude/hooks/hooks.env</code>.</p>
+  <p>Shape the tree while you're there: single-project repos delete the <code>backend/</code> and
+  <code>frontend/</code> subfolders; headless projects delete the design subtree; unused per-stack
+  reference folders can go.</p>
+</li>
+<li>
+  <h3>Verify nothing is unfilled</h3>
+  <pre><code>grep -rn '{{' .ai CLAUDE.md .claude/hooks/hooks.env | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|templates/artifact-header|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'</code></pre>
+  <p>Empty output means done.</p>
+</li>
+<li>
+  <h3>Switch the guardrails on</h3>
+  <p><code>hooks.env</code> is <strong>inert-safe</strong>: a blank value or <code>*_CHECK="off"</code>
+  skips that check silently. An un-customised file blocks nothing while looking fully installed.</p>
+  <table>
+  <thead><tr><th>Key</th><th>If left unset</th></tr></thead>
+  <tbody>
+  <tr><td><code>PROTECTED_BRANCHES</code></td><td>Direct pushes to main/develop aren't blocked</td></tr>
+  <tr><td><code>TYPECHECK_CMD</code> / <code>LINT_CMD</code> + <code>PACKAGE_DIRS</code></td><td>No checks run after edits</td></tr>
+  <tr><td><code>MIGRATIONS_GLOB</code></td><td>Generated migrations can be hand-edited silently</td></tr>
+  <tr><td><code>SENSITIVE_CONFIG_GLOBS</code></td><td>No warning before editing secrets-bearing config</td></tr>
+  <tr><td><code>TENANT_ISOLATION_CHECK</code> + <code>TENANT_KEY</code></td><td>No tenant-scoping check on data access</td></tr>
+  </tbody>
+  </table>
+  <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.</p>
+</li>
+</ol>
+
+<h2 id="first">Your first feature</h2>
+<p>The studios produce the specs; the workflow consumes them and will not generate them for you.</p>
+<div class="flow"><span>/ba &lt;slug&gt;</span><em>→</em><span>/qa &lt;slug&gt;</span><em>→</em><span>/workflows:feature &lt;slug&gt;</span></div>
+<p>What to expect from the workflow:</p>
+<table>
+<thead><tr><th>Step</th><th>What happens</th><th>Gate</th></tr></thead>
+<tbody>
+<tr><td>Inputs</td><td>Reads the BA/QA artifacts; stops if any are missing</td><td>—</td></tr>
+<tr><td>State</td><td>Writes <code>STATE.md</code>; re-running resumes and re-verifies each "done" phase</td><td>—</td></tr>
+<tr><td>Scope</td><td>Resolves backend / frontend / fullstack and loads only that context</td><td>—</td></tr>
+<tr><td>Technical spec</td><td>Written, then shown to you; asks once about per-task atomic commits</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Design</td><td>For any UI surface: UX → visual design → Artifact preview → approval loop</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Implement</td><td>Delegated to a developer sub-agent with fresh context</td><td>—</td></tr>
+<tr><td>Verify</td><td>Tests where a runner exists; clean build + documented manual check where none does — and it says which</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Review + security</td><td>Reviewer and security scanner run <strong>in parallel</strong> on the diff</td><td>CRITICAL blocks</td></tr>
+<tr><td>Commit</td><td>Message shown for confirmation</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>PR</td><td>Description generated and shown before anything is opened</td><td><span class="pill block">STOP</span></td></tr>
+</tbody>
+</table>
+<div class="callout"><p>Five STOP gates is the point, not friction: a human approves the spec, the
+design, the verification, the commit and the PR.</p></div>
+
+<h2 id="layers">The two layers</h2>
+<table>
+<thead><tr><th>Layer</th><th>Path</th><th>Nature</th><th>Contains</th></tr></thead>
+<tbody>
+<tr><td>Knowledge</td><td><code>.ai/</code></td><td>Markdown only — nothing executes</td><td>Personas, playbooks, standards, templates, project config/context, memory</td></tr>
+<tr><td>Execution</td><td><code>.claude/</code></td><td>What Claude Code runs</td><td>Commands, sub-agents, hooks, <code>settings.json</code>, scripts</td></tr>
+</tbody>
+</table>
+<p>Commands pull personas and standards from <code>.ai/</code> with <code>@</code>-includes, so the
+same command behaves correctly on a different stack.</p>
+
+<h2 id="commands">Commands</h2>
+<h3>Studios — you drive these</h3>
+<table>
+<thead><tr><th>Command</th><th>Purpose</th><th>Produces</th></tr></thead>
+<tbody>
+<tr><td><code>/init-project</code></td><td>Interview, then fill every skeleton</td><td>A configured harness</td></tr>
+<tr><td><code>/ba &lt;slug&gt;</code></td><td>BA Studio — interactive requirements</td><td><code>requirement-spec.md</code>, <code>user-stories.md</code>, and <code>epic-breakdown.md</code> for epics</td></tr>
+<tr><td><code>/qa &lt;slug&gt;</code></td><td>QA Studio — test design from those specs</td><td><code>test-specs.md</code></td></tr>
+</tbody>
+</table>
+<h3>Specialists — <code>/agents:*</code></h3>
+<table>
+<thead><tr><th>Command</th><th>Produces</th></tr></thead>
+<tbody>
+<tr><td><code>/agents:architect</code></td><td>Solution design; ADRs</td></tr>
+<tr><td><code>/agents:ba</code></td><td>Requirements and stories (non-interactive)</td></tr>
+<tr><td><code>/agents:design</code></td><td><code>design-spec.md</code> plus an Artifact preview and approval loop</td></tr>
+<tr><td><code>/agents:dev</code></td><td>Implementation</td></tr>
+<tr><td><code>/agents:devops</code></td><td>CI/CD, deploy and infrastructure changes</td></tr>
+<tr><td><code>/agents:pm</code></td><td>Status reports, planning, changelogs</td></tr>
+<tr><td><code>/agents:qa</code></td><td>Tests and a verification report</td></tr>
+<tr><td><code>/agents:release-manager</code></td><td>Release notes, migration plan, rollback plan, deployment checklist</td></tr>
+<tr><td><code>/agents:review</code></td><td><code>review-report.md</code> — BLOCKER / WARNING / SUGGESTION / PRAISE with file:line</td></tr>
+<tr><td><code>/agents:security</code></td><td><code>security-report.md</code> with severities</td></tr>
+</tbody>
+</table>
+<h3>Workflows, utilities, maintenance</h3>
+<table>
+<thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → commit</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix with forward-port</td></tr>
+<tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump</td></tr>
+<tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
+<tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
+<tr><td><code>/utils:learn "&lt;lesson&gt;"</code> · <code>/utils:scope &lt;scope&gt;</code></td><td>Record a learning; force a scope</td></tr>
+<tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness; change it through an author → critic → revise loop</td></tr>
+</tbody>
+</table>
+
+<h2 id="personas">Agent personas</h2>
+<p>Role definitions in <code>.ai/agents/</code> — responsibilities, method, output format and explicit
+"never do" lists. Commands include them; they are not separately invocable.</p>
+<table>
+<thead><tr><th>Persona</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>architect</code></td><td>Architecture and technical decisions</td></tr>
+<tr><td><code>ba</code> / <code>ba-studio</code></td><td>Requirements — non-interactive / human-operated</td></tr>
+<tr><td><code>qa</code> / <code>qa-studio</code></td><td>Test strategy — non-interactive / human-operated</td></tr>
+<tr><td><code>designer</code></td><td>UI/UX, Artifact previews, design-system and accessibility validation</td></tr>
+<tr><td><code>developer</code></td><td>Implementation against an approved spec</td></tr>
+<tr><td><code>reviewer</code></td><td>Code review method and severity vocabulary</td></tr>
+<tr><td><code>security</code></td><td>Security checklist and reporting</td></tr>
+<tr><td><code>devops</code> · <code>release</code> · <code>pm</code></td><td>Deploy surface · release packaging · status and planning</td></tr>
+<tr><td><code>orchestrator</code></td><td>Decomposes a request and delegates</td></tr>
+<tr><td><code>critic</code></td><td>Adversarial verifier — exists to break authored work</td></tr>
+<tr><td><code>harness-engineer</code> · <code>harness-guide</code></td><td>Change the harness · explain the harness</td></tr>
+</tbody>
+</table>
+
+<h2 id="subagents">Sub-agents</h2>
+<p>Spawned automatically, each with its own context window and a <strong>restricted tool set</strong>.
+Least privilege is deliberate: a reviewer that cannot write cannot "helpfully" fix things mid-review.</p>
+<table>
+<thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th></tr></thead>
+<tbody>
+<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>—</td></tr>
+<tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td></tr>
+<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>haiku</td><td>project</td></tr>
+<tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td></tr>
+<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td></tr>
+<tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td></tr>
+<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>inherit</td><td>project</td></tr>
+<tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td></tr>
+</tbody>
+</table>
+<p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
+folder of accumulated project facts. It is runtime state and git-ignored.</p>
+
+<h2 id="hooks">Hooks &amp; guardrails</h2>
+<table>
+<thead><tr><th>Hook</th><th>Event</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td><strong>Blocks</strong> <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches, deploys to the production stage</td></tr>
+<tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config</td></tr>
+<tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check + lint for the edited package; tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
+<tr><td><code>post-tool-batch.sh</code></td><td>PostToolBatch</td><td>Full-project type-check after parallel edits</td></tr>
+<tr><td><code>post-tool-failure.sh</code></td><td>PostToolUseFailure</td><td>Classifies the failure and feeds back a hint</td></tr>
+<tr><td><code>stop-check.sh</code></td><td>Stop</td><td>Flags uncommitted changes on feature/epic branches</td></tr>
+<tr><td><code>user-prompt-context.sh</code></td><td>UserPromptSubmit</td><td>Injects current branch and active scope</td></tr>
+<tr><td><code>compact-restore.sh</code></td><td>SessionStart (compact)</td><td>Re-injects orientation after compaction</td></tr>
+</tbody>
+</table>
+<div class="callout"><p>All behaviour comes from <strong><code>.claude/hooks/hooks.env</code></strong> —
+25 keys covering version control, deploy guard, repo layout, quality commands, sensitive files,
+tenant isolation, frontend env, design tokens and the TDD nudge. Warnings go to stderr and are
+non-blocking; only the git guard and sensitive-file rules hard-block.</p></div>
+
+<h2 id="workflows">Workflows</h2>
+<p>Playbooks in <code>.ai/workflows/</code> are the method the commands follow — edit a playbook and
+the matching command changes behaviour. They cover feature development, bug fixing, hotfixes,
+releases, code review, story generation, and harness improvement.</p>
+<h3>The epic path</h3>
+<p>When <code>/ba</code> produced an <code>epic-breakdown.md</code>, the feature workflow switches to
+six phases:</p>
+<div class="flow"><span>A validate</span><em>→</em><span>B design gate</span><em>→</em><span>C epic branch</span><em>→</em><span>D parallel build</span><em>→</em><span>E sequential merge</span><em>→</em><span>F review + PR</span></div>
+<p>Phase D isolates each sub-feature in its own <strong>git worktree</strong> under
+<code>.worktrees/</code>, so delegated agents never share a working tree. Worktrees only see
+committed files — which is why planning artifacts are committed onto the epic branch first.</p>
+
+<h2 id="standards">Standards &amp; templates</h2>
+<table>
+<thead><tr><th>Tree</th><th>Nature</th></tr></thead>
+<tbody>
+<tr><td><code>standards/universal/</code></td><td>Portable principles — coding, API design, security baseline, testing, accessibility, UI/UX, frontend craft, git workflow</td></tr>
+<tr><td><code>standards/project/**/tech-specific.md</code></td><td>Your stack's concrete rules — what agents actually read</td></tr>
+<tr><td><code>standards/project/frontend/design/</code></td><td>The closed design system: palette, tokens, component specs. Governs <em>whatever</em> UI exists, server-rendered included</td></tr>
+<tr><td><code>standards/**/&lt;stack&gt;/</code> and <code>universal/vcs/</code></td><td><strong>Reference-only</strong> worked examples — never loaded by a command</td></tr>
+</tbody>
+</table>
+<p>Templates in <code>.ai/templates/</code> shape every output: technical spec, design spec, user
+story, test plan, security report, PR description, release checklist, ADR, the branded artifact
+header, and <code>feature-state.md</code> (which becomes <code>STATE.md</code>).</p>
+
+<h2 id="memory">Memory</h2>
+<table>
+<thead><tr><th>Location</th><th>Written by</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>.ai/memory/decisions.md</code></td><td>Agents, <code>/init-project</code></td><td>Precedent-setting or hard-to-reverse decisions, with the reason</td></tr>
+<tr><td><code>.ai/memory/learnings.md</code></td><td>Agents, <code>/utils:learn</code></td><td>Non-obvious reusable lessons — pitfalls, approaches abandoned and why</td></tr>
+<tr><td><code>.ai/memory/design-taste.md</code></td><td>Designer</td><td>Approved and rejected design choices, in the user's own words</td></tr>
+<tr><td><code>.claude/agent-memory/</code></td><td>Claude Code (runtime)</td><td>Per-sub-agent project facts; git-ignored, recreated automatically</td></tr>
+</tbody>
+</table>
+<p>The first three are committed — the harness's institutional memory. The designer reads
+design-taste before proposing, so a rejected pattern stays rejected.</p>
+
+<h2 id="scope">Scope model</h2>
+<p>Every context-loading command resolves a scope first: a forced scope in
+<code>.ai/config/current-scope.md</code> wins; otherwise it infers <strong>backend / frontend /
+fullstack</strong> from your request using the stack signals filled in at init, and loads only that
+scope's config, context and standards. Force it with <code>/utils:scope backend</code>; release it
+with <code>/utils:scope auto</code>.</p>
+
+<h2 id="artifacts">Where artifacts land</h2>
+<pre><code>.ai/features/&lt;slug&gt;/
+├── requirement-spec.md          # /ba
+├── user-stories.md              # /ba
+├── epic-breakdown.md            # /ba, epics only
+├── test-specs.md                # /qa
+├── STATE.md                     # the workflow — resumable state, never branded
+├── technical-specs/             # backend.md / frontend.md when fullstack
+├── design/design-spec.md        # /agents:design
+├── test-specs/test-report.md    # what was and wasn't verified
+├── review-report.md             # reviewer sub-agent
+├── security-report.md           # security-scanner sub-agent
+└── pr-description.md            # the final report</code></pre>
+<p>Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
+Every document except <code>STATE.md</code> opens with your branded header.</p>
+
+<h2 id="trouble">Troubleshooting</h2>
+<table>
+<thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Hooks never fire</td><td>No bash on <code>PATH</code></td><td>Install Git Bash / WSL, re-test</td></tr>
+<tr><td>Hooks fire, nothing blocked</td><td><code>hooks.env</code> still inert</td><td>Fill the branch, command and <code>*_CHECK</code> keys</td></tr>
+<tr><td>Workflow says artifacts missing</td><td>Studios haven't run</td><td><code>/ba &lt;slug&gt;</code> then <code>/qa &lt;slug&gt;</code></td></tr>
+<tr><td>Agents cite the wrong stack</td><td>A config or tech-specific file is still a skeleton</td><td>Re-run the verify grep</td></tr>
+<tr><td>Too much context loaded</td><td>Scope guessed wide</td><td><code>/utils:scope backend</code></td></tr>
+<tr><td>Resume starts in the wrong place</td><td><code>STATE.md</code> claims a phase done but its artifact is missing</td><td>It re-runs automatically; delete <code>STATE.md</code> to start clean</td></tr>
+<tr><td>Docs have no logo or footer</td><td><code>.ai/config/branding.md</code> unfilled</td><td>Fill it, drop a logo in <code>.ai/branding/</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="cheat">Cheat sheet</h2>
+<div class="card">
+<table>
+<thead><tr><th>Situation</th><th>Command</th></tr></thead>
+<tbody>
+<tr><td>New project</td><td><code>/init-project</code></td></tr>
+<tr><td>New feature (full path)</td><td><code>/ba &lt;slug&gt;</code> → <code>/qa &lt;slug&gt;</code> → <code>/workflows:feature &lt;slug&gt;</code></td></tr>
+<tr><td>Small change, no specs</td><td><code>/agents:dev "&lt;change&gt;"</code></td></tr>
+<tr><td>Bug</td><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td></tr>
+<tr><td>Production emergency</td><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td></tr>
+<tr><td>Release</td><td><code>/agents:security</code> → <code>/workflows:release &lt;version&gt;</code></td></tr>
+<tr><td>Review what I just wrote</td><td><code>/agents:review</code></td></tr>
+<tr><td>Daily check-in</td><td><code>/utils:status</code>, <code>/utils:standup</code></td></tr>
+<tr><td>Capture a lesson</td><td><code>/utils:learn "&lt;lesson&gt;"</code></td></tr>
+<tr><td>Question about the harness</td><td><code>/harness:ask "&lt;question&gt;"</code></td></tr>
+<tr><td>Change the harness</td><td><code>/harness:improve "&lt;change&gt;"</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<footer>
+<p>Source docs: <code>docs/getting-started.md</code> and <code>docs/components.md</code> in this
+repository. Deeper references: <code>COMMANDS.md</code> (every command), <code>.ai/CUSTOMIZATION.md</code>
+(the 12 variability axes), <code>.ai/README.md</code> and <code>.claude/README.md</code> (per-layer
+detail), and <code>examples/fleetkeep/</code> (a fully configured worked example).</p>
+</footer>
+</main>
+</div>
+</body>
+</html>
