@@ -11,7 +11,7 @@ review / security / release reports. The header template lives at
 |---------|-------|
 | Company name | **Northwind Systems** |
 | Product name | **FleetKeep** |
-| Logo | `.ai/branding/logo.svg` — placeholder mark; replace with the official Northwind Systems logo (PNG recommended for broadest rendering) |
+| Logo | `/.ai/branding/logo.svg` — the FleetKeep lockup. **Leading slash matters:** artifacts live at varying depths under `.ai/features/<slug>/`, so the path must be root-relative or the image breaks |
 | Primary color | `#0B5D51` (FleetKeep deep teal — matches the Mantine `brand` scale in `src/Web/src/theme/theme.ts`) |
 | Footer | `© Northwind Systems — Confidential` |
 

@@ -6,8 +6,10 @@ Drop your organisation's logo in this folder and point `.ai/branding/logo.svg` i
 - **File:** replace `logo.svg` with your own (`logo.png` recommended for broadest rendering).
 - **Referenced by:** `.ai/templates/artifact-header.md`, which every artifact-generating agent
   prepends to the Markdown documents it produces.
-- **Path or URL:** `.ai/branding/logo.svg` accepts a repo-relative path (e.g. `.ai/branding/logo.png`)
-  or a public `https://` URL.
+- **Path or URL:** the logo setting accepts a **root-relative** path — leading slash, as in
+  `/.ai/branding/logo.svg` — or a public `https://` URL. The leading slash is required because
+  generated artifacts sit at varying depths under `.ai/features/<slug>/`; a path relative to the
+  artifact itself resolves differently per file and breaks.
 
 `logo.svg` here is the FleetKeep lockup (Northwind Systems vendor brand + product name) in the
 brand teal `#0B5D51` with the `#F2A007` accent. Keep any replacement to 220x64 so the artifact
