@@ -310,5 +310,13 @@ AI Harness is documented in layered guides. Start here and drill into whichever 
 
 ## License
 
-> [FILL IN: your organisation's licence or usage terms — e.g. "Internal use only. © <Your Org>.
-> Confidential and proprietary." Replace this block before sharing the repo.]
+Private repository — **all rights reserved**.
+
+Not licensed for distribution, publication, or use outside the organisations that hold rights to it.
+Portions derive from an internal base template; that prior work's terms continue to apply.
+
+If you are unsure whether you may use or share this, ask the repository owner before doing either.
+
+> **Adopting the harness into a project?** This section describes *this template repo*. Replace it
+> with your project's own licence when you copy `README.md` across — the harness makes no claim over
+> the code you build with it.
