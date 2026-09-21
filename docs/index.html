@@ -98,6 +98,7 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
   <a href="#scope">Scope model</a>
   <a href="#artifacts">Where artifacts land</a>
   <h2>Reference</h2>
+  <a href="#portability">Other AI agents</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#cheat">Cheat sheet</a>
 </nav>
@@ -397,6 +398,25 @@ with <code>/utils:scope auto</code>.</p>
 └── pr-description.md            # the final report</code></pre>
 <p>Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
 Every document except <code>STATE.md</code> opens with your branded header.</p>
+
+<h2 id="portability">Other AI agents</h2>
+<p>The harness splits into a <strong>method</strong> that travels and an <strong>enforcement
+mechanism</strong> that does not. <code>.ai/</code> is 82 files of plain markdown with no
+tool-specific syntax. The Claude Code coupling sits in the 26 commands (73 <code>@file</code>
+includes, 108 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 8 hooks wired to Claude Code's
+event names.</p>
+<table>
+<thead><tr><th>Step</th><th>What it gives you</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td><strong><code>AGENTS.md</code></strong> <span class="pill">done</span></td><td>The whole method as instructions — which files to read, how to scope, which playbook, the five gates, the guardrails to self-enforce. Works with Codex, Cursor, Gemini, Copilot</td><td>None ongoing; it defers to <code>CLAUDE.md</code> and <code>.ai/</code> so it can't drift</td></tr>
+<tr><td><strong>Git hooks + CI</strong></td><td>Guardrails that hold regardless of <em>who</em> edits — agent or human. Recipes for <code>pre-push</code> and <code>pre-commit</code> that re-use <code>hooks.env</code> verbatim</td><td>About half a day; CI is the real boundary since <code>--no-verify</code> skips local hooks</td></tr>
+<tr><td><strong>Command generators</strong></td><td>Slash-command ergonomics inside one specific non-Claude tool</td><td>Highest — generated output rots on every harness change unless CI fails on staleness</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><p><strong>Three things never port:</strong> hard blocks at the tool call,
+read-only sub-agents that <em>cannot</em> edit what they review, and parallel isolated review. Elsewhere
+those become instructions, and instructions are advisory.</p></div>
+<p>Full detail, recipes and the support matrix: <code>docs/portability.md</code>.</p>
 
 <h2 id="trouble">Troubleshooting</h2>
 <table>

@@ -47,8 +47,11 @@ This repo ships as a **template**: every project-specific value is a `{{TOKEN}}`
 This repository **is** the template. Copy these into your project's repo root:
 
 ```
-.ai/  .claude/  .mcp.json  CLAUDE.md  COMMANDS.md  README.md
+.ai/  .claude/  .mcp.json  CLAUDE.md  AGENTS.md  COMMANDS.md  README.md
 ```
+
+`AGENTS.md` carries the same method for agents other than Claude Code — see `docs/portability.md`
+in the harness template repo.
 
 Optionally take `examples/fleetkeep/` along while you configure — `/init-project` offers to delete
 it at the end. **Don't** copy this repo's `.gitignore`; it is written for the template itself. Your
@@ -66,7 +69,7 @@ initialization in `.ai/memory/decisions.md`.
 Prefer to do it by hand, or tweaking afterwards? [`.ai/CUSTOMIZATION.md`](.ai/CUSTOMIZATION.md) lists
 all 12 variability axes — which files each touches and which tokens it owns. For a worked answer to
 "what should this file actually look like when filled?", open the matching file under
-[`examples/fleetkeep/`](examples/fleetkeep).
+`examples/fleetkeep/` in the harness template repo.
 
 **Shape the tree to the project while you're there:**
 
@@ -241,7 +244,7 @@ examples/fleetkeep/       → a fully configured copy of both layers (worked ref
   standards, workflows, templates, decisions). Markdown only; nothing here executes.
 - **[`.claude/`](.claude/README.md)** — the **Execution Layer**: everything Claude Code runs (slash
   commands, sub-agents, hooks, settings).
-- **[`examples/fleetkeep/`](examples/fleetkeep)** — the same two layers, **filled in** for a sample
+- **`examples/fleetkeep/`** *(template repo only)* — the same two layers, **filled in** for a sample
   project: FleetKeep, a multi-tenant fleet-compliance SaaS (.NET 8 API + React/Mantine SPA + Azure
   Functions worker + Bicep, on GitHub). Every token substituted, every `[FILL IN]` answered, and
   `hooks.env` configured with the tenant-isolation, design-token and TDD checks switched on. Read it
@@ -261,7 +264,8 @@ AI Harness is documented in layered guides. Start here and drill into whichever 
 | [`COMMANDS.md`](COMMANDS.md) | Know exactly what to type — every `/command`, who uses it, and what it produces |
 | [`.ai/CUSTOMIZATION.md`](.ai/CUSTOMIZATION.md) | Tailor the template to your project, organized by axis |
 | [`CLAUDE.md`](CLAUDE.md) | See the per-repo guidance Claude Code auto-loads each session |
-| [`examples/fleetkeep/`](examples/fleetkeep) | See a complete, filled-in configuration end to end |
+| `examples/fleetkeep/` *(template repo only)* | See a complete, filled-in configuration end to end |
+| [`AGENTS.md`](AGENTS.md) · `docs/portability.md` *(template repo only)* | Run the harness on Codex, Cursor, Gemini or another agent |
 | `PORTING.md` *(extraction bundles only — not part of the harness itself)* | Understand a bundle's layout: the pristine base template, the worked references, and what was genericized |
 
 ---

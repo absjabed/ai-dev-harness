@@ -47,8 +47,11 @@ This repo ships as a **template**: every project-specific value is a `{{TOKEN}}`
 This repository **is** the template. Copy these into your project's repo root:
 
 ```
-.ai/  .claude/  .mcp.json  CLAUDE.md  COMMANDS.md  README.md
+.ai/  .claude/  .mcp.json  CLAUDE.md  AGENTS.md  COMMANDS.md  README.md
 ```
+
+`AGENTS.md` carries the same method for agents other than Claude Code — see
+[`docs/portability.md`](docs/portability.md).
 
 Optionally take `examples/fleetkeep/` along while you configure — `/init-project` offers to delete
 it at the end. **Don't** copy this repo's `.gitignore`; it is written for the template itself. Your
@@ -262,6 +265,7 @@ AI Harness is documented in layered guides. Start here and drill into whichever 
 | [`.ai/CUSTOMIZATION.md`](.ai/CUSTOMIZATION.md) | Tailor the template to your project, organized by axis |
 | [`CLAUDE.md`](CLAUDE.md) | See the per-repo guidance Claude Code auto-loads each session |
 | [`examples/fleetkeep/`](examples/fleetkeep) | See a complete, filled-in configuration end to end |
+| [`AGENTS.md`](AGENTS.md) · [`docs/portability.md`](docs/portability.md) | Run the harness on Codex, Cursor, Gemini or another agent |
 | `PORTING.md` *(extraction bundles only — not part of the harness itself)* | Understand a bundle's layout: the pristine base template, the worked references, and what was genericized |
 
 ---

@@ -7,12 +7,14 @@ Everything needed to adopt the harness and understand what each part does.
 | [`index.html`](index.html) | Read the whole thing as one browsable page — open it in a browser, no build step |
 | [`getting-started.md`](getting-started.md) | Take the template from clone to a working setup, and run your first feature |
 | [`components.md`](components.md) | Look up any component: every command, persona, sub-agent, hook, workflow, template and where its output lands |
+| [`portability.md`](portability.md) | Run the harness on a non-Claude agent — what travels, what doesn't, and how to make the guardrails tool-independent |
 
-These three are the entry point. The deeper references live with the code they describe:
+These four are the entry point. The deeper references live with the code they describe:
 
 | Reference | Covers |
 |---|---|
 | [`../README.md`](../README.md) | The system overview and the condensed setup section |
+| [`../AGENTS.md`](../AGENTS.md) | The method as instructions for any non-Claude agent |
 | [`../COMMANDS.md`](../COMMANDS.md) | Every `/command`, who runs it, and what it produces |
 | [`../.ai/CUSTOMIZATION.md`](../.ai/CUSTOMIZATION.md) | The 12 variability axes — which files and tokens each owns |
 | [`../.ai/README.md`](../.ai/README.md) | The Knowledge Layer in detail |
