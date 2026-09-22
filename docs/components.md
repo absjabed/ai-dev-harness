@@ -143,7 +143,7 @@ of the harness that works whether or not the model cooperates.
 | Hook | Event | What it does |
 |---|---|---|
 | `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited — generated migrations, sensitive config |
-| `git-guard.sh` | PreToolUse (Bash) | **Blocks** `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage |
+| `git-guard.sh` | PreToolUse (Bash) | **Blocks** `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage. The first two are **unconditional — there is no override flag**: a deliberate history rewrite has to be run from a terminal outside Claude Code |
 | `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check + lint for the edited package; runs the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) |
 | `post-tool-batch.sh` | PostToolBatch | Full-project type-check after a batch of parallel edits |
 | `post-tool-failure.sh` | PostToolUseFailure | Classifies a failed tool call (type error, lint, test) and feeds back a hint |

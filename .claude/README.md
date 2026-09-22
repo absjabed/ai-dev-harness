@@ -20,7 +20,7 @@ for any project once `.ai/` is filled in.
 | [`hooks/`](hooks) | Safety/quality hooks (see below) plus **`hooks.env`** — the single config for all hook behavior. |
 | [`scripts/`](scripts) | Helper scripts (e.g. `devops-mode.sh`). |
 | `settings.json` | Hook registration (which script fires on which event). |
-| `settings.local.json` | Local, machine-specific overrides (not committed conventions). |
+| `settings.local.json` | Local, machine-specific overrides — git-ignored. Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
 
 ---
 

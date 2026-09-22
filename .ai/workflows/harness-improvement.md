@@ -32,9 +32,13 @@ before they land. Used by `/harness:improve`.
    `examples/<example-project>/`; only `hooks.env` differs. Portable files copied into the example
    stay verbatim copies. **If `examples/` is absent, skip all mirror steps — never
    recreate the folder.**
-7. **Docs inventories stay true** — `COMMANDS.md`, `README.md`, `.ai/README.md`,
-   `.claude/README.md`, and `.ai/CUSTOMIZATION.md` enumerate commands, agents, templates,
-   memory files, and hook toggles. Any addition/rename updates every list that names it.
+7. **Docs inventories stay true** — `COMMANDS.md`, `README.md`, `AGENTS.md`, `.ai/README.md`,
+   `.claude/README.md`, `.ai/CUSTOMIZATION.md`, and everything under `docs/`
+   (`getting-started.md`, `components.md`, `portability.md`, and the hand-written
+   `index.html`) enumerate commands, agents, sub-agents, hooks, templates, memory files and
+   hook toggles — several of them by **count** as well as by name. Any addition/rename updates
+   every list that names it, and any count it changes. `docs/index.html` is not generated:
+   edit it in the same change as the markdown it mirrors.
 8. **Tool least-privilege** — command/sub-agent frontmatter grants only the tools the role
    needs; anything the instructions tell the agent to run must be grantable from its
    `allowed-tools`/`tools` line (e.g. `date +%F` needs Bash).
