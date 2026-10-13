@@ -11,6 +11,9 @@
   --border:#dde4ec; --accent:#0b5d51; --accent-soft:#e6f4f1; --warn-bg:#fef3c7; --warn-text:#92400e;
   --danger:#b91c1c; --ok:#166534; --code-bg:#f1f5f9; --shadow:0 1px 2px rgba(16,26,36,.06),0 8px 24px rgba(16,26,36,.06);
   --mark-bg:#0F8A72; /* brand mark + favicon: one value for both themes — white glyph 4.3:1, chip 4.0:1 vs the dark sidebar, 4.1:1 vs the light one */
+  --dg-proc:#dae8fc; --dg-proc-s:#6c8ebf; --dg-gate:#fff2cc; --dg-gate-s:#d6b656; --dg-par:#d5e8d4; --dg-par-s:#82b366;
+  --dg-rv:#e1d5e7; --dg-rv-s:#9673a6; --dg-opt:#f5f5f5; --dg-opt-s:#999999; --dg-lane:#ffffff; --dg-lane-h:#f1f4f8;
+  --dg-badge:#9a7a12; --dg-edge:#5b6b7f;
   --mono:ui-monospace,'Cascadia Mono','SF Mono',Consolas,monospace;
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 }
@@ -18,7 +21,10 @@
   :root:not([data-theme="light"]){
     --bg:#0b1120; --surface:#111c33; --surface-2:#16233d; --text:#e2e8f0; --muted:#94a3b8;
     --border:#2b3a52; --accent:#45af9b; --accent-soft:#0f2b28; --warn-bg:#3b2f10; --warn-text:#fbbf24;
-    --danger:#f87171; --ok:#4ade80; --code-bg:#0f1a2e; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    --danger:#f87171; --ok:#4ade80; --code-bg:#0f1a2e;
+    --dg-proc:#1b2c47; --dg-proc-s:#7b9fd4; --dg-gate:#3a3014; --dg-gate-s:#d6b656; --dg-par:#1a3324; --dg-par-s:#82b366;
+    --dg-rv:#2d2340; --dg-rv-s:#b195d1; --dg-opt:#151e30; --dg-opt-s:#7d8799; --dg-lane:#0e1729; --dg-lane-h:#16233d;
+    --dg-badge:#e2c35c; --dg-edge:#94a3b8; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
   }
 }
 *{box-sizing:border-box}
@@ -68,6 +74,29 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
 .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:1rem 0;font-family:var(--mono);font-size:.82rem}
 .flow span{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
 .flow em{color:var(--muted);font-style:normal}
+main a{color:var(--accent);text-underline-offset:2px}
+.dg-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:10px;margin:1.1rem 0}
+.dg{display:block;width:100%;min-width:860px;height:auto;font-family:var(--sans)}
+.dg-lane{fill:var(--dg-lane);stroke:var(--border)}
+.dg-lane-h{fill:var(--dg-lane-h);stroke:var(--border)}
+.dg-n{stroke-width:1.3}
+.dg-proc{fill:var(--dg-proc);stroke:var(--dg-proc-s)}
+.dg-gate{fill:var(--dg-gate);stroke:var(--dg-gate-s);stroke-width:2}
+.dg-par{fill:var(--dg-par);stroke:var(--dg-par-s)}
+.dg-rv{fill:var(--dg-rv);stroke:var(--dg-rv-s);stroke-width:2}
+.dg-opt{fill:var(--dg-opt);stroke:var(--dg-opt-s)}
+.dg-note{fill:var(--dg-lane-h);stroke:var(--dg-opt-s);stroke-dasharray:4 3}
+.dg-guard{fill:var(--accent-soft);stroke:var(--accent)}
+.dg-e{stroke:var(--dg-edge);stroke-width:1.4;fill:none}
+.dg-dash{stroke-dasharray:3 3}
+.dg-ah{fill:var(--dg-edge)}
+.dg-h{font-size:15px;font-weight:700;fill:var(--text)}
+.dg-lg{font-size:11px;fill:var(--muted)}
+.dg-lt{font-size:12.5px;font-weight:700;fill:var(--text)}
+.dg-lc{font-size:9.5px;fill:var(--muted);font-family:var(--mono)}
+.dg-t{font-size:10.5px;font-weight:600;fill:var(--text)}
+.dg-s{font-size:9.5px;fill:var(--muted)}
+.dg-badge{font-size:7.5px;font-weight:800;letter-spacing:.06em;fill:var(--dg-badge)}
 @media(max-width:900px){
   .layout{grid-template-columns:1fr}
   nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
@@ -92,6 +121,7 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
   <h2>Start here</h2>
   <a href="#what">What it is</a>
   <a href="#why">Why use it</a>
+  <a href="#map">Harness map</a>
   <a href="#prereq">Prerequisites</a>
   <a href="#setup">Setup in 4 steps</a>
   <a href="#first">Your first feature</a>
@@ -162,6 +192,273 @@ overhead is real and not worth paying: use <code>/agents:dev</code> or
 <code>/workflows:bugfix</code> instead. The harness also can't make a codebase testable, and it
 won't catch a bad decision you approve at a gate. It removes the failures that come from
 forgetting, not the ones that come from judgment.</p>
+
+<h2 id="map">Harness map</h2>
+<p>Every path through the harness on one page. Read each lane left to right; yellow boxes are the
+points where it stops and asks you. On a narrow screen, scroll the diagram sideways.</p>
+<div class="dg-wrap">
+<svg viewBox="0 0 1040 708" role="img" aria-labelledby="dg-title dg-desc" class="dg">
+<title id="dg-title">Harness map — every path</title>
+<desc id="dg-desc">Swimlane diagram of the harness paths: setup, feature, bug fix, hotfix, ad-hoc verification, release and harness change, with STOP gates, parallel sub-agents and runtime checks marked.</desc>
+<defs><marker id="dg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-ah"/></marker></defs>
+<text x="10" y="26" class="dg-h">Every path, at a glance</text>
+<rect x="300" y="14" width="18" height="14" rx="3" class="dg-n dg-proc"/>
+<text x="324" y="25.5" class="dg-lg">Step</text>
+<rect x="370.4" y="14" width="18" height="14" rx="3" class="dg-n dg-gate"/>
+<text x="394.4" y="25.5" class="dg-lg">STOP — asks you</text>
+<rect x="507.9" y="14" width="18" height="14" rx="3" class="dg-n dg-par"/>
+<text x="531.9" y="25.5" class="dg-lg">Sub-agent(s)</text>
+<rect x="627.0999999999999" y="14" width="18" height="14" rx="3" class="dg-n dg-rv"/>
+<text x="651.0999999999999" y="25.5" class="dg-lg">Runtime checks — block unless accepted</text>
+<rect x="904.8999999999999" y="14" width="18" height="14" rx="3" class="dg-n dg-opt"/>
+<text x="928.8999999999999" y="25.5" class="dg-lg">Optional / conditional</text>
+<rect x="4" y="64" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="64" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="101.0" class="dg-lt" text-anchor="middle">Setup</text>
+<text x="63.0" y="116.0" class="dg-lc" text-anchor="middle">once per project</text>
+<rect x="130" y="79.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="100.0" class="dg-t" text-anchor="middle">Copy harness</text>
+<text x="174.0" y="114.0" class="dg-s" text-anchor="middle">.ai/ · .claude/ · root</text>
+<line x1="218" y1="103.0" x2="229" y2="103.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="79.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="274.0" y="100.0" class="dg-t" text-anchor="middle">/init-project</text>
+<text x="274.0" y="114.0" class="dg-s" text-anchor="middle">interview</text>
+<line x1="318" y1="103.0" x2="329" y2="103.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="79.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="374.0" y="100.0" class="dg-t" text-anchor="middle">Fill skeletons</text>
+<text x="374.0" y="114.0" class="dg-s" text-anchor="middle">+ hooks.env</text>
+<line x1="418" y1="103.0" x2="429" y2="103.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="79.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="513" y="89.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="474.0" y="100.0" class="dg-t" text-anchor="middle">Verify grep</text>
+<text x="474.0" y="114.0" class="dg-s" text-anchor="middle">= 0 tokens</text>
+<line x1="518" y1="103.0" x2="529" y2="103.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="79.0" width="88" height="48" rx="6" class="dg-n dg-opt" stroke-dasharray="5 3"/>
+<text x="574.0" y="100.0" class="dg-t" text-anchor="middle">Tidy up</text>
+<text x="574.0" y="114.0" class="dg-s" text-anchor="middle">examples, stack refs</text>
+<rect x="4" y="142" width="1032" height="108" rx="6" class="dg-lane"/>
+<rect x="4" y="142" width="118" height="108" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="179.0" class="dg-lt" text-anchor="middle">Feature</text>
+<text x="63.0" y="194.0" class="dg-lc" text-anchor="middle">/workflows:feature</text>
+<rect x="130" y="157.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="178.0" class="dg-t" text-anchor="middle">/ba → /qa</text>
+<text x="174.0" y="192.0" class="dg-s" text-anchor="middle">specs + fix version</text>
+<line x1="218" y1="181.0" x2="229" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="157.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="313" y="167.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="274.0" y="178.0" class="dg-t" text-anchor="middle">Tech spec</text>
+<text x="274.0" y="192.0" class="dg-s" text-anchor="middle">approved</text>
+<line x1="318" y1="181.0" x2="329" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="157.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="413" y="167.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="374.0" y="178.0" class="dg-t" text-anchor="middle">Design</text>
+<text x="374.0" y="192.0" class="dg-s" text-anchor="middle">approved (UI)</text>
+<line x1="418" y1="181.0" x2="429" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="157.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="474.0" y="178.0" class="dg-t" text-anchor="middle">Implement</text>
+<text x="474.0" y="192.0" class="dg-s" text-anchor="middle">+ tests</text>
+<line x1="518" y1="181.0" x2="529" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="157.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="574.0" y="178.0" class="dg-t" text-anchor="middle">Review ‖</text>
+<text x="574.0" y="192.0" class="dg-s" text-anchor="middle">security scan</text>
+<line x1="618" y1="181.0" x2="629" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="157.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="674.0" y="178.0" class="dg-t" text-anchor="middle">Docs +</text>
+<text x="674.0" y="192.0" class="dg-s" text-anchor="middle">deploy notes</text>
+<line x1="718" y1="181.0" x2="729" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="730" y="157.0" width="88" height="48" rx="6" class="dg-n dg-rv"/>
+<text x="774.0" y="178.0" class="dg-t" text-anchor="middle">Runtime checks</text>
+<text x="774.0" y="192.0" class="dg-s" text-anchor="middle">API · UI · DB</text>
+<line x1="818" y1="181.0" x2="829" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="830" y="157.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="913" y="167.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="874.0" y="178.0" class="dg-t" text-anchor="middle">Commit</text>
+<text x="874.0" y="192.0" class="dg-s" text-anchor="middle">confirmed</text>
+<line x1="918" y1="181.0" x2="929" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="930" y="157.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="1013" y="167.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="974.0" y="178.0" class="dg-t" text-anchor="middle">PR</text>
+<text x="974.0" y="192.0" class="dg-s" text-anchor="middle">confirmed</text>
+<rect x="430" y="214.0" width="588" height="22" rx="4" class="dg-note"/>
+<text x="724.0" y="229.0" class="dg-s" text-anchor="middle">Epic: sub-features build in parallel worktrees → merged in order → checked once on the epic branch</text>
+<line x1="474.0" y1="205.0" x2="474.0" y2="214.0" class="dg-e dg-dash"/>
+<rect x="4" y="250" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="250" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="287.0" class="dg-lt" text-anchor="middle">Bug fix</text>
+<text x="63.0" y="302.0" class="dg-lc" text-anchor="middle">/workflows:bugfix</text>
+<rect x="130" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="286.0" class="dg-t" text-anchor="middle">Reproduce</text>
+<text x="174.0" y="300.0" class="dg-s" text-anchor="middle">the bug</text>
+<line x1="218" y1="289.0" x2="229" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="274.0" y="293.0" class="dg-t" text-anchor="middle">Root cause</text>
+<line x1="318" y1="289.0" x2="329" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="374.0" y="286.0" class="dg-t" text-anchor="middle">Guard</text>
+<text x="374.0" y="300.0" class="dg-s" text-anchor="middle">failing test</text>
+<line x1="418" y1="289.0" x2="429" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="474.0" y="293.0" class="dg-t" text-anchor="middle">Minimal fix</text>
+<line x1="518" y1="289.0" x2="529" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="574.0" y="286.0" class="dg-t" text-anchor="middle">Verify +</text>
+<text x="574.0" y="300.0" class="dg-s" text-anchor="middle">blast radius</text>
+<line x1="618" y1="289.0" x2="629" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="674.0" y="293.0" class="dg-t" text-anchor="middle">Deploy notes</text>
+<line x1="718" y1="289.0" x2="729" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="730" y="265.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="774.0" y="286.0" class="dg-t" text-anchor="middle">Review</text>
+<text x="774.0" y="300.0" class="dg-s" text-anchor="middle">sub-agent</text>
+<line x1="818" y1="289.0" x2="829" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="830" y="265.0" width="88" height="48" rx="6" class="dg-n dg-rv"/>
+<text x="874.0" y="286.0" class="dg-t" text-anchor="middle">Runtime checks</text>
+<text x="874.0" y="300.0" class="dg-s" text-anchor="middle">the original bug</text>
+<line x1="918" y1="289.0" x2="929" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="930" y="265.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="1013" y="275.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="974.0" y="286.0" class="dg-t" text-anchor="middle">Commit</text>
+<text x="974.0" y="300.0" class="dg-s" text-anchor="middle">confirmed</text>
+<rect x="4" y="328" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="328" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="365.0" class="dg-lt" text-anchor="middle">Hotfix</text>
+<text x="63.0" y="380.0" class="dg-lc" text-anchor="middle">/workflows:hotfix</text>
+<rect x="130" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="364.0" class="dg-t" text-anchor="middle">Branch from</text>
+<text x="174.0" y="378.0" class="dg-s" text-anchor="middle">production</text>
+<line x1="218" y1="367.0" x2="229" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="274.0" y="364.0" class="dg-t" text-anchor="middle">Minimal fix</text>
+<text x="274.0" y="378.0" class="dg-s" text-anchor="middle">+ guard</text>
+<line x1="318" y1="367.0" x2="329" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="374.0" y="371.0" class="dg-t" text-anchor="middle">Verify</text>
+<line x1="418" y1="367.0" x2="429" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="474.0" y="371.0" class="dg-t" text-anchor="middle">Deploy notes</text>
+<line x1="518" y1="367.0" x2="529" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="343.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="574.0" y="364.0" class="dg-t" text-anchor="middle">Review</text>
+<text x="574.0" y="378.0" class="dg-s" text-anchor="middle">sub-agent</text>
+<line x1="618" y1="367.0" x2="629" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="343.0" width="88" height="48" rx="6" class="dg-n dg-rv"/>
+<text x="674.0" y="364.0" class="dg-t" text-anchor="middle">Smoke check</text>
+<text x="674.0" y="378.0" class="dg-s" text-anchor="middle">one journey</text>
+<line x1="718" y1="367.0" x2="729" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="730" y="343.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="813" y="353.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="774.0" y="364.0" class="dg-t" text-anchor="middle">PR</text>
+<text x="774.0" y="378.0" class="dg-s" text-anchor="middle">confirmed</text>
+<line x1="818" y1="367.0" x2="829" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="830" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="874.0" y="364.0" class="dg-t" text-anchor="middle">Forward-port</text>
+<text x="874.0" y="378.0" class="dg-s" text-anchor="middle">+ deploy</text>
+<line x1="918" y1="367.0" x2="929" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="930" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="974.0" y="364.0" class="dg-t" text-anchor="middle">Post-mortem</text>
+<text x="974.0" y="378.0" class="dg-s" text-anchor="middle">≤ 48 h</text>
+<rect x="4" y="406" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="406" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="443.0" class="dg-lt" text-anchor="middle">Ad-hoc</text>
+<text x="63.0" y="458.0" class="dg-lc" text-anchor="middle">/agents:dev</text>
+<text x="63.0" y="470.0" class="dg-lc" text-anchor="middle">/workflows:verify</text>
+<rect x="130" y="421.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="442.0" class="dg-t" text-anchor="middle">Any change</text>
+<text x="174.0" y="456.0" class="dg-s" text-anchor="middle">or /agents:dev</text>
+<line x1="218" y1="445.0" x2="229" y2="445.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="421.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="274.0" y="442.0" class="dg-t" text-anchor="middle">Verify</text>
+<text x="274.0" y="456.0" class="dg-s" text-anchor="middle">/workflows:verify</text>
+<line x1="318" y1="445.0" x2="329" y2="445.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="421.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="413" y="431.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="374.0" y="442.0" class="dg-t" text-anchor="middle">Confirm plan</text>
+<text x="374.0" y="456.0" class="dg-s" text-anchor="middle">API · UI · DB</text>
+<line x1="418" y1="445.0" x2="429" y2="445.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="421.0" width="88" height="48" rx="6" class="dg-n dg-rv"/>
+<text x="474.0" y="442.0" class="dg-t" text-anchor="middle">Run checks</text>
+<text x="474.0" y="456.0" class="dg-s" text-anchor="middle">test env only</text>
+<line x1="518" y1="445.0" x2="529" y2="445.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="421.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="574.0" y="442.0" class="dg-t" text-anchor="middle">e2e report</text>
+<text x="574.0" y="456.0" class="dg-s" text-anchor="middle">PASS · FAIL</text>
+<line x1="618" y1="445.0" x2="629" y2="445.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="421.0" width="88" height="48" rx="6" class="dg-n dg-opt" stroke-dasharray="5 3"/>
+<text x="674.0" y="442.0" class="dg-t" text-anchor="middle">You commit</text>
+<text x="674.0" y="456.0" class="dg-s" text-anchor="middle">(never auto)</text>
+<rect x="4" y="484" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="484" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="521.0" class="dg-lt" text-anchor="middle">Release</text>
+<text x="63.0" y="536.0" class="dg-lc" text-anchor="middle">/workflows:release</text>
+<rect x="130" y="499.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="174.0" y="520.0" class="dg-t" text-anchor="middle">Security ‖</text>
+<text x="174.0" y="534.0" class="dg-s" text-anchor="middle">release artifacts</text>
+<line x1="218" y1="523.0" x2="229" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="499.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="274.0" y="520.0" class="dg-t" text-anchor="middle">Quality gates</text>
+<text x="274.0" y="534.0" class="dg-s" text-anchor="middle">lint · test · build</text>
+<line x1="318" y1="523.0" x2="329" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="499.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="413" y="509.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="374.0" y="520.0" class="dg-t" text-anchor="middle">Confirm</text>
+<text x="374.0" y="534.0" class="dg-s" text-anchor="middle">release</text>
+<line x1="418" y1="523.0" x2="429" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="499.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="474.0" y="520.0" class="dg-t" text-anchor="middle">Version bump</text>
+<text x="474.0" y="534.0" class="dg-s" text-anchor="middle">+ changelog</text>
+<line x1="518" y1="523.0" x2="529" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="499.0" width="88" height="48" rx="6" class="dg-n dg-opt" stroke-dasharray="5 3"/>
+<text x="574.0" y="520.0" class="dg-t" text-anchor="middle">Deployment</text>
+<text x="574.0" y="534.0" class="dg-s" text-anchor="middle">guide (if on)</text>
+<line x1="618" y1="523.0" x2="629" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="499.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="674.0" y="527.0" class="dg-t" text-anchor="middle">Commit + tag</text>
+<line x1="718" y1="523.0" x2="729" y2="523.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="730" y="499.0" width="88" height="48" rx="6" class="dg-n dg-opt" stroke-dasharray="5 3"/>
+<text x="774.0" y="520.0" class="dg-t" text-anchor="middle">Tracker update</text>
+<text x="774.0" y="534.0" class="dg-s" text-anchor="middle">(confirmed)</text>
+<rect x="4" y="562" width="1032" height="78" rx="6" class="dg-lane"/>
+<rect x="4" y="562" width="118" height="78" rx="6" class="dg-lane-h"/>
+<text x="63.0" y="599.0" class="dg-lt" text-anchor="middle">Harness change</text>
+<text x="63.0" y="614.0" class="dg-lc" text-anchor="middle">/harness:improve</text>
+<rect x="130" y="577.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="174.0" y="598.0" class="dg-t" text-anchor="middle">Scope</text>
+<text x="174.0" y="612.0" class="dg-s" text-anchor="middle">work packages</text>
+<line x1="218" y1="601.0" x2="229" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="230" y="577.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="274.0" y="598.0" class="dg-t" text-anchor="middle">Author</text>
+<text x="274.0" y="612.0" class="dg-s" text-anchor="middle">harness-engineer</text>
+<line x1="318" y1="601.0" x2="329" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="330" y="577.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
+<text x="374.0" y="598.0" class="dg-t" text-anchor="middle">Critic</text>
+<text x="374.0" y="612.0" class="dg-s" text-anchor="middle">tries to break it</text>
+<line x1="418" y1="601.0" x2="429" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="430" y="577.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="474.0" y="598.0" class="dg-t" text-anchor="middle">Revise +</text>
+<text x="474.0" y="612.0" class="dg-s" text-anchor="middle">recheck</text>
+<line x1="518" y1="601.0" x2="529" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="530" y="577.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="574.0" y="598.0" class="dg-t" text-anchor="middle">Integrate</text>
+<text x="574.0" y="612.0" class="dg-s" text-anchor="middle">docs + mirror</text>
+<line x1="618" y1="601.0" x2="629" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="630" y="577.0" width="88" height="48" rx="10" class="dg-n dg-gate"/>
+<text x="713" y="587.0" class="dg-badge" text-anchor="end">STOP</text>
+<text x="674.0" y="598.0" class="dg-t" text-anchor="middle">Verify &amp; land</text>
+<text x="674.0" y="612.0" class="dg-s" text-anchor="middle">confirmed</text>
+<line x1="718" y1="601.0" x2="729" y2="601.0" class="dg-e" marker-end="url(#dg-arrow)"/>
+<rect x="730" y="577.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
+<text x="774.0" y="598.0" class="dg-t" text-anchor="middle">Bump version</text>
+<text x="774.0" y="612.0" class="dg-s" text-anchor="middle">+ tag v&lt;x.y.z&gt;</text>
+<rect x="4" y="654" width="1032" height="44" rx="6" class="dg-guard"/>
+<text x="63.0" y="672" class="dg-lt" text-anchor="middle">Always on</text>
+<text x="63.0" y="686" class="dg-lc" text-anchor="middle">hooks</text>
+<text x="130" y="672" class="dg-t">git-guard: no force push · no push to protected branches · no prod deploy   |   e2e-guard: no request or browser visit to production</text>
+<text x="130" y="687" class="dg-s">Edit guards on migrations + sensitive config · type-check + lint after edits · deploy notes from every path feed the release by fix version</text>
+</svg>
+</div>
+<p>Details for each lane: <a href="#first">Your first feature</a>, <a href="#workflows">Workflows</a>,
+<a href="#runtime">Runtime verification</a>, <a href="#release">Release flow</a> and
+<a href="#hooks">Hooks &amp; guardrails</a>.</p>
 
 <h2 id="prereq">Prerequisites</h2>
 <table>
