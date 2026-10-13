@@ -87,7 +87,7 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
         <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div><strong>AI Harness</strong><span>Setup &amp; component guide</span></div>
+    <div><strong>AI Harness</strong><span>Setup &amp; component guide · v1.0.0</span></div>
   </div>
   <h2>Start here</h2>
   <a href="#what">What it is</a>
@@ -253,7 +253,7 @@ design, the verification, the commit and the PR.</p></div>
 <thead><tr><th>Layer</th><th>Path</th><th>Nature</th><th>Contains</th></tr></thead>
 <tbody>
 <tr><td>Knowledge</td><td><code>.ai/</code></td><td>Markdown only — nothing executes</td><td>Personas, playbooks, standards, templates, project config/context, memory</td></tr>
-<tr><td>Execution</td><td><code>.claude/</code></td><td>What Claude Code runs</td><td>Commands, sub-agents, hooks, <code>settings.json</code>, scripts</td></tr>
+<tr><td>Execution</td><td><code>.claude/</code></td><td>What Claude Code runs</td><td>Commands, sub-agents, hooks, <code>settings.json</code>, scripts, <code>HARNESS_VERSION</code></td></tr>
 </tbody>
 </table>
 <p>Commands pull personas and standards from <code>.ai/</code> with <code>@</code>-includes, so the
@@ -297,7 +297,7 @@ same command behaves correctly on a different stack.</p>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
 <tr><td><code>/utils:learn "&lt;lesson&gt;"</code> · <code>/utils:scope &lt;scope&gt;</code></td><td>Record a learning (or an area-specific <code>.claude/rules/</code> file); force a scope</td></tr>
-<tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness; change it through an author → critic → revise loop</td></tr>
+<tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness; change it through an author → critic → revise loop. A released change bumps <code>.claude/HARNESS_VERSION</code> (patch: fixes/docs · minor: new capability · major: projects must act) and is tagged <code>v&lt;version&gt;</code></td></tr>
 </tbody>
 </table>
 
