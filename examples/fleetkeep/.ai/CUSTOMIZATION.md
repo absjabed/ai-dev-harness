@@ -62,8 +62,14 @@ Everything that changes from project to project, and exactly where to change it.
 - The hooks run `TYPECHECK_CMD`/`LINT_CMD` after edits — set them in `hooks.env` to enable.
 
 ### 5. Conventions & principles
-- **Files:** `.ai/standards/project/**`, `CLAUDE.md`; universal principles in `.ai/standards/universal/*` (portable)
+- **Files:** `.ai/standards/project/**`, `CLAUDE.md`; universal principles in `.ai/standards/universal/*` (portable);
+  area-specific rules in `.claude/rules/**/*.md`
 - **Tokens:** `{{LAYERING_PATTERN}}` `{{VALIDATION_LIB}}` `{{RESPONSE_ENVELOPE}}` `{{DATA_ACCESS_LAYER}}` `{{ROUTING_PATTERN}}`
+- **Path-scoped rules:** knowledge that only matters in one area of the code (a legacy screen, a
+  module with its own traps) goes in `.claude/rules/<area>.md` with `paths:` frontmatter — Claude
+  Code loads it only when a matching file is read or edited. A rule *without* `paths:` loads every
+  session, so keep project-wide rules in `tech-specific.md` instead. Start from
+  `.claude/rules/_example-area.md`; `/utils:learn` offers this route for area-specific lessons.
 
 ### 6. Version control (provider-agnostic)
 - **Files:** `.ai/standards/universal/git-workflow.md`, `.ai/templates/pr-description.md`, `.claude/hooks/hooks.env`, `.ai/workflows/{bug-fixing,hotfix-process,release-process,feature-development}.md`, `.claude/commands/workflows/*`
@@ -95,6 +101,9 @@ Everything that changes from project to project, and exactly where to change it.
 - **Tokens:** `{{COMPANY_NAME}}` `{{LOGO_PATH}}` `{{PRIMARY_COLOR}}` `{{FOOTER_TEXT}}`
 - Every generated `.md` artifact (specs, stories, test specs, reports) starts with your branded header.
   Drop your logo in `.ai/branding/` and point `LOGO_PATH` at it.
+- **Deliberate exceptions:** the internal files `.ai/features/**/STATE.md` (workflow state) and
+  `.ai/features/**/deploy-notes.md` (deploy input) are unbranded, and so is the deployment guide
+  (axis 13), which has its own title; its Word copy uses `COMPANY_NAME` and `PRIMARY_COLOR`.
 
 ### 10. Hook behavior toggles
 - **File:** `.claude/hooks/hooks.env` (the single source for all hook behavior)
@@ -112,6 +121,25 @@ Everything that changes from project to project, and exactly where to change it.
   commands that need them (`mcp__<server>`), and keep integration steps optional so everything
   works with no server connected. The binding rules are invariants 9–13 in
   `.ai/workflows/harness-improvement.md`; change integrations via `/harness:improve`.
+
+### 13. Release deliverables
+- **Files:** `.ai/config/project-config.md` → *Release deliverables*; templates
+  `.ai/templates/{deploy-notes,deployment-guide,release-guides-index}.md`; converter
+  `.claude/scripts/md-to-docx.py`
+- Every feature and hotfix writes `.ai/features/<slug>/deploy-notes.md` — what the change needs at
+  deploy time, stamped with the **fix version** `/ba` records in each requirement spec. The release
+  path selects notes by fix version and folds them into its internal artifacts.
+- **Deployment guide** (`on` / `off`): when on, `/workflows:release` also assembles a human-facing
+  guide at `docs/release/<version>/deployment-guide-<version>.md` for whoever deploys the product,
+  and keeps an index in `docs/release/README.md`. Set the audience, deployable units and rollout
+  order in the same config section — they shape the guide's sections.
+- **Word copy** (`on` / `off`): a `.docx` generated from the guide by
+  `python .claude/scripts/md-to-docx.py <guide>.md --org "<company>" --color "<#primary>"`
+  (Python 3 + `python-docx` + `markdown-it-py`).
+  The Markdown stays the single source of truth; the `.docx` is never hand-edited. A different
+  deliverable (PDF, wiki page)? Swap the converter and the regenerate step only.
+- Not tracking releases by version at all? Leave the guide off; deploy notes still record each
+  change's deploy impact, with the fix version `unknown — to be confirmed`.
 
 ---
 
@@ -161,7 +189,7 @@ a worked starting point:
 | `.ai/config/**`, `.ai/context/**` | `.ai/standards/universal/*` | `.ai/standards/project/**/<stack>/` |
 | `.ai/standards/project/**/tech-specific.md` + `frontend/design/*` | `.ai/workflows/*`, `.ai/templates/*` | `.ai/standards/universal/vcs/*` |
 | `.ai/config/branding.md`, `.ai/branding/` | `.ai/agents/*`, `.ai/memory/*` (decisions, learnings, design-taste) | |
-| `CLAUDE.md`, `.claude/hooks/hooks.env` | `.claude/commands/*`, `.claude/agents/*`, `.claude/settings.json`, `.claude/scripts/*` | |
+| `CLAUDE.md`, `.claude/hooks/hooks.env`, `.claude/rules/*` (as you add them) | `.claude/commands/*`, `.claude/agents/*`, `.claude/settings.json`, `.claude/scripts/*` | |
 
 ## A worked reference
 

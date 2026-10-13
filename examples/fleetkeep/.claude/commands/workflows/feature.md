@@ -12,6 +12,7 @@ allowed-tools: Read, Write, Edit, Bash, Task
 @.ai/templates/artifact-header.md
 @.ai/templates/technical-spec.md
 @.ai/templates/design-spec.md
+@.ai/templates/deploy-notes.md
 
 **Scope determination (do this first, before any other action):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
@@ -58,8 +59,9 @@ prepend the branded artifact header to it.
 - **`STATE.md` exists → this is a RESUME.** Announce that to the user. **Trust but verify**: for
   each phase marked done under `## Phases`, confirm its artifact actually exists on disk — the
   technical spec(s) under `technical-specs/`, `design/design-spec.md` (if the design gate ran),
-  `test-specs/test-report.md`, `review-report.md`, `security-report.md` — as applicable to that
-  phase. Re-run any phase whose artifact is missing (uncheck it first). Then continue from
+  `test-specs/test-report.md`, `review-report.md`, `security-report.md`, `deploy-notes.md` — as
+  applicable to that phase. Re-run any phase whose artifact is missing (uncheck it first). Then
+  continue from
   `## Next action`.
 - **`STATE.md` does not exist →** create it from `.ai/templates/feature-state.md` right after
   Step 2, once the mode (single | epic) is known.
@@ -150,7 +152,15 @@ completely, in order:
    confirmation report shown in step 6. CRITICAL findings must be resolved before committing —
    do not proceed past step 6 with unresolved CRITICAL findings (whether or not atomic commits
    are enabled).
-6. **STOP** — get user confirmation before finalising. Show: test results, security scan summary (finding counts by severity), and any CRITICAL/HIGH details. Record the gate outcome in `STATE.md`.
+5a. **Document & deploy notes** — per step 7 of `feature-development.md`: update any README/docs
+   the change affects, then write `.ai/features/$ARGUMENTS/deploy-notes.md` from
+   `.ai/templates/deploy-notes.md` — **Fix version** copied from the Source issue block of
+   `.ai/features/$ARGUMENTS/requirement-spec.md` (`unknown — to be confirmed` if that is what it
+   says or the field is absent; never guess), the target deployment-guide section named, and an
+   explicit *No deploy impact* line if the change needs nothing beyond the standard pipeline run.
+   Never a secret — `<placeholders>` only. This is not a gate: the file is included in the step 6
+   commit, so write it before that STOP.
+6. **STOP** — get user confirmation before finalising. Show: test results, security scan summary (finding counts by severity), any CRITICAL/HIGH details, and the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan). Record the gate outcome in `STATE.md`.
    - Atomic commits **off** (default): create a single conventional commit after confirmation.
    - Atomic commits **on**: show the list of per-task commits already on `feature/$ARGUMENTS` (plus any uncommitted remainder) for confirmation instead of creating one commit; commit any remainder only after confirmation.
 7. Generate the pull request description at `.ai/features/$ARGUMENTS/pr-description.md`. Update
@@ -231,15 +241,16 @@ For each **dependency group** (sub-features that can run in parallel):
 > 4. Read `.ai/features/$ARGUMENTS/epic-breakdown.md` to understand what other sub-features exist and avoid overlap
 > 5. Create the technical spec under `.ai/features/$ARGUMENTS/$FEATURE/technical-specs/` (split backend.md / frontend.md if fullstack), then implement following all standards
 > 6. Verify per the loaded scope — write & run tests where the scope has a runner, else confirm a clean build + drive the flow manually; generate a report at `.ai/features/$ARGUMENTS/$FEATURE/test-specs/test-report.md`
-> 7. Commit on `feature/$ARGUMENTS/$FEATURE` with message: `feat($FEATURE): [what was implemented]` — include the artifacts you wrote under `.ai/features/$ARGUMENTS/$FEATURE/` (technical specs, test report); the worktree is discarded after merge, so uncommitted work is lost.
+> 7. Write the deploy notes at `.ai/features/$ARGUMENTS/$FEATURE/deploy-notes.md` from `.ai/templates/deploy-notes.md` — **inside this worktree**, not the main working tree (a stray copy there is invisible from here and would block the Phase E merge as an untracked-file conflict). Stamp them with the **Fix version** from the Source issue block of `.ai/features/$ARGUMENTS/$FEATURE/requirement-spec.md` (`unknown — to be confirmed` if that is what it says or the field is absent — never guess a version), name the target deployment-guide section, and if this sub-feature needs nothing beyond the standard pipeline run still write the file with an explicit *No deploy impact* line. Never a secret — `<placeholders>` only.
+> 8. Commit on `feature/$ARGUMENTS/$FEATURE` with message: `feat($FEATURE): [what was implemented]` — include the artifacts you wrote under `.ai/features/$ARGUMENTS/$FEATURE/` (technical specs, test report, deploy notes); the worktree is discarded after merge, so uncommitted work is lost.
 > Return: branch name, commit hash, and a one-paragraph summary of what was built."
 
   - Wait for all agents in the group to complete before starting the next dependency group.
   - After each group completes, update `STATE.md`: mark the group's sub-features `implemented`
     and set `## Next action`. (The epic `STATE.md` lives in the **main** working tree and is
     maintained by the parent only — spawned agents never edit it.) Each sub-feature's outputs
-    (technical specs, test report) live as commits on its branch — the parent reads them only
-    after the Phase E merge brings them into `epic/$ARGUMENTS`.
+    (technical specs, test report, deploy notes) live as commits on its branch — the parent
+    reads them only after the Phase E merge brings them into `epic/$ARGUMENTS`.
 
 ### Phase E — Sequential Merge into Epic Branch
 

@@ -2,7 +2,10 @@
 
 Controls the branded header that every artifact-generating agent prepends to the Markdown
 documents it produces — requirement specs, user stories, test specs, technical specs, and
-review / security / release reports. The header template lives at
+review / security / release reports. Not prepended to the unbranded internal files
+(`STATE.md`, `deploy-notes.md`) or to the deployment guide under `docs/release/`, which has its own
+title, and whose Word copy takes the company name and primary colour from here. The header
+template lives at
 `.ai/templates/artifact-header.md`; this file supplies its values.
 
 ## Values

@@ -29,7 +29,7 @@ irreversible. Each mechanism below answers a specific failure mode.
 |---|---|
 | You re-explain the stack, conventions and domain every session — and the answers drift | The filled `.ai/config/` and `.ai/context/` are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt |
 | Output quality depends on how well you phrased today's prompt | Personas and playbooks fix the *method*. `/agents:review` applies the same severity vocabulary on a Friday as on a Monday |
-| AI-written code lands with a glance, because reviewing it is slower than accepting it | Reviewer and security scanner run **in parallel, read-only**, on the diff. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget |
+| AI-written code lands with a glance, because reviewing it is slower than accepting it | Reviewer and security scanner run **in parallel**, in separate contexts, and report rather than fix. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget |
 | "Tests pass" — but nobody checks whether tests exist for that scope | Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened |
 | One bad command — a force push, a hard reset, a deploy to prod — undoes a day | Hooks **hard-block** them at the tool call, before the model's intent matters |
 | Why a decision was made lives in a Slack thread that's now gone | Append-only `decisions`, `learnings` and `design-taste` logs. The designer reads rejected patterns before proposing, so a "no" stays a no |
@@ -67,21 +67,23 @@ bash -c 'echo bash-ok' && git --version
 From a clone of this repo, copy into your project's repo root:
 
 ```
-.ai/  .claude/  .mcp.json  CLAUDE.md  COMMANDS.md  README.md
+.ai/  .claude/  .mcp.json  CLAUDE.md  AGENTS.md  COMMANDS.md  README.md
 ```
 
 Optionally bring `examples/fleetkeep/` along while you configure — it is a fully worked version of
 every file you are about to fill in, and `/init-project` offers to delete it at the end.
 
-**Do not copy this repo's `.gitignore`.** It is written for the template itself. Your project needs
-one line of its own:
+**Do not copy this repo's `.gitignore`.** It is written for the template itself. The one line your project
+must have:
 
 ```gitignore
 .worktrees/
 ```
 
 Do **not** ignore `.ai/features/` — the epic path commits planning artifacts onto the epic branch,
-and git worktrees only see committed files.
+and git worktrees only see committed files. Do not ignore `.claude/agent-memory/` either: the
+reviewer, security scanner, critic and harness engineer write what they learn there, and committing
+it shares that with the team. `.claude/settings.local.json` is per-developer — ignore that one.
 
 ---
 
@@ -105,9 +107,10 @@ It interviews you in rounds and then writes every skeleton. Have answers ready f
 | Design system | Component library, styling system, token source file; whether the UI is an SPA, server-rendered, or both |
 | Risk profile | Whether the codebase handles regulated data or has thin safety nets |
 | Branding | Company name, logo, primary colour, footer for generated documents |
+| Release deliverables | Whether someone outside the team deploys (turns on the deployment guide), its audience, a Word copy, the deployable units and rollout order |
 
 Prefer to do it by hand, or to adjust later? [`.ai/CUSTOMIZATION.md`](../.ai/CUSTOMIZATION.md) maps
-all 12 variability axes to the exact files and tokens they own.
+all 13 variability axes to the exact files and tokens they own.
 
 **Shape the tree while you are there:**
 
@@ -193,7 +196,7 @@ Everything lands under `.ai/features/<slug>/`, each document carrying your brand
 | Cutting a release | `/agents:security` then `/workflows:release <version>` |
 | Daily check-in | `/utils:status`, `/utils:standup` |
 | Force a scope for the session | `/utils:scope backend` |
-| Record a lesson learned | `/utils:learn "<one-liner>"` |
+| Record a lesson learned | `/utils:learn "<one-liner>"` — area-specific lessons can become a `.claude/rules/` file |
 | A question about the harness itself | `/harness:ask "<question>"` |
 
 ---

@@ -7,6 +7,9 @@
 
 # Per-developer Claude Code state — never commit
 .claude/settings.local.json
+
+# Sub-agent memory from maintaining THIS template. A project commits its own: `memory: project`
+# is meant to be shared. The template ships none, so adopters start clean.
 .claude/agent-memory/
 
 # Isolated worktrees used by the epic path of /workflows:feature

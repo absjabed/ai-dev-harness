@@ -38,7 +38,7 @@ command behaves differently — correctly — per project.
 | Command | Purpose | Produces |
 |---|---|---|
 | `/init-project` | Interviews you about stack, conventions, VCS and branding, then fills every skeleton and writes `hooks.env` | A configured harness; an entry in `.ai/memory/decisions.md` |
-| `/ba <slug>` | BA Studio — interviews you as a business analyst | `requirement-spec.md` + `user-stories.md`; for an epic, `epic-breakdown.md` plus those two per sub-feature |
+| `/ba <slug>` | BA Studio — interviews you as a business analyst | `requirement-spec.md` + `user-stories.md`, each spec carrying the release **Fix version**; for an epic, `epic-breakdown.md` plus those two per sub-feature |
 | `/qa <slug>` | QA Studio — turns the requirement + stories into a test specification | `test-specs.md` (per sub-feature for an epic) |
 
 ### Specialists — `/agents:*`
@@ -52,7 +52,7 @@ command behaves differently — correctly — per project.
 | `/agents:devops` | DevOps — CI/CD, deployment, infrastructure | Pipeline/IaC changes, deploy checklists |
 | `/agents:pm` | Project Manager — status, planning, changelogs | Status reports |
 | `/agents:qa` | QA — writes tests, finds bugs, validates quality | Tests and a verification report |
-| `/agents:release-manager` | Release preparation | Release notes, migration plan, rollback plan, deployment checklist |
+| `/agents:release-manager` | Release preparation | Release notes, migration plan, rollback plan, deployment checklist (fed by the in-scope deploy notes); the deployment guide if switched on |
 | `/agents:review` | Code Reviewer on recent changes or a target | `review-report.md` — BLOCKER / WARNING / SUGGESTION / PRAISE with file:line |
 | `/agents:security` | Dedicated security audit | `security-report.md` with severities |
 
@@ -62,8 +62,8 @@ command behaves differently — correctly — per project.
 |---|---|---|
 | `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | **5 STOP gates**: technical spec, design, verification, commit, PR |
 | `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → review → commit | Verification, then a **review gate** — BLOCKER findings block the commit |
-| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline, plus a **review gate** before the PR — skippable only with explicit human approval, never silently |
-| `/workflows:release <version>` | Security gate, release artifacts, changelog, version bump | Security findings block the release |
+| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline, deploy notes, plus a **review gate** before the PR — skippable only with explicit human approval, never silently |
+| `/workflows:release <version>` | Security gate, release artifacts, changelog, version bump; then the deployment guide (+ `.docx`) if switched on | Security findings block the release; the guide is written only after the confirmation gate, and merged — never overwritten |
 
 ### Utilities — `/utils:*`
 
@@ -74,7 +74,7 @@ command behaves differently — correctly — per project.
 | `/utils:changelog` | Changelog from git commits |
 | `/utils:docs` | Generate or update documentation for a module or the project |
 | `/utils:docs-serve` | Serve `.ai/` as a local MkDocs site on `http://localhost:8000` |
-| `/utils:learn "<lesson>"` | Append a one-line learning to the append-only log |
+| `/utils:learn "<lesson>"` | Append a one-line learning to the append-only log — or write an area-specific lesson as a path-scoped rule in `.claude/rules/` |
 | `/utils:scope <backend\|frontend\|fullstack\|auto>` | Force a scope for the session |
 
 ### Harness maintenance — `/harness:*`
@@ -106,7 +106,7 @@ Commands `@`-include them; they are not separately invocable.
 | `pm-agent` | Status, planning, reporting |
 | `qa-agent` | Test strategy and execution |
 | `qa-studio-agent` | Interactive test design, operated by a tester |
-| `release-agent` | Release packaging and deployment checklists |
+| `release-agent` | Release packaging and deployment checklists from the in-scope deploy notes; the optional deployment guide |
 | `reviewer-agent` | Code review method and severity vocabulary |
 | `security-agent` | Security review checklist and reporting |
 
@@ -115,23 +115,30 @@ Commands `@`-include them; they are not separately invocable.
 ## Sub-agents (`.claude/agents/`)
 
 Spawned automatically by commands and workflows, each with its own context window and a **restricted
-tool set** — least privilege is deliberate: a reviewer that cannot write cannot "helpfully" fix
-things mid-review.
+tool set**. The reviewer and critic get no `Write` or `Edit` tool and are told never to change code,
+so a review doesn't quietly turn into a fix. That is least privilege, not a sandbox: both keep
+`Bash` (the reviewer saves its report through it), and `memory: project` lets a sub-agent write to
+its own memory folder.
 
 | Sub-agent | Tools | Model | Memory | Spawned by |
 |---|---|---|---|---|
 | `orchestrator` | delegates to developer, reviewer, security-scanner | inherit | — | Complex multi-part tasks |
 | `developer` | Read, Write, Edit, Bash | inherit | — | Feature/bugfix implementation |
-| `reviewer` | Read, Bash (**read-only**) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
+| `reviewer` | Read, Bash (no Write/Edit) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
 | `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | — | Test writing/running, live browser checks |
 | `release-manager` | Read, Write, Edit, Bash | sonnet | — | `/workflows:release` |
-| `critic` | Read, Bash (**read-only**) | inherit | project | `/harness:improve` |
+| `critic` | Read, Bash (no Write/Edit) | inherit | project | `/harness:improve` |
 | `harness-engineer` | Read, Write, Edit, Bash | inherit | project | `/harness:improve` work packages |
 
-`memory: project` means Claude Code maintains a persistent `.claude/agent-memory/<agent>/` folder for
-that sub-agent — it accumulates project-specific facts across sessions. It is runtime state and is
-git-ignored.
+`memory: project` gives that sub-agent a persistent `.claude/agent-memory/<agent>/` folder — a
+`MEMORY.md` index plus topic files it writes as it learns: recurring defects, files that are easy to
+miss, project quirks. Claude Code loads the first 200 lines (25 KB) of the index into the
+sub-agent's prompt on every run, so it checks what went wrong last time first. The folder appears on
+the sub-agent's first run. Project scope is meant to be **committed**, so every developer's runs
+benefit from what any run learned; review changes to it like any other diff. Prefer per-developer
+memory? Set `memory: local` (stored in `.claude/agent-memory-local/<agent>/`, which you keep out of
+git). Sub-agent memory is off when auto memory is disabled in Claude Code.
 
 ---
 
@@ -172,6 +179,19 @@ Warnings go to stderr and are non-blocking; only `git-guard.sh` and the sensitiv
 
 ---
 
+## Path-scoped rules (`.claude/rules/`)
+
+Claude Code loads every `.md` file under `.claude/rules/`. A rule with `paths:` frontmatter loads
+only when Claude reads or edits a file matching one of its globs, so area-specific knowledge — a
+legacy screen's traps, a generated folder's conventions — costs no context anywhere else. A rule
+without `paths:` loads every session, like `CLAUDE.md`.
+
+The template ships one inert example, `_example-area.md`, whose glob matches nothing. Copy it,
+point `paths:` at real code, and replace the text. `/utils:learn` offers this route when a lesson
+only applies to one area. Other agents don't read `.claude/rules/`; `AGENTS.md` tells them to.
+
+---
+
 ## Workflow playbooks (`.ai/workflows/`)
 
 Method documents the commands follow. Editing a playbook changes how the matching command behaves.
@@ -198,6 +218,26 @@ epic diff, then one PR.
 Worktrees only see committed files, which is why planning artifacts are committed onto the epic
 branch first.
 
+### The release flow
+
+Deploy knowledge is captured while it is fresh, not reconstructed from `git log` weeks later:
+
+1. **`/ba`** records each spec's **Fix version** in its `## Source issue` block — from the tracker
+   when connected, otherwise by asking; `unknown — to be confirmed` if nobody knows. Never guessed.
+2. **`/workflows:feature`** (step 5a) and **`/workflows:hotfix`** (step 4a) write
+   `.ai/features/<slug>/deploy-notes.md`: settings, migrations, manual steps, per-tenant order,
+   verify checks and rollback for that change — or an explicit *No deploy impact*. No new gate; it
+   rides the existing commit.
+3. **`/workflows:release <version>`** selects notes by fix version and folds them into the internal
+   artifacts in `.ai/releases/<version>/`. If the project switched the **deployment guide** on
+   (`.ai/config/project-config.md` → Release deliverables), Step 4 — after the confirmation gate —
+   also assembles `docs/release/<version>/deployment-guide-<version>.md` for whoever deploys the
+   product, optionally with a Word copy generated by `.claude/scripts/md-to-docx.py`. An existing
+   guide is merged, never overwritten.
+
+`/workflows:bugfix` writes no deploy notes — a fix with deploy impact should go through the hotfix
+or feature path, or have its note written by hand.
+
 ---
 
 ## Standards (`.ai/standards/`)
@@ -222,7 +262,7 @@ Output shapes every agent fills in, so artifacts look the same across people and
 
 | Template | Used for |
 |---|---|
-| `artifact-header.md` | The branded header prepended to every generated document |
+| `artifact-header.md` | The branded header prepended to every generated deliverable (not `STATE.md`, `deploy-notes.md` or the deployment guide) |
 | `technical-spec.md` | The spec approved at the first gate |
 | `design-spec.md` | Design decisions + Artifact URL + approved version |
 | `user-story.md` | Story format with acceptance criteria |
@@ -230,6 +270,9 @@ Output shapes every agent fills in, so artifacts look the same across people and
 | `security-report.md` | Findings with severity |
 | `pr-description.md` | Pull/merge request body |
 | `release-checklist.md` | Deployment checklist |
+| `deploy-notes.md` | Per-feature deploy impact, stamped with the fix version — written by the feature and hotfix workflows, read by the release path; unbranded |
+| `deployment-guide.md` | Skeleton for the human-facing release guide under `docs/release/<version>/` (only if switched on) |
+| `release-guides-index.md` | Seed for `docs/release/README.md`, the index of release guides |
 | `adr.md` | Architecture Decision Record |
 | `feature-state.md` | `STATE.md` — the workflow's resumable state file |
 
@@ -239,7 +282,7 @@ Output shapes every agent fills in, so artifacts look the same across people and
 
 | File | Holds |
 |---|---|
-| `.ai/config/project-config.md` | Identity, stack, commands, structure, conventions, "never do" rules |
+| `.ai/config/project-config.md` | Identity, stack, commands, structure, conventions, "never do" rules, release deliverables |
 | `.ai/config/{backend,frontend}/project-config.md` | The per-scope versions |
 | `.ai/config/current-scope.md` | Active scope (`auto` by default) — written by `/utils:scope` |
 | `.ai/config/branding.md` | Company, product, logo, colour, footer for generated documents |
@@ -258,9 +301,9 @@ Each context file also exists per scope when the repo has two.
 | `.ai/memory/decisions.md` | Agents, `/init-project` | Precedent-setting or hard-to-reverse decisions, with the reason |
 | `.ai/memory/learnings.md` | Agents, `/utils:learn` | Non-obvious, reusable lessons — pitfalls, approaches abandoned and why |
 | `.ai/memory/design-taste.md` | Designer agent | Approved and rejected design choices, in the user's own words |
-| `.claude/agent-memory/<agent>/` | Claude Code (runtime) | Per-sub-agent project facts; git-ignored, recreated automatically |
+| `.claude/agent-memory/<agent>/` | Sub-agents with `memory: project` | Per-sub-agent learnings — recurring defects, easy-to-miss files; created on first run |
 
-The first three are committed. They are the harness's institutional memory — the designer reads
+All four are committed. They are the harness's institutional memory — the designer reads
 design-taste before proposing, so a rejected pattern stays rejected.
 
 ---
@@ -293,8 +336,10 @@ window. Force it for a session with `/utils:scope backend`; return with `/utils:
 ├── test-specs/test-report.md    # verification: what was and wasn't checked
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
+├── deploy-notes.md              # deploy impact + fix version, read by the release path; never branded
 └── pr-description.md            # the final report
 ```
 
 Standalone runs write to `.ai/reports/`; releases write to `.ai/releases/<version>/`. Every document
-except `STATE.md` opens with your branded header.
+except `STATE.md` and `deploy-notes.md` opens with your branded header. With the deployment guide
+switched on, releases also write `docs/release/<version>/deployment-guide-<version>.md` (+ `.docx`).

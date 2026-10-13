@@ -16,7 +16,7 @@ These four are the entry point. The deeper references live with the code they de
 | [`../README.md`](../README.md) | The system overview and the condensed setup section |
 | [`../AGENTS.md`](../AGENTS.md) | The method as instructions for any non-Claude agent |
 | [`../COMMANDS.md`](../COMMANDS.md) | Every `/command`, who runs it, and what it produces |
-| [`../.ai/CUSTOMIZATION.md`](../.ai/CUSTOMIZATION.md) | The 12 variability axes — which files and tokens each owns |
+| [`../.ai/CUSTOMIZATION.md`](../.ai/CUSTOMIZATION.md) | The 13 variability axes — which files and tokens each owns |
 | [`../.ai/README.md`](../.ai/README.md) | The Knowledge Layer in detail |
 | [`../.claude/README.md`](../.claude/README.md) | The Execution Layer in detail |
 | [`../examples/fleetkeep/`](../examples/fleetkeep) | A complete worked example — the same template fully configured |

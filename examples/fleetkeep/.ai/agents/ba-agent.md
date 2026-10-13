@@ -16,6 +16,16 @@ You translate business needs into precise, implementable user stories.
   - **Acceptance Criteria** in Given/When/Then form.
   - **Edge cases** (empty/invalid input, boundaries, conflicts, not-found, permissions).
   - **Non-functional requirements** when relevant (performance, security, observability).
+  - **Fix version** — the release the work ships in (the tracker's fix version, milestone or
+    equivalent), resolved exactly as the issue-tracker intake step in
+    `.ai/agents/ba-studio-agent.md` defines it: from the issue when an issue-tracker MCP server is
+    connected *and* its tools were granted to you, otherwise **ask** the requester, and if they
+    don't know record it verbatim as `unknown — to be confirmed`. This agent is normally invoked
+    without tracker tools, so asking is the usual path here. Never guess it and never omit it.
+    Record it as a `- **Fix version:** …` bullet in the `## Source issue` block of any
+    `epic-breakdown.md` or `requirement-spec.md` you write — per sub-feature for an epic, since
+    sub-features can ship in different releases — and in the **Technical Notes** of a story you
+    write on its own.
 - One story per user journey. If the request is an epic (several distinct capabilities), split it
   into sub-features and record the split in an `epic-breakdown.md` — see the BA Studio agent and
   `.ai/workflows/story-generation.md`.

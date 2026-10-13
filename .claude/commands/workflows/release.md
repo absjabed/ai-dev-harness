@@ -1,5 +1,5 @@
 ---
-description: Prepare a release — security gate, full release artifacts, changelog, version bump
+description: Prepare a release — security gate, full release artifacts, changelog, version bump, and (if switched on) the deployment guide
 allowed-tools: Read, Write, Edit, Bash, Task, mcp__atlassian
 ---
 @.ai/workflows/release-process.md
@@ -27,7 +27,7 @@ Spawn both of the following Task agents **concurrently** and wait for both to co
 
 **release-manager** — prepare release artifacts:
 
-> "Prepare release artifacts for version $ARGUMENTS. Scope: [determined scope]. Follow the release-agent methodology: enumerate commits since the last tag, check {{ORM}} migrations, generate release notes, migration plan, rollback plan, and deployment checklist. Write all four files to `.ai/releases/$ARGUMENTS/`."
+> "Prepare release artifacts for version $ARGUMENTS. Scope: [determined scope]. Follow the release-agent methodology: enumerate commits since the last tag, check {{ORM}} migrations, generate release notes, migration plan, rollback plan, and deployment checklist. Use the deploy notes in scope for this version (`.ai/features/**/deploy-notes.md`, selected by fix version). Write all four files to `.ai/releases/$ARGUMENTS/`. Return the deploy notes in scope, those with no deploy impact, and any whose fix version is still `unknown — to be confirmed`. Stop there — do **not** write the `docs/release/` deployment guide in this step; that happens in Step 4, after the confirmation gate."
 
 Once both agents return, evaluate the security results:
 - If the security scan returns any **CRITICAL** findings: **STOP** — show the user the findings and do not proceed until they are resolved.
@@ -49,7 +49,11 @@ Report any failures.
 Show the user:
 - Security scan verdict (pass/fail, finding counts) — and the saved report at `.ai/releases/$ARGUMENTS/security-report.md`
 - Paths to generated release artifacts under `.ai/releases/$ARGUMENTS/`
+- Deploy notes in scope, those with **no deploy impact**, and any whose fix version is still
+  `unknown — to be confirmed` (the user may want to assign them before finalising)
 - Quality gate results (lint/test/build)
+- What Step 4 will do with the deployment guide: `off` (nothing under `docs/release/`), or the
+  guide path it will **create** or **merge into**, and whether a `.docx` will be regenerated
 - Any CRITICAL or HIGH security findings
 
 Get explicit confirmation before proceeding to step 4.
@@ -60,9 +64,21 @@ On user confirmation:
 1. Bump the version in each sub-project's manifest — e.g. `{{BACKEND_DIR}}` (semver: fix → patch, feat → minor, BREAKING → major)
 2. Bump the version in the other sub-projects' manifests — e.g. `{{FRONTEND_DIR}}` — to match
 3. Update `CHANGELOG.md` with the release notes content (Keep a Changelog format)
-4. Commit: `chore(release): bump version to $ARGUMENTS`
-5. Tag: `git tag $ARGUMENTS`
-6. **Issue-tracker update (optional)** — only if an issue-tracker MCP server is connected
+4. **Deployment guide** — only if switched on in `project-config.md` → Release deliverables; skip
+   this step otherwise. Create-or-merge `docs/release/<version>/deployment-guide-<version>.md`,
+   regenerate its `.docx` if the Word copy is on
+   (`python .claude/scripts/md-to-docx.py docs/release/<version>/deployment-guide-<version>.md --org "<company>" --color "<#primary>"` (company name and primary colour from `.ai/config/branding.md`)), and
+   refresh the `## Guides` row in `docs/release/README.md`. Do it inline or by spawning the
+   **release-manager** agent for it; either way follow `.ai/agents/release-agent.md` →
+   *Deployment guide* (section mapping, merge-not-clobber rules, missing-dependency fallback). Read
+   the Step 1 artifacts from `.ai/releases/$ARGUMENTS/`. Show the user the converter's output,
+   including any `warning:` lines.
+5. Commit: `chore(release): bump version to $ARGUMENTS` — include the guide's `.md` and its
+   regenerated `.docx` in this same commit. If the converter could not run (missing Python
+   dependencies), commit the `.md` alone and tell the user the `.docx` is stale until they run
+   `pip install python-docx markdown-it-py` and regenerate — never imply the Word file matches.
+6. Tag: `git tag $ARGUMENTS`
+7. **Issue-tracker update (optional)** — only if an issue-tracker MCP server is connected
    (see `.mcp.json`): collect the issue keys referenced in this release's commit messages,
    then **STOP** — show the user the list of issues, the transition to apply (e.g. → Done),
    and the release-note comment to attach. Apply only on explicit confirmation. Skip this

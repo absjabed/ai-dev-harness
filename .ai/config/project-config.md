@@ -109,6 +109,27 @@
 > [FILL IN: hard rules — e.g. don't bypass the service layer, don't hardcode resource names,
 > don't hand-write migrations, don't assume tooling exists that hasn't been set up]
 
+## Release deliverables
+
+Read by the release agent (`.ai/agents/release-agent.md`). Every feature and hotfix writes
+`.ai/features/<slug>/deploy-notes.md` regardless; these settings decide what the release path builds
+from them beyond the internal artifacts in `.ai/releases/<version>/`.
+
+- **Deployment guide:** > [FILL IN: `on` — `/workflows:release` also writes a human-facing guide at
+  `docs/release/<version>/deployment-guide-<version>.md`, assembled from the deploy notes; or `off`
+  — internal release artifacts only. Choose `on` when someone outside the dev team performs or
+  approves deployments (an ops team, customer IT, a hosting partner).]
+- **Guide audience:** > [FILL IN: who follows the guide and what they work in — e.g. "customer IT
+  administrators; cloud console and CI web UI only, no command line". Delete if the guide is off.]
+- **Word copy:** > [FILL IN: `on` — also generate a `.docx` with `.claude/scripts/md-to-docx.py`
+  (needs Python 3 + `python-docx` + `markdown-it-py`); or `off` — Markdown only.]
+- **Deployable units:** > [FILL IN: each separately deployed unit, in deploy order — they become
+  the guide's "Application deployment" subsections, the environment-matrix columns, and the
+  `Application: <unit>` targets in deploy notes. E.g. "API (container app) → web SPA (static
+  hosting) → worker (functions)".]
+- **Environments & rollout order:** > [FILL IN: e.g. "staging → production"; if deployed per tenant,
+  region or customer, say which goes first and how far one is taken before the rest.]
+
 ## Architecture Notes
 
 > [FILL IN: 3–6 bullets on the big-picture shape — independent subsystems, data stores,

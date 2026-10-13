@@ -26,6 +26,7 @@ Last updated: YYYY-MM-DD HH:MM
 - [ ] Implementation & tests (developer agent)
 - [ ] Review
 - [ ] Security gate
+- [ ] Deploy notes captured
 - [ ] Commit confirmed (STOP gate)
 - [ ] pull request description
 

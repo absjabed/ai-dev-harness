@@ -18,7 +18,8 @@ for any project once `.ai/` is filled in.
 | [`commands/`](commands) | The slash commands you type. Top-level studios (`init-project`, `ba`, `qa`) plus four families: [`agents/`](commands/agents), [`workflows/`](commands/workflows), [`utils/`](commands/utils), [`harness/`](commands/harness). |
 | [`agents/`](agents) | Spawnable **sub-agents** — isolated workers with their own tool permissions: `developer`, `reviewer`, `qa-runner`, `security-scanner`, `release-manager`, `orchestrator`, `harness-engineer`, `critic`. Workflows spawn these behind the scenes. |
 | [`hooks/`](hooks) | Safety/quality hooks (see below) plus **`hooks.env`** — the single config for all hook behavior. |
-| [`scripts/`](scripts) | Helper scripts (e.g. `devops-mode.sh`). |
+| [`rules/`](rules) | Path-scoped rules: area-specific instructions Claude Code loads only when it reads or edits a matching file. `_example-area.md` is an inert example to copy. |
+| [`scripts/`](scripts) | Helper scripts: `devops-mode.sh` (toggle DevOps execute mode) and `md-to-docx.py` (Word copy of the release deployment guide). |
 | `settings.json` | Hook registration (which script fires on which event). |
 | `settings.local.json` | Local, machine-specific overrides — git-ignored. Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
 

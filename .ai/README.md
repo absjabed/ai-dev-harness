@@ -24,9 +24,9 @@ includes, so all project-specific knowledge lives here and the execution layer s
 | [`standards/project/`](standards/project) | Your stack's concrete rules: `backend/` (+ `node/`, `dotnet/`) and `frontend/` (+ `react/`, `angular/`, and a `design/` system). | ✅ yes |
 | [`agents/`](agents) | Agent **role definitions** — persona + instructions for each specialist (BA, architect, developer, designer, QA, reviewer, security, devops, PM, release, orchestrator, the BA/QA studios, plus the meta-roles: harness-engineer, critic, and harness-guide). Pure knowledge; runs nothing. | portable |
 | [`workflows/`](workflows) | Process playbooks: feature-development, bug-fixing, hotfix-process, release-process, code-review, story-generation, harness-improvement. | portable |
-| [`templates/`](templates) | Output shapes: user-story, technical-spec, adr, test-plan, design-spec, pr-description, release-checklist, security-report, feature-state (machine-maintained workflow state, unbranded), and the shared `artifact-header.md`. | portable |
-| [`branding/`](branding) | Your logo and branding assets, prepended to every generated document. | ✅ yes |
-| [`features/`](features) | Where feature artifacts land (`requirement-spec.md`, `user-stories.md`, `test-specs.md`, `epic-breakdown.md`, …). Seeded from `TEMPLATE.md`. | generated |
+| [`templates/`](templates) | Output shapes: user-story, technical-spec, adr, test-plan, design-spec, pr-description, deploy-notes (per-feature deploy impact, unbranded), release-checklist, deployment-guide + release-guides-index (the optional human-facing release guide), security-report, feature-state (machine-maintained workflow state, unbranded), and the shared `artifact-header.md`. | portable |
+| [`branding/`](branding) | Your logo and branding assets, prepended to every generated document — except the unbranded internal ones (`STATE.md`, `deploy-notes.md`). | ✅ yes |
+| [`features/`](features) | Where feature artifacts land (`requirement-spec.md`, `user-stories.md`, `test-specs.md`, `epic-breakdown.md`, `deploy-notes.md`, …). Seeded from `TEMPLATE.md`. | generated |
 | [`memory/`](memory) | Append-only logs: `decisions.md` (non-obvious, precedent-setting decisions), `learnings.md` (reusable project learnings), `design-taste.md` (approved/rejected design patterns). | grows over time |
 | [`CUSTOMIZATION.md`](CUSTOMIZATION.md) | How to tailor the template, organized by axis. | reference |
 
@@ -44,7 +44,11 @@ includes, so all project-specific knowledge lives here and the execution layer s
 - **Feature artifacts** — the studios author everything for a feature under `features/<slug>/`; the
   workflows consume it. This is the shared hand-off surface between BA → QA → dev.
 - **Branding** — `config/branding.md` + `templates/artifact-header.md` prepend your logo/name/footer
-  to every generated document.
+  to every generated document — except the two unbranded internal files under `features/<slug>/`,
+  `STATE.md` and `deploy-notes.md`.
+- **Release flow** — `/ba` records each spec's fix version; each feature and hotfix writes
+  `deploy-notes.md`; the release path collects notes by fix version into its artifacts and, if
+  switched on in `config/project-config.md`, a deployment guide under `docs/release/`.
 - **Decision memory** — `memory/decisions.md` records decisions worth remembering across sessions;
   `memory/learnings.md` records reusable, non-obvious learnings (add one with `/utils:learn`); and
   `memory/design-taste.md` records approved/rejected design patterns the Designer reads and appends to.

@@ -71,7 +71,7 @@ every token, replaces every `[FILL IN]` block, writes `.claude/hooks/hooks.env`,
 initialization in `.ai/memory/decisions.md`.
 
 Prefer to do it by hand, or tweaking afterwards? [`.ai/CUSTOMIZATION.md`](.ai/CUSTOMIZATION.md) lists
-all 12 variability axes — which files each touches and which tokens it owns. For a worked answer to
+all 13 variability axes — which files each touches and which tokens it owns. For a worked answer to
 "what should this file actually look like when filled?", open the matching file under
 `examples/fleetkeep/` *(template repo)*.
 
@@ -241,6 +241,7 @@ AI Harness automatically prevents unsafe operations including:
  ├── agents/
  ├── commands/
  ├── hooks/
+ ├── rules/
  └── scripts/
 
 examples/fleetkeep/       → a fully configured copy of both layers (worked reference)

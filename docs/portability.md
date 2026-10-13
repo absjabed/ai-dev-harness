@@ -9,10 +9,11 @@ specific). This document measures that split and gives recipes for closing the g
 
 | Part | Size | Portable? |
 |---|---|---|
-| `.ai/` — personas, playbooks, standards, templates, config, context, memory | 82 files, ~4,400 lines | **Yes.** Plain markdown, no tool-specific syntax |
-| `.claude/commands/` — 26 commands | 26 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 73 `@file` includes, 108 `$ARGUMENTS` references |
+| `.ai/` — personas, playbooks, standards, templates, config, context, memory | 85 files, ~5,000 lines | **Yes.** Plain markdown, no tool-specific syntax |
+| `.claude/commands/` — 26 commands | 26 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 75 `@file` includes, 114 `$ARGUMENTS` references |
 | `.claude/agents/` — 8 sub-agents | 8 files | **No.** `tools` / `model` / `memory` / `effort` frontmatter; isolated-context spawning is a Claude Code feature |
 | `.claude/hooks/` — 8 scripts | 8 scripts | **Partly.** Ordinary bash with no `CLAUDE_*` dependencies inside, but wired to Claude Code's seven hook events and fed a JSON payload on stdin |
+| `.claude/rules/` — path-scoped rules | 1 example | **Partly.** Plain markdown, but loading by `paths:` glob is Claude Code behaviour; `AGENTS.md` tells other agents to read matching rules themselves |
 | `.mcp.json` | 1 file | **Partly.** MCP is an open standard; clients differ on config location and format |
 | `CLAUDE.md` | 1 file | Equivalent exists elsewhere: `AGENTS.md`, `GEMINI.md`, `.cursorrules` |
 
@@ -24,9 +25,10 @@ the method *unskippable* do not.
 - **Hard blocks at the tool call.** `git-guard.sh` refuses a force push before it happens. Nothing
   outside the agent's own tool loop can do that; the closest substitute is a git hook, which fires
   later and can be bypassed with `--no-verify`.
-- **Read-only sub-agents.** A reviewer given only `Read` and `Bash` *cannot* edit the code it is
-  reviewing. Elsewhere, a "reviewer" is the same agent with different instructions — and instructions
-  are advisory.
+- **Tool-restricted sub-agents.** A reviewer spawned without `Write` or `Edit` has no direct way
+  to edit the code it is reviewing. That is a narrower tool list rather than a sandbox — it keeps
+  `Bash` — but it is still more than instructions. Elsewhere, a "reviewer" is the same agent with
+  different instructions, and instructions are advisory.
 - **Parallel isolated review.** Reviewer and security scanner run concurrently in separate context
   windows, neither seeing the other's reasoning.
 
@@ -166,8 +168,8 @@ the translation is known to be tractable.
 | Claude Code | Translate to |
 |---|---|
 | `description:` frontmatter | The tool's command description field |
-| `@file` include (73 of them) | Inline the file's contents, or the tool's own include syntax |
-| `$ARGUMENTS` (108 refs) | The tool's argument placeholder |
+| `@file` include (75 of them) | Inline the file's contents, or the tool's own include syntax |
+| `$ARGUMENTS` (114 refs) | The tool's argument placeholder |
 | `allowed-tools:` | The tool's permission list — or, failing that, a prose constraint in the prompt |
 | Sub-agent `tools:` / `model:` | Usually no equivalent; degrade to a single agent following the persona |
 | Hook events | Nothing direct — cover with Option 2 |

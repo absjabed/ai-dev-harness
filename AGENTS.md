@@ -23,6 +23,7 @@ a task from the code alone — load the files for the task first.
 | Any UI surface | `.ai/standards/universal/{ui-ux-standards,accessibility,frontend-design}.md` + the `design/` subtree |
 | Architecture decisions | `.ai/context/architecture.md`, then write an ADR from `.ai/templates/adr.md` |
 | Domain rules | `.ai/context/business-rules.md` — authorization, tenancy, state machines |
+| Files in an area with its own rules | Any `.claude/rules/**/*.md` whose `paths:` globs match the files you touch — Claude Code loads these automatically; you must read them yourself |
 | Always | `.ai/standards/universal/coding-principles.md` and `.ai/standards/universal/security-baseline.md` |
 
 Single-scope repos have only the top-level `config/`, `context/` and `standards/project/` files —
@@ -105,10 +106,11 @@ Feature work produces documents, not just code. Use the templates in `.ai/templa
 ├── requirement-spec.md     user-stories.md      test-specs.md
 ├── technical-specs/        design/design-spec.md
 ├── review-report.md        security-report.md   pr-description.md
+├── deploy-notes.md         # deploy impact + fix version; unbranded, read by the release path
 └── STATE.md                # your own progress: phase, tasks, decisions, next action
 ```
 
-Every document except `STATE.md` opens with the branded header from
+Every document except `STATE.md` and `deploy-notes.md` opens with the branded header from
 `.ai/templates/artifact-header.md`, using the values in `.ai/config/branding.md`.
 
 **Keep `STATE.md` current** — update it after each step and at each gate. It is how the next session
@@ -138,7 +140,7 @@ These logs are append-only. They are why the next agent does not repeat this ses
 ## Capability gap
 
 Under Claude Code this repo also gets: hard blocks at the tool call, automatic type-check and lint
-after every edit, read-only reviewers spawned in parallel, and resumable workflow state. None of
+after every edit, tool-restricted reviewers spawned in parallel, and resumable workflow state. None of
 that exists on other agents — the method above is the same, but **you** are the enforcement.
 
 To close the gap with tool-independent guardrails (git hooks and CI), see

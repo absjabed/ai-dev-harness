@@ -30,6 +30,7 @@ propose a sensible default and mark it.
 - **Design system** (any UI) → component library, styling system, palette/token source file. Ask whether the UI is a separate SPA, server-rendered by the backend, or both (mid-migration) — the `design/` subtree covers whichever exist, and which scope loads it follows from that. Only if there is no UI at all, tell the user you'll delete the `.ai/standards/project/frontend/design/` subtree.
 - **Risk profile** → whether the codebase handles regulated/sensitive data or has thin safety nets; fill the `[FILL IN]` risk blocks in `.ai/workflows/{bug-fixing,hotfix-process}.md`, or delete them.
 - **Branding** → `{{COMPANY_NAME}}`, `{{LOGO_PATH}}`, `{{PRIMARY_COLOR}}`, `{{FOOTER_TEXT}}` (see `.ai/config/branding.md`).
+- **Release deliverables** → whether someone outside the dev team deploys the product (if so, turn the deployment guide on and ask who reads it and what tools they use), whether they need a Word copy, the deployable units in deploy order, and the environment/tenant rollout order. Fills *Release deliverables* in `.ai/config/project-config.md`. Default when unsure: guide `off`, Word `off`.
 
 ## Step 3 — Fill the skeletons
 

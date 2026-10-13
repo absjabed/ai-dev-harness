@@ -13,12 +13,27 @@ what you produce, so these artifacts are the authoritative source.
 2. Read `.ai/config/branding.md` and `.ai/templates/artifact-header.md`. **Every artifact you write
    begins with the rendered branded header.**
 3. Read `.ai/templates/user-story.md` for the user-story format.
-4. **Issue-tracker intake (optional)** — if the request references an issue key (e.g. `ABC-123`)
-   and an issue-tracker MCP server is connected (see `.mcp.json`), fetch the issue and its
-   comments **read-only** and treat them as the rough requirement: cite the key and title in
-   `requirement-spec.md` under a "Source issue" line for traceability. If no server is connected
-   or the fetch fails, ask the BA to paste the issue text and continue manually — never block
-   on the integration.
+4. **Issue-tracker intake (optional) + fix version (always)** — if the request references an
+   issue key (e.g. `ABC-123`) and an issue-tracker MCP server is connected (see `.mcp.json`), fetch
+   the issue and its comments **read-only** and treat them as the rough requirement: cite the key
+   and title in `requirement-spec.md` under a "Source issue" block for traceability, and read the
+   issue's **fix version** (Jira `fixVersion`, a GitHub/GitLab milestone, or your tracker's
+   equivalent) — that field is how the team groups work into a release. If no server is connected
+   or the fetch fails, ask the BA to paste the issue text and continue manually — never block on
+   the integration.
+
+   **Fix version — required in every requirement spec, tracked issue or not.** Take the first of
+   these that yields a value:
+   1. the issue's fix version from the fetch above — only when a server is connected, its tools
+      were granted to you, and the field is actually set;
+   2. otherwise **ask the BA** which release this ships in. This is the normal path whenever no
+      server is connected, the fetch failed, the issue carries no fix version, or the request isn't
+      tracked at all;
+   3. if the BA doesn't know, record it verbatim as `unknown — to be confirmed`.
+
+   Never guess a version and never leave the field out — the release path reads the fix version
+   from the spec to decide which deploy notes belong to a release, and must be able to tell a real
+   version from an unconfirmed one from a spec that never captured it.
 
 ## Interaction protocol (this is a conversation, not a one-shot)
 
@@ -30,6 +45,9 @@ section confidently. Cover at minimum:
 - **Scope** — what's in scope vs explicitly out of scope.
 - **Acceptance criteria** — testable, per user story (Given/When/Then where useful).
 - **Constraints & NFRs** — performance, security/compliance, data, integrations, deadlines.
+- **Target release** — which fix version this work ships in; resolve it in the order step 4 of
+  **Always do first** defines, and record `unknown — to be confirmed` only if the BA genuinely
+  doesn't know.
 - **Edge cases & failure modes** — empty / error / permission / limit conditions.
 
 Reflect answers back and confirm the outline before writing files. If the BA says "you decide," make
@@ -54,9 +72,19 @@ Derive `<slug>` as a kebab-case slug from the feature/epic name in the request.
 
 ### Single feature → write to `.ai/features/<slug>/`
 
-1. **`requirement-spec.md`** — the authoritative requirement: overview, goal, users, in/out scope,
-   functional requirements, acceptance criteria, constraints/NFRs, edge cases, open questions, and
-   assumptions. This is the file `/workflows:feature` reads first.
+1. **`requirement-spec.md`** — the authoritative requirement: a `## Source issue` block, then
+   overview, goal, users, in/out scope, functional requirements, acceptance criteria,
+   constraints/NFRs, edge cases, open questions, and assumptions. This is the file
+   `/workflows:feature` reads first.
+   - **`## Source issue`** is a short bullet list — issue key + title, tracker link, and type /
+     priority / status where known — and it **always** carries the release as its own bullet,
+     resolved per the intake step above: `- **Fix version:** 1.4`, or
+     `- **Fix version:** unknown — to be confirmed`. Keep the label `Fix version` verbatim and the
+     value bare — the release path reads it straight out of this block. Write the block even when
+     there is no tracked issue, so the fix version is still recorded.
+   - For an **epic**, the fix version goes on `epic-breakdown.md` *and* on each sub-feature's
+     `requirement-spec.md` — sub-features of one epic can ship in different releases, so confirm
+     each one with the BA instead of copying the epic's value.
 2. **`user-stories.md`** — one or more stories using the user-story template, each with acceptance
    criteria.
 
@@ -65,6 +93,10 @@ Derive `<slug>` as a kebab-case slug from the feature/epic name in the request.
 1. **`epic-breakdown.md`** — the decomposition `/workflows:feature` reads to plan branches and
    parallel work. Include:
    - **Epic name**
+   - **Fix version** — a `## Source issue` block carrying the release as its own bullet
+     (`- **Fix version:** 1.4` or `- **Fix version:** unknown — to be confirmed`), resolved per
+     step 4 of **Always do first**. Each sub-feature's `requirement-spec.md` carries its own
+     `Fix version`, confirmed with the BA rather than copied from the epic.
    - **Sub-features** — an ordered list; for each: a kebab-case name/slug, a one-line description,
      scope (backend / frontend / fullstack), and dependencies (which sub-features must complete first).
    - **Dependency groups** — which sub-features can be built in parallel vs must be sequential.

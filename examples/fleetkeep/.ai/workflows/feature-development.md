@@ -16,8 +16,8 @@ before delegating any work.
 
 **Resume rule (trust but verify):** if `STATE.md` already exists, this is a resume. For every
 phase it marks done, verify the phase's artifact actually exists on disk (technical spec, design
-spec, test report, review report, security report as applicable); re-run any phase whose artifact
-is missing, then continue from the recorded next action.
+spec, test report, review report, security report, `deploy-notes.md` as applicable); re-run any
+phase whose artifact is missing, then continue from the recorded next action.
 
 1. **Understand** — Read the consumed `requirement-spec.md`, `user-stories.md`, and `test-specs.md`.
    Confirm the acceptance criteria. Ask clarifying questions if needed. (Single feature vs epic is
@@ -47,7 +47,17 @@ is missing, then continue from the recorded next action.
 6. **Review & security gate (parallel)** — Spawn the Reviewer and security scanner concurrently
    on the same diff; reviewer saves to `.ai/features/<slug>/review-report.md`, security saves to
    `.ai/features/<slug>/security-report.md`. CRITICAL findings block the commit step.
-7. **Document** — Update the relevant README/docs if the public behavior/API changed.
+7. **Document** — Update the relevant README/docs if the public behavior/API changed. Then record
+   the release impact while it is fresh: write `.ai/features/<slug>/deploy-notes.md` from
+   `.ai/templates/deploy-notes.md`, stamped with the **Fix version** from the spec's Source issue
+   block (write `unknown — to be confirmed` if that is what it says or the field is absent — never
+   guess a version), and naming the deployment-guide section it belongs in (Database,
+   Configuration & infrastructure, Application: <unit>, Other deployments) so release assembly is
+   deterministic. If the change needs nothing beyond the standard pipeline run, **still write the
+   file** with an explicit *No deploy impact* line — release assembly must be able to tell
+   "nothing to do" from "never captured". Never a secret in it: use `<placeholders>`. For an epic,
+   each sub-feature writes its own inside its worktree, so it commits on the sub-feature branch.
+   No new gate — the file rides the step 8 commit.
 8. **Commit** — A clear Conventional Commits message referencing the tracker ticket (e.g.
    `FK-1234: <summary>`) after user confirmation. If atomic commits were enabled,
    present the per-task commit list for confirmation instead of creating a single commit. CRITICAL

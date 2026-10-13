@@ -4,6 +4,7 @@ allowed-tools: Read, Write, Edit, Bash, Task
 ---
 @.ai/workflows/hotfix-process.md
 @.ai/standards/universal/security-baseline.md
+@.ai/templates/deploy-notes.md
 
 **Scope determination (do this first, before any other action):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
@@ -26,12 +27,15 @@ allowed-tools: Read, Write, Edit, Bash, Task
 Issue to hotfix: $ARGUMENTS
 
 Follow the hotfix-process workflow. Minimal change only — no refactors, no unrelated cleanup.
-Guard the fix, then verify against the affected scope's gates.
+Guard the fix, then verify against the affected scope's gates. Do not skip step 4a (deploy notes):
+write `.ai/features/<slug>/deploy-notes.md` and commit it with the fix before the review gate, so it
+is part of the reviewed diff.
 
 **Review gate (step 5) — before opening the pull request:** spawn a `reviewer` Task agent:
 > "Review this hotfix diff (`git diff main...HEAD`) for: `$ARGUMENTS`. This is going straight to
 > production. Confirm the change is minimal and reversible, addresses the root cause, and carries
-> no unrelated edits. Flag anything that could make the incident worse. Apply the full reviewer
+> no unrelated edits (its `.ai/features/<slug>/deploy-notes.md` belongs to the fix — check it
+> matches the change and holds no secret). Flag anything that could make the incident worse. Apply the full reviewer
 > checklist. Output BLOCKER/WARNING/SUGGESTION/PRAISE findings and an overall verdict."
 
 Show the verdict in chat. **BLOCKER findings must be resolved before the pull request is opened.**

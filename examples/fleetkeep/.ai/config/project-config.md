@@ -186,6 +186,25 @@ FleetKeep/
 > - Never deploy to `rg-fleetkeep-prod` from a developer machine — production deploys run only
 >   from the `deploy-prod` workflow on `main`.
 
+## Release deliverables
+
+Read by the release agent (`.ai/agents/release-agent.md`). Every feature and hotfix writes
+`.ai/features/<slug>/deploy-notes.md` regardless; these settings decide what the release path builds
+from them beyond the internal artifacts in `.ai/releases/<version>/`.
+
+- **Deployment guide:** `on` — Northwind's platform-operations rota runs production deploys and
+  approves the `deploy-prod` environment gate, so each release gets a guide under
+  `docs/release/<version>/`.
+- **Guide audience:** Northwind platform operations (on-call). They work in the Azure Portal and
+  the GitHub Actions web UI; command lines go in the last appendix only.
+- **Word copy:** `off` — the guide is read in the repo; nobody outside Northwind receives it.
+- **Deployable units:** in deploy order — database (EF Core migrations, applied by the deploy
+  workflow) → API (`app-fleetkeep-<env>`, App Service) → worker (`func-fleetkeep-<env>`, Function
+  App) → SPA (`swa-fleetkeep-<env>`, Static Web App). Bicep infrastructure changes run first, from
+  the same workflow, when `infra/` changed.
+- **Environments & rollout order:** dev → staging → production, one Azure deployment per
+  environment. Tenants share one deployment, so there is no per-tenant rollout.
+
 ## Architecture Notes
 
 > - Three deployables from one repo: the API (App Service), the SPA (Static Web App), and the

@@ -101,7 +101,9 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
   <a href="#personas">Agent personas</a>
   <a href="#subagents">Sub-agents</a>
   <a href="#hooks">Hooks &amp; guardrails</a>
+  <a href="#rules">Path-scoped rules</a>
   <a href="#workflows">Workflows</a>
+  <a href="#release">Release flow</a>
   <a href="#standards">Standards &amp; templates</a>
   <a href="#memory">Memory</a>
   <a href="#scope">Scope model</a>
@@ -141,7 +143,7 @@ mode, not a slogan.</p>
 <tbody>
 <tr><td>You re-explain the stack, conventions and domain every session — and the answers drift</td><td>The filled <code>.ai/config/</code> and <code>.ai/context/</code> are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt</td></tr>
 <tr><td>Output quality depends on how well you phrased today's prompt</td><td>Personas and playbooks fix the <em>method</em>. <code>/agents:review</code> applies the same severity vocabulary on a Friday as on a Monday</td></tr>
-<tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>Reviewer and security scanner run <strong>in parallel, read-only</strong>, on the diff. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget</td></tr>
+<tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>Reviewer and security scanner run <strong>in parallel</strong>, in separate contexts, and report rather than fix. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget</td></tr>
 <tr><td>"Tests pass" — but nobody checks whether tests exist for that scope</td><td>Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened</td></tr>
 <tr><td>One bad command — a force push, a hard reset, a deploy to prod — undoes a day</td><td>Hooks <strong>hard-block</strong> them at the tool call, before the model's intent matters</td></tr>
 <tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads rejected patterns before proposing, so a "no" stays a no</td></tr>
@@ -176,7 +178,7 @@ forgetting, not the ones that come from judgment.</p>
 <li>
   <h3>Copy the harness in</h3>
   <p>From a clone of the template repo, copy into your project root:</p>
-  <pre><code>.ai/  .claude/  .mcp.json  CLAUDE.md  COMMANDS.md  README.md</code></pre>
+  <pre><code>.ai/  .claude/  .mcp.json  CLAUDE.md  AGENTS.md  COMMANDS.md  README.md</code></pre>
   <p>Optionally bring <code>examples/fleetkeep/</code> for reference while configuring.</p>
   <div class="callout warn"><p><strong>Don't copy the template's <code>.gitignore</code>.</strong>
   Your project needs <code>.worktrees/</code> ignored — and must <em>not</em> ignore
@@ -185,7 +187,7 @@ forgetting, not the ones that come from judgment.</p>
 <li>
   <h3>Run <code>/init-project</code></h3>
   <p>It interviews you across identity, repo topology, stack, commands, conventions, version control,
-  security, design system, risk profile and branding — then fills every skeleton and writes
+  security, design system, risk profile, branding and release deliverables — then fills every skeleton and writes
   <code>.claude/hooks/hooks.env</code>.</p>
   <p>Shape the tree while you're there: single-project repos delete the <code>backend/</code> and
   <code>frontend/</code> subfolders; headless projects delete the design subtree; unused per-stack
@@ -254,7 +256,7 @@ same command behaves correctly on a different stack.</p>
 <thead><tr><th>Command</th><th>Purpose</th><th>Produces</th></tr></thead>
 <tbody>
 <tr><td><code>/init-project</code></td><td>Interview, then fill every skeleton</td><td>A configured harness</td></tr>
-<tr><td><code>/ba &lt;slug&gt;</code></td><td>BA Studio — interactive requirements</td><td><code>requirement-spec.md</code>, <code>user-stories.md</code>, and <code>epic-breakdown.md</code> for epics</td></tr>
+<tr><td><code>/ba &lt;slug&gt;</code></td><td>BA Studio — interactive requirements</td><td><code>requirement-spec.md</code> (with the release fix version), <code>user-stories.md</code>, and <code>epic-breakdown.md</code> for epics</td></tr>
 <tr><td><code>/qa &lt;slug&gt;</code></td><td>QA Studio — test design from those specs</td><td><code>test-specs.md</code></td></tr>
 </tbody>
 </table>
@@ -269,7 +271,7 @@ same command behaves correctly on a different stack.</p>
 <tr><td><code>/agents:devops</code></td><td>CI/CD, deploy and infrastructure changes</td></tr>
 <tr><td><code>/agents:pm</code></td><td>Status reports, planning, changelogs</td></tr>
 <tr><td><code>/agents:qa</code></td><td>Tests and a verification report</td></tr>
-<tr><td><code>/agents:release-manager</code></td><td>Release notes, migration plan, rollback plan, deployment checklist</td></tr>
+<tr><td><code>/agents:release-manager</code></td><td>Release notes, migration plan, rollback plan, deployment checklist from the in-scope deploy notes; the deployment guide if switched on</td></tr>
 <tr><td><code>/agents:review</code></td><td><code>review-report.md</code> — BLOCKER / WARNING / SUGGESTION / PRAISE with file:line</td></tr>
 <tr><td><code>/agents:security</code></td><td><code>security-report.md</code> with severities</td></tr>
 </tbody>
@@ -280,11 +282,11 @@ same command behaves correctly on a different stack.</p>
 <tbody>
 <tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
 <tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → <strong>review</strong> → commit. BLOCKER findings block the commit</td></tr>
-<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; <strong>review</strong> before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
-<tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; deploy notes, then <strong>review</strong> before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
+<tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump; then the deployment guide (+ <code>.docx</code>) if switched on — written after the confirmation gate, merged, never overwritten</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
-<tr><td><code>/utils:learn "&lt;lesson&gt;"</code> · <code>/utils:scope &lt;scope&gt;</code></td><td>Record a learning; force a scope</td></tr>
+<tr><td><code>/utils:learn "&lt;lesson&gt;"</code> · <code>/utils:scope &lt;scope&gt;</code></td><td>Record a learning (or an area-specific <code>.claude/rules/</code> file); force a scope</td></tr>
 <tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness; change it through an author → critic → revise loop</td></tr>
 </tbody>
 </table>
@@ -311,22 +313,29 @@ same command behaves correctly on a different stack.</p>
 
 <h2 id="subagents">Sub-agents</h2>
 <p>Spawned automatically, each with its own context window and a <strong>restricted tool set</strong>.
-Least privilege is deliberate: a reviewer that cannot write cannot "helpfully" fix things mid-review.</p>
+The reviewer and critic get no <code>Write</code> or <code>Edit</code> tool and are told never to change
+code, so a review doesn't quietly turn into a fix. That is least privilege, not a sandbox: both keep
+<code>Bash</code> (the reviewer saves its report through it), and <code>memory: project</code> lets a
+sub-agent write to its own memory folder.</p>
 <table>
 <thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th><th>Spawned by</th></tr></thead>
 <tbody>
 <tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>—</td><td>Complex multi-part tasks</td></tr>
 <tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td><td>Feature and bugfix implementation</td></tr>
-<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
+<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
 <tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td><td>Test writing and running, live browser checks</td></tr>
 <tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td><td><code>/workflows:release</code></td></tr>
-<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
+<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
 <tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
 </tbody>
 </table>
 <p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
-folder of accumulated project facts. It is runtime state and git-ignored.</p>
+folder — a <code>MEMORY.md</code> index plus topic files it writes as it learns (recurring defects,
+easy-to-miss files, project quirks). The first 200 lines (25&nbsp;KB) of the index load into its prompt
+on every run. Project scope is meant to be <strong>committed</strong>, so every developer's runs benefit;
+review it like any other diff. For per-developer memory, set <code>memory: local</code>
+(<code>.claude/agent-memory-local/</code>, kept out of git). It is off when auto memory is disabled.</p>
 
 <h2 id="hooks">Hooks &amp; guardrails</h2>
 <table>
@@ -347,6 +356,14 @@ folder of accumulated project facts. It is runtime state and git-ignored.</p>
 tenant isolation, frontend env, design tokens and the TDD nudge. Warnings go to stderr and are
 non-blocking; only the git guard and sensitive-file rules hard-block.</p></div>
 
+<h2 id="rules">Path-scoped rules</h2>
+<p>Claude Code loads every <code>.md</code> file under <code>.claude/rules/</code>. A rule with
+<code>paths:</code> frontmatter loads only when Claude reads or edits a matching file, so
+area-specific knowledge costs no context anywhere else; a rule without it loads every session. The
+template ships one inert example, <code>_example-area.md</code> — copy it, point <code>paths:</code>
+at real code, replace the text. <code>/utils:learn</code> offers this route for area-specific
+lessons.</p>
+
 <h2 id="workflows">Workflows</h2>
 <p>Playbooks in <code>.ai/workflows/</code> are the method the commands follow — edit a playbook and
 the matching command changes behaviour. They cover feature development, bug fixing, hotfixes,
@@ -358,6 +375,18 @@ six phases:</p>
 <p>Phase D isolates each sub-feature in its own <strong>git worktree</strong> under
 <code>.worktrees/</code>, so delegated agents never share a working tree. Worktrees only see
 committed files — which is why planning artifacts are committed onto the epic branch first.</p>
+
+<h2 id="release">Release flow</h2>
+<p>Deploy knowledge is captured while it is fresh, not reconstructed from <code>git log</code> later:</p>
+<div class="flow"><span>/ba: fix version</span><em>→</em><span>feature / hotfix: deploy-notes.md</span><em>→</em><span>/workflows:release</span></div>
+<p><code>/ba</code> records each spec's <strong>fix version</strong> (from the tracker, or by asking —
+never guessed). The feature and hotfix workflows write <code>.ai/features/&lt;slug&gt;/deploy-notes.md</code>
+— settings, migrations, manual steps, verify checks, rollback, or an explicit <em>No deploy impact</em>.
+<code>/workflows:release</code> selects notes by fix version for its internal artifacts and, if the
+<strong>deployment guide</strong> is switched on in <code>project-config.md</code>, assembles
+<code>docs/release/&lt;version&gt;/deployment-guide-&lt;version&gt;.md</code> after the confirmation gate,
+optionally with a Word copy from <code>.claude/scripts/md-to-docx.py</code>. Existing guides are merged,
+never overwritten. <code>/workflows:bugfix</code> writes no deploy notes.</p>
 
 <h2 id="standards">Standards &amp; templates</h2>
 <table>
@@ -371,7 +400,9 @@ committed files — which is why planning artifacts are committed onto the epic 
 </table>
 <p>Templates in <code>.ai/templates/</code> shape every output: technical spec, design spec, user
 story, test plan, security report, PR description, release checklist, ADR, the branded artifact
-header, and <code>feature-state.md</code> (which becomes <code>STATE.md</code>).</p>
+header, <code>feature-state.md</code> (which becomes <code>STATE.md</code>), <code>deploy-notes.md</code>
+(each feature's deploy impact, read by the release path), and <code>deployment-guide.md</code> +
+<code>release-guides-index.md</code> for the optional human-facing release guide.</p>
 
 <h2 id="memory">Memory</h2>
 <table>
@@ -380,10 +411,10 @@ header, and <code>feature-state.md</code> (which becomes <code>STATE.md</code>).
 <tr><td><code>.ai/memory/decisions.md</code></td><td>Agents, <code>/init-project</code></td><td>Precedent-setting or hard-to-reverse decisions, with the reason</td></tr>
 <tr><td><code>.ai/memory/learnings.md</code></td><td>Agents, <code>/utils:learn</code></td><td>Non-obvious reusable lessons — pitfalls, approaches abandoned and why</td></tr>
 <tr><td><code>.ai/memory/design-taste.md</code></td><td>Designer</td><td>Approved and rejected design choices, in the user's own words</td></tr>
-<tr><td><code>.claude/agent-memory/</code></td><td>Claude Code (runtime)</td><td>Per-sub-agent project facts; git-ignored, recreated automatically</td></tr>
+<tr><td><code>.claude/agent-memory/</code></td><td>Sub-agents with <code>memory: project</code></td><td>Per-sub-agent learnings — recurring defects, easy-to-miss files; created on first run</td></tr>
 </tbody>
 </table>
-<p>The first three are committed — the harness's institutional memory. The designer reads
+<p>All four are committed — the harness's institutional memory. The designer reads
 design-taste before proposing, so a rejected pattern stays rejected.</p>
 
 <h2 id="scope">Scope model</h2>
@@ -405,15 +436,17 @@ with <code>/utils:scope auto</code>.</p>
 ├── test-specs/test-report.md    # what was and wasn't verified
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
+├── deploy-notes.md              # deploy impact + fix version; never branded
 └── pr-description.md            # the final report</code></pre>
 <p>Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
-Every document except <code>STATE.md</code> opens with your branded header.</p>
+Every document except <code>STATE.md</code> and <code>deploy-notes.md</code> opens with your branded header.
+With the deployment guide switched on, releases also write <code>docs/release/&lt;version&gt;/</code>.</p>
 
 <h2 id="portability">Other AI agents</h2>
 <p>The harness splits into a <strong>method</strong> that travels and an <strong>enforcement
-mechanism</strong> that does not. <code>.ai/</code> is 82 files of plain markdown with no
-tool-specific syntax. The Claude Code coupling sits in the 26 commands (73 <code>@file</code>
-includes, 108 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 8 hooks wired to Claude Code's
+mechanism</strong> that does not. <code>.ai/</code> is 85 files of plain markdown with no
+tool-specific syntax. The Claude Code coupling sits in the 26 commands (75 <code>@file</code>
+includes, 114 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 8 hooks wired to Claude Code's
 event names.</p>
 <table>
 <thead><tr><th>Step</th><th>What it gives you</th><th>Cost</th></tr></thead>
@@ -424,7 +457,7 @@ event names.</p>
 </tbody>
 </table>
 <div class="callout warn"><p><strong>Three things never port:</strong> hard blocks at the tool call,
-read-only sub-agents that <em>cannot</em> edit what they review, and parallel isolated review. Elsewhere
+tool-restricted sub-agents spawned without edit tools, and parallel isolated review. Elsewhere
 those become instructions, and instructions are advisory.</p></div>
 <p>Full detail, recipes and the support matrix: <code>docs/portability.md</code>.</p>
 
@@ -465,7 +498,7 @@ those become instructions, and instructions are advisory.</p></div>
 <footer>
 <p>Source docs: <code>docs/getting-started.md</code>, <code>docs/components.md</code> and
 <code>docs/portability.md</code> in this repository. Deeper references: <code>COMMANDS.md</code>
-(every command), <code>.ai/CUSTOMIZATION.md</code> (the 12 variability axes),
+(every command), <code>.ai/CUSTOMIZATION.md</code> (the 13 variability axes),
 <code>AGENTS.md</code> (non-Claude agents), <code>.ai/README.md</code> and
 <code>.claude/README.md</code> (per-layer detail), and <code>examples/fleetkeep/</code> (a fully
 configured worked example).</p>

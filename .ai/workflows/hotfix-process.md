@@ -13,8 +13,19 @@ smallest reversible change wins.
    concrete manual/driven reproduction where it has none, so the regression can't silently return.
 4. **Verify** — run the affected scope's gates (build always; lint/type-check/test where defined) and
    re-run the reproduction. State what you verified.
-5. **Review gate** — Spawn the Reviewer on the hotfix diff before opening the {{PR_TERM}}. It is
-   read-only and runs on a deliberately tiny diff, so it costs little. **This is the step most
+4a. **Deploy notes** — capture the release impact while the deploy plan is fresh, before the review
+   gate: write `.ai/features/<slug>/deploy-notes.md` from `.ai/templates/deploy-notes.md`, where
+   `<slug>` is the branch name minus its `fix/` or `hotfix/` prefix — the same `.ai/features/` path
+   features use, never a version-based one. Stamp it with the **Fix version** from the Source issue
+   block of that feature's `requirement-spec.md` if one exists, otherwise `unknown — to be
+   confirmed` — never guess a version. Name the deployment-guide section it belongs in, the same
+   way features do. Even a fix that needs nothing beyond the standard pipeline run gets the file,
+   with an explicit *No deploy impact* line, so release assembly can tell "nothing to do" from
+   "never captured". Never a secret in it: use `<placeholders>`. No new gate — it travels with the
+   fix itself. If the deploy plan is not fully settled yet, write what is known now and refine it
+   before the merge; it must exist by the time the change is up for review.
+5. **Review gate** — Spawn the Reviewer on the hotfix diff before opening the {{PR_TERM}}. It makes
+   no edits and runs on a deliberately tiny diff, so it costs little. **This is the step most
    likely to be skipped under time pressure and the one where skipping costs most** — the change is
    going straight to production, usually written fast, by someone who has been staring at the
    incident. **BLOCKER findings must be resolved before step 6.** If the outage is actively burning
@@ -23,7 +34,8 @@ smallest reversible change wins.
 6. **Land it via {{PR_TERM}} and forward-port** — open a {{PR_TERM}} into `{{DEFAULT_BRANCH}}`, then
    forward-port to the active development and `release/*` branches so the fix isn't lost next
    release. Never push directly to {{PROTECTED_BRANCHES}}.
-7. **Deploy with monitoring** — follow the DevOps deploy checklist (env vars / app config, any DB
+7. **Deploy with monitoring** — follow the deploy notes from step 4a (update that file if reality
+   differs) and the DevOps deploy checklist (env vars / app config, any DB
    migration, rollback plan); watch {{CLOUD_PROVIDER}} logs/metrics after rollout. Call out
    per-tenant impact ({{TENANT_ISOLATION_RULE}}).
 8. **Post-mortem within 48 hours** — root cause, why it wasn't caught, and the prevention action (a
