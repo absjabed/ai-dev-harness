@@ -37,9 +37,9 @@ Everything else has a workable substitute.
 ## Option 1 — `AGENTS.md` (done)
 
 [`AGENTS.md`](../AGENTS.md) at the repo root carries the whole method as instructions: which `.ai/`
-files to read for which task, how to resolve scope, which playbook to follow, the five gates to stop
-at, the guardrails to self-enforce from `hooks.env`, where artifacts go, and what to record in
-memory.
+files to read for which task, how to resolve scope, which playbook to follow, the gates to stop at
+(a review before any commit, then the five feature-path gates), the guardrails to self-enforce from
+`hooks.env`, where artifacts go, and what to record in memory.
 
 - **Cost:** none ongoing. It defers to `CLAUDE.md` and `.ai/` for every project specific, so it holds
   no tokens and cannot drift out of sync.

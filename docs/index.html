@@ -279,8 +279,8 @@ same command behaves correctly on a different stack.</p>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
-<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → <strong>review</strong> → commit</td></tr>
-<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; <strong>review</strong> before the PR, then forward-port</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → <strong>review</strong> → commit. BLOCKER findings block the commit</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; <strong>review</strong> before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
 <tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
@@ -313,16 +313,16 @@ same command behaves correctly on a different stack.</p>
 <p>Spawned automatically, each with its own context window and a <strong>restricted tool set</strong>.
 Least privilege is deliberate: a reviewer that cannot write cannot "helpfully" fix things mid-review.</p>
 <table>
-<thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th></tr></thead>
+<thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th><th>Spawned by</th></tr></thead>
 <tbody>
-<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>—</td></tr>
-<tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td></tr>
-<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>haiku</td><td>project</td></tr>
-<tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td></tr>
-<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td></tr>
-<tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td></tr>
-<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>inherit</td><td>project</td></tr>
-<tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td></tr>
+<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>—</td><td>Complex multi-part tasks</td></tr>
+<tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td><td>Feature and bugfix implementation</td></tr>
+<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
+<tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
+<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td><td>Test writing and running, live browser checks</td></tr>
+<tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td><td><code>/workflows:release</code></td></tr>
+<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">read-only</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
+<tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
 </tbody>
 </table>
 <p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
@@ -332,7 +332,7 @@ folder of accumulated project facts. It is runtime state and git-ignored.</p>
 <table>
 <thead><tr><th>Hook</th><th>Event</th><th>What it does</th></tr></thead>
 <tbody>
-<tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td><strong>Blocks</strong> <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches, deploys to the production stage</td></tr>
+<tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td><strong>Blocks</strong> <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches, deploys to the production stage. The first two are <strong>unconditional — there is no override flag</strong>: a deliberate history rewrite has to run from a terminal outside Claude Code</td></tr>
 <tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config</td></tr>
 <tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check + lint for the edited package; tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
 <tr><td><code>post-tool-batch.sh</code></td><td>PostToolBatch</td><td>Full-project type-check after parallel edits</td></tr>
@@ -418,7 +418,7 @@ event names.</p>
 <table>
 <thead><tr><th>Step</th><th>What it gives you</th><th>Cost</th></tr></thead>
 <tbody>
-<tr><td><strong><code>AGENTS.md</code></strong> <span class="pill">done</span></td><td>The whole method as instructions — which files to read, how to scope, which playbook, the five gates, the guardrails to self-enforce. Works with Codex, Cursor, Gemini, Copilot</td><td>None ongoing; it defers to <code>CLAUDE.md</code> and <code>.ai/</code> so it can't drift</td></tr>
+<tr><td><strong><code>AGENTS.md</code></strong> <span class="pill">done</span></td><td>The whole method as instructions — which files to read, how to scope, which playbook, the gates to stop at — a review before any commit, then the five feature-path gates — and the guardrails to self-enforce. Works with Codex, Cursor, Gemini, Copilot</td><td>None ongoing; it defers to <code>CLAUDE.md</code> and <code>.ai/</code> so it can't drift</td></tr>
 <tr><td><strong>Git hooks + CI</strong></td><td>Guardrails that hold regardless of <em>who</em> edits — agent or human. Recipes for <code>pre-push</code> and <code>pre-commit</code> that re-use <code>hooks.env</code> verbatim</td><td>About half a day; CI is the real boundary since <code>--no-verify</code> skips local hooks</td></tr>
 <tr><td><strong>Command generators</strong></td><td>Slash-command ergonomics inside one specific non-Claude tool</td><td>Highest — generated output rots on every harness change unless CI fails on staleness</td></tr>
 </tbody>
