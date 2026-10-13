@@ -126,7 +126,7 @@ Everything that changes from project to project, and exactly where to change it.
 - **Files:** `.ai/config/project-config.md` → *Release deliverables*; templates
   `.ai/templates/{deploy-notes,deployment-guide,release-guides-index}.md`; converter
   `.claude/scripts/md-to-docx.py`
-- Every feature and hotfix writes `.ai/features/<slug>/deploy-notes.md` — what the change needs at
+- Every feature, bugfix and hotfix writes `.ai/features/<slug>/deploy-notes.md` — what the change needs at
   deploy time, stamped with the **fix version** `/ba` records in each requirement spec. The release
   path selects notes by fix version and folds them into its internal artifacts.
 - **Deployment guide** (`on` / `off`): when on, `/workflows:release` also assembles a human-facing

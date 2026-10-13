@@ -17,7 +17,7 @@
    migration steps (DB schema changes ship via the schema owner's migration process; mirror any
    shared column change into the other models), the rollback plan and the deployment checklist,
    written to `.ai/releases/<version>/`. Feed them from every `.ai/features/**/deploy-notes.md`
-   whose **fix version** matches this release — each feature and hotfix recorded its deploy impact
+   whose **fix version** matches this release — each feature, bugfix and hotfix recorded its deploy impact
    there while it was fresh.
 8. **Publish the deployment guide** *(only if switched on in `project-config.md` → Release
    deliverables)* — the human-facing deliverable, produced after the internal artifacts exist

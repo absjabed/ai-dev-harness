@@ -10,7 +10,7 @@ specific). This document measures that split and gives recipes for closing the g
 | Part | Size | Portable? |
 |---|---|---|
 | `.ai/` — personas, playbooks, standards, templates, config, context, memory | 85 files, ~5,000 lines | **Yes.** Plain markdown, no tool-specific syntax |
-| `.claude/commands/` — 26 commands | 26 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 75 `@file` includes, 114 `$ARGUMENTS` references |
+| `.claude/commands/` — 26 commands | 26 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 76 `@file` includes, 114 `$ARGUMENTS` references |
 | `.claude/agents/` — 8 sub-agents | 8 files | **No.** `tools` / `model` / `memory` / `effort` frontmatter; isolated-context spawning is a Claude Code feature |
 | `.claude/hooks/` — 8 scripts | 8 scripts | **Partly.** Ordinary bash with no `CLAUDE_*` dependencies inside, but wired to Claude Code's seven hook events and fed a JSON payload on stdin |
 | `.claude/rules/` — path-scoped rules | 1 example | **Partly.** Plain markdown, but loading by `paths:` glob is Claude Code behaviour; `AGENTS.md` tells other agents to read matching rules themselves |
@@ -168,7 +168,7 @@ the translation is known to be tractable.
 | Claude Code | Translate to |
 |---|---|
 | `description:` frontmatter | The tool's command description field |
-| `@file` include (75 of them) | Inline the file's contents, or the tool's own include syntax |
+| `@file` include (76 of them) | Inline the file's contents, or the tool's own include syntax |
 | `$ARGUMENTS` (114 refs) | The tool's argument placeholder |
 | `allowed-tools:` | The tool's permission list — or, failing that, a prose constraint in the prompt |
 | Sub-agent `tools:` / `model:` | Usually no equivalent; degrade to a single agent following the persona |

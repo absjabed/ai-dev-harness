@@ -281,7 +281,7 @@ same command behaves correctly on a different stack.</p>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
-<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → <strong>review</strong> → commit. BLOCKER findings block the commit</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → <strong>review</strong> → commit. BLOCKER findings block the commit</td></tr>
 <tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; deploy notes, then <strong>review</strong> before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
 <tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump; then the deployment guide (+ <code>.docx</code>) if switched on — written after the confirmation gate, merged, never overwritten</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
@@ -378,15 +378,15 @@ committed files — which is why planning artifacts are committed onto the epic 
 
 <h2 id="release">Release flow</h2>
 <p>Deploy knowledge is captured while it is fresh, not reconstructed from <code>git log</code> later:</p>
-<div class="flow"><span>/ba: fix version</span><em>→</em><span>feature / hotfix: deploy-notes.md</span><em>→</em><span>/workflows:release</span></div>
+<div class="flow"><span>/ba: fix version</span><em>→</em><span>feature / bugfix / hotfix: deploy-notes.md</span><em>→</em><span>/workflows:release</span></div>
 <p><code>/ba</code> records each spec's <strong>fix version</strong> (from the tracker, or by asking —
-never guessed). The feature and hotfix workflows write <code>.ai/features/&lt;slug&gt;/deploy-notes.md</code>
+never guessed). The feature, bugfix and hotfix workflows write <code>.ai/features/&lt;slug&gt;/deploy-notes.md</code>
 — settings, migrations, manual steps, verify checks, rollback, or an explicit <em>No deploy impact</em>.
 <code>/workflows:release</code> selects notes by fix version for its internal artifacts and, if the
 <strong>deployment guide</strong> is switched on in <code>project-config.md</code>, assembles
 <code>docs/release/&lt;version&gt;/deployment-guide-&lt;version&gt;.md</code> after the confirmation gate,
 optionally with a Word copy from <code>.claude/scripts/md-to-docx.py</code>. Existing guides are merged,
-never overwritten. <code>/workflows:bugfix</code> writes no deploy notes.</p>
+never overwritten.</p>
 
 <h2 id="standards">Standards &amp; templates</h2>
 <table>
@@ -445,7 +445,7 @@ With the deployment guide switched on, releases also write <code>docs/release/&l
 <h2 id="portability">Other AI agents</h2>
 <p>The harness splits into a <strong>method</strong> that travels and an <strong>enforcement
 mechanism</strong> that does not. <code>.ai/</code> is 85 files of plain markdown with no
-tool-specific syntax. The Claude Code coupling sits in the 26 commands (75 <code>@file</code>
+tool-specific syntax. The Claude Code coupling sits in the 26 commands (76 <code>@file</code>
 includes, 114 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 8 hooks wired to Claude Code's
 event names.</p>
 <table>

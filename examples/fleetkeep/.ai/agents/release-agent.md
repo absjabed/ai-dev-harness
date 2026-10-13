@@ -37,7 +37,7 @@ never the version being prepared.
 
 ## Deploy notes in scope
 
-Each feature and hotfix records its deploy impact in `.ai/features/**/deploy-notes.md`
+Each feature, bugfix and hotfix records its deploy impact in `.ai/features/**/deploy-notes.md`
 (template: `.ai/templates/deploy-notes.md`). Select them **by fix version**:
 
 1. List them — e.g. `find .ai/features -name deploy-notes.md`.

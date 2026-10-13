@@ -1,6 +1,7 @@
 <!-- Internal working input — NOT a deliverable. Written by /workflows:feature (command step 5a
-     "Document & deploy notes" = playbook step 7 "Document" in feature-development.md) or
-     /workflows:hotfix (playbook step 4a, "Deploy notes") to .ai/features/<slug>/deploy-notes.md,
+     "Document & deploy notes" = playbook step 7 "Document" in feature-development.md),
+     /workflows:bugfix (playbook step 6a) or /workflows:hotfix (playbook step 4a) to
+     .ai/features/<slug>/deploy-notes.md,
      while the deploy knowledge is still fresh. The release path reads every note carrying a given
      fix version: it always feeds the internal migration plan, rollback plan and deployment
      checklist, and — when the project has the deployment guide switched on (project-config.md →
@@ -11,20 +12,21 @@
      One file per feature. For an epic, one per sub-feature at
      .ai/features/<epic>/<sub-feature>/deploy-notes.md, written inside that sub-feature's worktree
      so it commits on the sub-feature branch. -->
-# Deploy Notes: [feature-or-hotfix slug]
+# Deploy Notes: [feature, bugfix or hotfix slug]
 
 > **Never paste a secret** — no connection strings, keys, passwords, tokens, or personal data. Use
 > `<placeholders>` and name the setting / secret-store entry the real value belongs in. This file
 > is committed to the repo.
 
-- **Slug:** [the `.ai/features/<slug>/` folder name — for a hotfix, the branch slug, e.g.
+- **Slug:** [the `.ai/features/<slug>/` folder name — for a bugfix or hotfix, the branch slug, e.g.
   `fix/PROJ-1234-slug` → `PROJ-1234-slug`]
 - **Ticket:** [issue key, or `none`]
 - **Fix version:** [copy verbatim from **Fix version** in the sibling `requirement-spec.md`
   "Source issue" block, e.g. `1.4`. If it reads `unknown — to be confirmed`, or the field (or the
-  spec itself — hotfixes often have none) is absent, write `unknown — to be confirmed`.
+  spec itself — fixes often have none) is absent and nobody can say, write
+  `unknown — to be confirmed`.
   **Never guess a version:** a wrong one files this change into the wrong release.]
-- **Captured:** [YYYY-MM-DD] · by [/workflows:feature | /workflows:hotfix]
+- **Captured:** [YYYY-MM-DD] · by [/workflows:feature | /workflows:bugfix | /workflows:hotfix]
 - **Deploy impact:** [yes | no]
 - **Guide target section:** [Database | Configuration & infrastructure | Application: <deployable
   unit> | Other deployments] — which section of `.ai/templates/deployment-guide.md` this change

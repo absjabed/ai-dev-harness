@@ -58,7 +58,7 @@ Multi-step pipelines that chain several agents with human approval gates.
 | Command | Who uses it | What it does |
 |---------|-------------|--------------|
 | `/workflows:feature` | Lead / Dev | End-to-end feature build. Detects single feature vs epic (by whether `epic-breakdown.md` exists) and **consumes** the `/ba` + `/qa` artifacts — it does **not** generate stories, epic breakdowns, or test specs; if they're missing it stops and asks you to run `/ba` / `/qa`. Then technical spec → design gate → implement → test → review + security gate (parallel) → document & deploy notes → {PR}. Parallelises epic sub-features in isolated git worktrees. Keeps machine state at `.ai/features/<slug>/STATE.md` and resumes interrupted runs; offers opt-in per-task atomic commits at spec approval (default off). |
-| `/workflows:bugfix` | Dev | Reproduce → root cause → fix → verify → **review** → commit |
+| `/workflows:bugfix` | Dev | Reproduce → root cause → fix → verify → deploy notes → **review** → commit |
 | `/workflows:hotfix` | Dev / On-call | Emergency fix — fast, minimal, safe; writes deploy notes, then **review** before it lands |
 | `/workflows:release` | Release owner | Security gate + release artifacts (parallel) → changelog → version bump → deployment guide (+ `.docx`) if switched on |
 

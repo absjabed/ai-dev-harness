@@ -24,6 +24,17 @@ Fix causes, not symptoms.
    components, and any shared contract other layers or services depend on (a schema change in
    particular must be mirrored wherever else it is mapped — see the scope standards). Call out any
    per-tenant / per-environment impact ({{TENANT_ISOLATION_RULE}}).
+6a. **Deploy notes** — record the fix's release impact while the blast-radius check is fresh:
+   write `.ai/features/<slug>/deploy-notes.md` from `.ai/templates/deploy-notes.md`, where `<slug>`
+   is the branch name minus its `fix/` prefix (on no work branch, a kebab-case slug of the ticket
+   key and summary) — the same `.ai/features/` path features use. Stamp it with the **Fix version**
+   from the Source issue block of that feature's `requirement-spec.md` if one exists; otherwise ask
+   the user once which release the fix ships in, and if they don't know write `unknown — to be
+   confirmed` — never guess a version. Name the deployment-guide section it belongs in. A fix that
+   needs nothing beyond the standard pipeline run still gets the file, with an explicit *No deploy
+   impact* line, so release assembly can tell "nothing to do" from "never captured". Never a
+   secret in it: use `<placeholders>`. No new gate — it is reviewed in step 7 and rides the step 8
+   commit.
 7. **Review gate** — Spawn the Reviewer on the fix diff before committing. It has no edit tools
    and reports rather than edits. A fix is a change like any other: the smaller it looks, the less
    scrutiny it tends to get, which is exactly when a wrong root cause slips through. **BLOCKER
@@ -32,5 +43,5 @@ Fix causes, not symptoms.
 8. **Commit** — Follow {{COMMIT_CONVENTION}} and reference the tracker ticket, e.g.
    `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`.
 
-**Report:** root cause, the fix, how it was verified, the review verdict, and any related risk you
-found.
+**Report:** root cause, the fix, how it was verified, the review verdict, the deploy notes (fix
+version and deploy impact), and any related risk you found.

@@ -1,11 +1,12 @@
 ---
-description: Full bug fix workflow — reproduce → root cause → fix → verify → review → commit
+description: Full bug fix workflow — reproduce → root cause → fix → verify → deploy notes → review → commit
 allowed-tools: Read, Write, Edit, Bash, Task
 ---
 @.ai/agents/developer-agent.md
 @.ai/agents/qa-agent.md
 @.ai/workflows/bug-fixing.md
 @.ai/standards/universal/testing-principles.md
+@.ai/templates/deploy-notes.md
 
 **Scope determination (do this first, before any other action):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
@@ -29,12 +30,16 @@ Bug to fix: $ARGUMENTS
 
 Follow the bug-fixing workflow completely. Guard the fix first — a failing test where the scope has
 a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify.
+Then do step 6a: write `.ai/features/<slug>/deploy-notes.md` (fix version from the spec if one
+exists, otherwise ask the user once; `unknown — to be confirmed` if nobody knows; an explicit
+*No deploy impact* line if the fix needs nothing beyond the standard pipeline run).
 
 **Review gate (step 7) — before committing:** spawn a `reviewer` Task agent:
 > "Review the current fix diff (`git diff HEAD`) for: `$ARGUMENTS`. Confirm it addresses the root
 > cause rather than a symptom, follows the loaded scope's standards, and introduces no regression
-> in the surrounding code. Apply the full reviewer checklist. Output BLOCKER/WARNING/SUGGESTION/
+> in the surrounding code. Also read `.ai/features/<slug>/deploy-notes.md` — a new file, so it is
+> not in `git diff HEAD` — and check it matches the fix and holds no secret. Apply the full reviewer checklist. Output BLOCKER/WARNING/SUGGESTION/
 > PRAISE findings and an overall verdict."
 
 Show the verdict in chat. **BLOCKER findings must be resolved before you commit** — re-run the
-reviewer after fixing them. Then commit with a "fix:" prefix.
+reviewer after fixing them. Then commit with a "fix:" prefix, including the deploy notes.

@@ -111,7 +111,7 @@
 
 ## Release deliverables
 
-Read by the release agent (`.ai/agents/release-agent.md`). Every feature and hotfix writes
+Read by the release agent (`.ai/agents/release-agent.md`). Every feature, bugfix and hotfix writes
 `.ai/features/<slug>/deploy-notes.md` regardless; these settings decide what the release path builds
 from them beyond the internal artifacts in `.ai/releases/<version>/`.
 

@@ -46,7 +46,7 @@ includes, so all project-specific knowledge lives here and the execution layer s
 - **Branding** — `config/branding.md` + `templates/artifact-header.md` prepend your logo/name/footer
   to every generated document — except the two unbranded internal files under `features/<slug>/`,
   `STATE.md` and `deploy-notes.md`.
-- **Release flow** — `/ba` records each spec's fix version; each feature and hotfix writes
+- **Release flow** — `/ba` records each spec's fix version; each feature, bugfix and hotfix writes
   `deploy-notes.md`; the release path collects notes by fix version into its artifacts and, if
   switched on in `config/project-config.md`, a deployment guide under `docs/release/`.
 - **Decision memory** — `memory/decisions.md` records decisions worth remembering across sessions;
