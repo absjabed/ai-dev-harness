@@ -61,8 +61,8 @@ command behaves differently — correctly — per project.
 | Command | Purpose | Gates |
 |---|---|---|
 | `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | **5 STOP gates**: technical spec, design, verification, commit, PR |
-| `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → commit | Verification before commit |
-| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline; PR into the default branch |
+| `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → review → commit | Verification, then a **review gate** — BLOCKER findings block the commit |
+| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline, plus a **review gate** before the PR — skippable only with explicit human approval, never silently |
 | `/workflows:release <version>` | Security gate, release artifacts, changelog, version bump | Security findings block the release |
 
 ### Utilities — `/utils:*`
@@ -122,7 +122,7 @@ things mid-review.
 |---|---|---|---|---|
 | `orchestrator` | delegates to developer, reviewer, security-scanner | inherit | — | Complex multi-part tasks |
 | `developer` | Read, Write, Edit, Bash | inherit | — | Feature/bugfix implementation |
-| `reviewer` | Read, Bash (**read-only**) | haiku | project | Review gate |
+| `reviewer` | Read, Bash (**read-only**) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
 | `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | — | Test writing/running, live browser checks |
 | `release-manager` | Read, Write, Edit, Bash | sonnet | — | `/workflows:release` |
@@ -179,8 +179,8 @@ Method documents the commands follow. Editing a playbook changes how the matchin
 | Playbook | Covers |
 |---|---|
 | `feature-development.md` | The 9-step feature path, the epic path, and the gate definitions |
-| `bug-fixing.md` | Reproduce → root cause → guard → fix → verify → blast radius → commit |
-| `hotfix-process.md` | Branch from production, minimal change, land via PR, forward-port, post-mortem |
+| `bug-fixing.md` | Reproduce → root cause → guard → fix → verify → blast radius → review → commit |
+| `hotfix-process.md` | Branch from production, minimal change, review gate, land via PR, forward-port, post-mortem |
 | `release-process.md` | Changelog, verification, dependency/secret check, version bump, tag, notes |
 | `code-review.md` | Review order and the BLOCKER/WARNING/SUGGESTION/PRAISE vocabulary |
 | `story-generation.md` | How requirements become stories |

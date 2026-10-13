@@ -61,6 +61,10 @@ the output format and an explicit "never do" list.
 Claude Code halts at these points automatically. **You must stop and ask the human instead.** Do not
 continue past one on your own judgement.
 
+0. **Review before you commit** — on *any* path that changes code, including a bug fix or a
+   hotfix. The playbooks now carry an explicit review step; you have no reviewer sub-agent, so
+   review the diff yourself against the scope's standards and report the findings before asking
+   to commit.
 1. **Technical spec approved** — before writing any implementation code.
 2. **Design approved** — for any UI surface, before building it.
 3. **Verification reported** — state plainly what you verified and what you did not.

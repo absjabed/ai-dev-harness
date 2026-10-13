@@ -278,8 +278,8 @@ same command behaves correctly on a different stack.</p>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
-<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → commit</td></tr>
-<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix with forward-port</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → <strong>review</strong> → commit</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; <strong>review</strong> before the PR, then forward-port</td></tr>
 <tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>

@@ -1,6 +1,6 @@
 ---
-description: Emergency hotfix — fast, minimal, safe
-allowed-tools: Read, Write, Edit, Bash
+description: Emergency hotfix — fast, minimal, safe, reviewed before it lands
+allowed-tools: Read, Write, Edit, Bash, Task
 ---
 @.ai/workflows/hotfix-process.md
 @.ai/standards/universal/security-baseline.md
@@ -25,4 +25,16 @@ allowed-tools: Read, Write, Edit, Bash
 
 Issue to hotfix: $ARGUMENTS
 
-Follow the hotfix-process workflow. Minimal change only. Test thoroughly. Merge to main and release branch.
+Follow the hotfix-process workflow. Minimal change only — no refactors, no unrelated cleanup.
+Guard the fix, then verify against the affected scope's gates.
+
+**Review gate (step 5) — before opening the {{PR_TERM}}:** spawn a `reviewer` Task agent:
+> "Review this hotfix diff (`git diff {{DEFAULT_BRANCH}}...HEAD`) for: `$ARGUMENTS`. This is going
+> straight to production. Confirm the change is minimal and reversible, addresses the root cause,
+> and carries no unrelated edits. Flag anything that could make the incident worse. Apply the full
+> reviewer checklist. Output BLOCKER/WARNING/SUGGESTION/PRAISE findings and an overall verdict."
+
+Show the verdict in chat. **BLOCKER findings must be resolved before the {{PR_TERM}} is opened.**
+If the outage is actively burning and the fix is a trivial revert, you may ask the user to approve
+skipping this gate — state that you are asking, and record the skip in the {{PR_TERM}}. Never skip
+it silently. Then land it via {{PR_TERM}} and forward-port.

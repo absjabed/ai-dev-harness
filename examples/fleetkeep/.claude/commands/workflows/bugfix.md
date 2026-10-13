@@ -1,6 +1,6 @@
 ---
-description: Full bug fix workflow — reproduce → root cause → fix → test → commit
-allowed-tools: Read, Write, Edit, Bash
+description: Full bug fix workflow — reproduce → root cause → fix → verify → review → commit
+allowed-tools: Read, Write, Edit, Bash, Task
 ---
 @.ai/agents/developer-agent.md
 @.ai/agents/qa-agent.md
@@ -27,4 +27,14 @@ allowed-tools: Read, Write, Edit, Bash
 
 Bug to fix: $ARGUMENTS
 
-Follow the bug-fixing workflow completely. Write a failing test first. Fix the root cause. Verify fix. Commit with "fix:" prefix.
+Follow the bug-fixing workflow completely. Guard the fix first — a failing test where the scope has
+a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify.
+
+**Review gate (step 7) — before committing:** spawn a `reviewer` Task agent:
+> "Review the current fix diff (`git diff HEAD`) for: `$ARGUMENTS`. Confirm it addresses the root
+> cause rather than a symptom, follows the loaded scope's standards, and introduces no regression
+> in the surrounding code. Apply the full reviewer checklist. Output BLOCKER/WARNING/SUGGESTION/
+> PRAISE findings and an overall verdict."
+
+Show the verdict in chat. **BLOCKER findings must be resolved before you commit** — re-run the
+reviewer after fixing them. Then commit with a "fix:" prefix.

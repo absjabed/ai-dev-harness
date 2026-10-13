@@ -24,7 +24,13 @@ Fix causes, not symptoms.
    components, and any shared contract other layers or services depend on (a schema change in
    particular must be mirrored wherever else it is mapped — see the scope standards). Call out any
    per-tenant / per-environment impact ({{TENANT_ISOLATION_RULE}}).
-7. **Commit** — Follow {{COMMIT_CONVENTION}} and reference the tracker ticket, e.g.
+7. **Review gate** — Spawn the Reviewer on the fix diff before committing. It is read-only, so it
+   reports rather than edits. A fix is a change like any other: the smaller it looks, the less
+   scrutiny it tends to get, which is exactly when a wrong root cause slips through. **BLOCKER
+   findings must be resolved before step 8.** Keep it proportionate — this is one agent on a small
+   diff, not the full feature gate.
+8. **Commit** — Follow {{COMMIT_CONVENTION}} and reference the tracker ticket, e.g.
    `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`.
 
-**Report:** root cause, the fix, how it was verified, and any related risk you found.
+**Report:** root cause, the fix, how it was verified, the review verdict, and any related risk you
+found.
