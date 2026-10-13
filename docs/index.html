@@ -103,6 +103,7 @@ footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);c
   <a href="#hooks">Hooks &amp; guardrails</a>
   <a href="#rules">Path-scoped rules</a>
   <a href="#workflows">Workflows</a>
+  <a href="#runtime">Runtime verification</a>
   <a href="#release">Release flow</a>
   <a href="#standards">Standards &amp; templates</a>
   <a href="#memory">Memory</a>
@@ -192,7 +193,7 @@ forgetting, not the ones that come from judgment.</p>
 <li>
   <h3>Run <code>/init-project</code></h3>
   <p>It interviews you across identity, repo topology, stack, commands, conventions, version control,
-  security, design system, risk profile, branding and release deliverables — then fills every skeleton and writes
+  security, design system, risk profile, branding, test environments and release deliverables — then fills every skeleton and writes
   <code>.claude/hooks/hooks.env</code>.</p>
   <p>Shape the tree while you're there: single-project repos delete the <code>backend/</code> and
   <code>frontend/</code> subfolders; headless projects delete the design subtree; unused per-stack
@@ -376,7 +377,7 @@ lessons.</p>
 <p>Playbooks in <code>.ai/workflows/</code> are the method the commands follow — edit a playbook and
 the matching command changes behaviour. They cover feature development, bug fixing, hotfixes,
 runtime verification, releases, code review, story generation, and harness improvement.</p>
-<h3>Runtime verification</h3>
+<h3 id="runtime">Runtime verification</h3>
 <p>After review and the security scan, the feature, bugfix and hotfix workflows prove the change against a
 running system: the agent proposes the levels the change needs — <strong>API</strong> calls with
 <code>curl</code>, a <strong>UI</strong> run of the journeys in a real browser (Claude in Chrome by default,
@@ -385,6 +386,25 @@ confirm, runs them against the test environment and writes <code>test-specs/e2e-
 planned check that did not run, blocks the commit unless you explicitly accept it. Hotfixes run a smoke
 check only; <code>/workflows:verify</code> does the same for ad-hoc work. Production hosts listed in
 <code>E2E_FORBIDDEN_HOSTS</code> are hard-blocked by <code>e2e-guard.sh</code>.</p>
+<table>
+<thead><tr><th>Level</th><th>Proposed when the change touches</th><th>What runs</th></tr></thead>
+<tbody>
+<tr><td><strong>API</strong></td><td>Endpoints, contracts, validation, auth, tenancy</td><td><code>curl</code> against the test base URL: happy path, 400, 401, 403, another tenant's record (must be refused), 404, 409</td></tr>
+<tr><td><strong>UI</strong></td><td>Pages, components, forms, routing, client state</td><td>The <code>test-specs.md</code> journeys in Claude in Chrome (default) or Playwright: screenshots, console errors, failed network calls</td></tr>
+<tr><td><strong>DB</strong></td><td>Schema, migrations, data access, backfills</td><td><code>SELECT</code>-only checks through a read-only database MCP server: rows written, tenant key set, nothing else touched</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><p><strong>Safety rules.</strong> It runs in your session, not a sub-agent — you confirm the plan,
+do any login yourself and decide on failures. Before a UI journey it checks the signed-in account is a
+listed test account, because Claude in Chrome uses your real profile. API tokens come from a token
+command run inline per request, or an environment variable exported <em>before</em> starting Claude Code
+— never printed or stored. The database is never written. Screenshots stay local (ignore
+<code>.ai/features/**/e2e-screenshots/</code>), and the report is re-checked for secrets and personal data
+at the commit STOP. Production checks after a deploy are a human's or CI's job.</p></div>
+<p>Set it up in <code>project-config.md</code> → <em>Test environments</em> (URLs, start commands, test-token
+source, test accounts, optional read-only DB server) and <code>E2E_FORBIDDEN_HOSTS</code>. Claude in Chrome
+needs <code>claude --chrome</code> (or <code>/chrome</code> → Enabled by default), the extension and a
+<code>/login</code> sign-in; a project file cannot turn it on, and it isn't available in WSL.</p>
 <h3>The epic path</h3>
 <p>When <code>/ba</code> produced an <code>epic-breakdown.md</code>, the feature workflow switches to
 six phases:</p>
