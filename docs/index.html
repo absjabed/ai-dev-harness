@@ -193,8 +193,9 @@ forgetting, not the ones that come from judgment.</p>
 </li>
 <li>
   <h3>Verify nothing is unfilled</h3>
-  <pre><code>grep -rn '{{' .ai CLAUDE.md .claude/hooks/hooks.env | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|templates/artifact-header|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'</code></pre>
-  <p>Empty output means done.</p>
+  <pre><code>grep -rnE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|commands/init-project.md|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'</code></pre>
+  <p>Empty output means done. It scans <code>.claude/</code> as well as <code>.ai/</code> — commands
+  and sub-agents carry tokens too, and an unfilled one there stays invisible until a command misbehaves.</p>
 </li>
 <li>
   <h3>Switch the guardrails on</h3>

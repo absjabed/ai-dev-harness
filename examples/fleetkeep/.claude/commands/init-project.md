@@ -12,7 +12,7 @@ conversationally — ask grouped questions, confirm, then write.
 ## Step 1 — Orient
 
 1. Confirm this is a fresh template (skeleton files still contain `{{TOKENS}}` / `[FILL IN]` blocks).
-   Run: `grep -rl '{{' .ai CLAUDE.md 2>/dev/null | head` to see what's unfilled.
+   Run: `grep -rlE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md 2>/dev/null | head` to see what's unfilled.
 2. If `$ARGUMENTS` is given, use it as the initial project description; otherwise ask for one.
 
 ## Step 2 — Interview (ask in these rounds; 3–6 questions per round, confirm as you go)
@@ -35,11 +35,17 @@ propose a sensible default and mark it.
 
 Once values are confirmed:
 
-1. Substitute every `{{TOKEN}}` with its value across the template:
-   - `.ai/config/**`, `.ai/context/**`, `.ai/standards/project/**`, `.ai/config/branding.md`, `CLAUDE.md`.
-   - Prefer editing files directly. A scripted replace is fine, but never touch reference-only trees:
-     the per-stack subfolders below, `.ai/standards/universal/vcs/`, and an `examples/` directory if
-     this repo happens to have one (older template layouts shipped a worked example there).
+1. Substitute every `{{TOKEN}}` with its value across **all of `.ai/`, `.claude/` and `CLAUDE.md`** —
+   tokens live in personas (`.ai/agents/`), playbooks (`.ai/workflows/`), templates
+   (`.ai/templates/`), branding, config, context and standards, and in the commands and sub-agents
+   under `.claude/`. The scope is everything *except* the following, so a newly added file is covered
+   by default rather than silently left out:
+   - **Reference-only trees** — the per-stack subfolders below, `.ai/standards/universal/vcs/`, and an
+     `examples/` directory if this repo has one. These are worked examples; filling them corrupts them.
+   - **Harness-maintenance files that document token *names*** — `.ai/CUSTOMIZATION.md`,
+     `.ai/agents/harness-engineer-agent.md`, `.ai/agents/harness-guide-agent.md`,
+     `.ai/workflows/harness-improvement.md`, and this file. Their `{{…}}` are vocabulary, not slots.
+   - Prefer editing files directly. A scripted replace is fine if it honours the exclusions above.
    - **Stack reference library:** the per-stack files under `.ai/standards/project/**/<stack>/` (e.g.
      `backend/node/`, `frontend/react/`) and `.ai/standards/universal/vcs/*.md` are **reference-only** —
      the system reads only the top-level template files. When filling
@@ -62,7 +68,7 @@ Write `.claude/hooks/hooks.env` from the answers:
 
 ## Step 5 — Finish
 
-1. Run `grep -rn '{{' .ai CLAUDE.md .claude/hooks/hooks.env | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|templates/artifact-header|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'` and resolve or report any leftover tokens. (`.ai/CUSTOMIZATION.md` documents token names, and the per-stack reference files under `standards/project/**/<stack>/` plus `standards/universal/vcs/` are reference-only — don't treat those as unfilled.)
+1. Run `grep -rnE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|commands/init-project.md|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'` and resolve or report any leftover tokens. The exclusions are exactly the step 3 exclusions — reference-only trees and the files that document token names. It must return nothing.
 2. Ask whether to delete the reference-only trees now that the stack is chosen — the unused per-stack
    folders under `.ai/standards/project/**/<stack>/`, the unused `.ai/standards/universal/vcs/*`
    profiles, and an `examples/` directory if this repo has one. Delete only what they confirm.

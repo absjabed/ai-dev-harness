@@ -22,12 +22,14 @@ placeholders. There are **two ways** to fill them in:
 When you're done, this should return nothing:
 
 ```bash
-grep -rn '{{' .ai CLAUDE.md .claude/hooks/hooks.env | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|templates/artifact-header|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'
+grep -rnE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|commands/init-project.md|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'
 ```
 
-(This guide is excluded because it documents token *names* like `{{PROJECT_NAME}}`; the per-stack
-folders and VCS provider profiles are reference-only — see [the stack reference
-library](#the-stack-reference-library).)
+It scans `.claude/` as well as `.ai/`: tokens live in commands and sub-agents too, not only in
+config and context. Excluded on purpose: this guide, `init-project.md` and the harness-maintenance
+files, because they document token *names* like `{{PROJECT_NAME}}`; and the per-stack folders and
+VCS provider profiles, which are reference-only — see [the stack reference
+library](#the-stack-reference-library).
 
 ---
 

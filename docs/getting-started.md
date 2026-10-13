@@ -126,11 +126,13 @@ all 12 variability axes to the exact files and tokens they own.
 Nothing unfilled should remain:
 
 ```bash
-grep -rn '{{' .ai CLAUDE.md .claude/hooks/hooks.env | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|templates/artifact-header|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'
+grep -rnE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|commands/init-project.md|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'
 ```
 
-Empty output means done. The exclusions are deliberate: `CUSTOMIZATION.md` and the harness-
-maintenance docs discuss token *names*, and the per-stack and VCS files are references you copy from.
+Empty output means done. It scans `.claude/` as well as `.ai/` — commands and sub-agents carry
+tokens too, and an unfilled one there is invisible until a command misbehaves. The exclusions are
+deliberate: `CUSTOMIZATION.md`, `init-project.md` and the harness-maintenance docs discuss token
+*names*, and the per-stack and VCS files are references you copy from.
 
 **Then check the guardrails are actually on.** `.claude/hooks/hooks.env` is the single config for
 all hook behaviour and it is **inert-safe** — a blank value or `*_CHECK="off"` skips that check
