@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Harness Guide</title>
+<title>AI Dev Harness Guide</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F8A72'/%3E%3Cpath d='M16 6.5l7 2.6v5.7c0 4.3-2.9 7.9-7 8.9-4.1-1-7-4.6-7-8.9V9.1l7-2.6z' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linejoin='round'/%3E%3Cpath d='M12.6 15.9l2.5 2.5 4.4-4.8' fill='none' stroke='%23fff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -116,7 +116,7 @@ main a{color:var(--accent);text-underline-offset:2px}
         <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div><strong>AI Harness</strong><span>Setup &amp; component guide · v1.0.0</span></div>
+    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.0.0</span></div>
   </div>
   <h2>Start here</h2>
   <a href="#what">What it is</a>
@@ -146,13 +146,14 @@ main a{color:var(--accent);text-underline-offset:2px}
 </nav>
 
 <main>
-<h1>AI Harness</h1>
+<h1>AI Dev Harness</h1>
 <p class="lede">A governed AI development lifecycle for Claude Code. Copy it into a repo, answer one
 interview, and specialist agents deliver features through the same gates, standards and guardrails
 every time.</p>
 
 <h2 id="what">What it is</h2>
-<p>The harness replaces ad-hoc prompting with a delivery model: specs before code, a human approving
+<p>AI Dev Harness is a development-workflow layer that runs <em>inside</em> an agent harness —
+Claude Code — not an agent runtime itself. The harness replaces ad-hoc prompting with a delivery model: specs before code, a human approving
 at every gate, and automated checks that run whether or not the model cooperates. It is a
 <strong>template</strong> — every project-specific value is a <code>{{TOKEN}}</code> or a
 <code>[FILL IN]</code> block until you configure it.</p>

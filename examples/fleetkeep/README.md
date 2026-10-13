@@ -1,10 +1,12 @@
-# AI Harness
+# AI Dev Harness
 
 > Human-led. AI-powered. Governed by design.
 
-AI Harness is an **AI-Driven Lifecycle (AI DLC)** framework that turns AI-assisted coding into a governed, repeatable software engineering process. It is a **template**: copy it into a repo, run `/init-project`, and the agents pick up that project's stack, standards and guardrails.
+AI Dev Harness is an **AI-Driven Lifecycle (AI DLC)** framework that turns AI-assisted coding into a governed, repeatable software engineering process. It is a **template**: copy it into a repo, run `/init-project`, and the agents pick up that project's stack, standards and guardrails.
+It is a development-workflow layer that runs **inside** an agent harness — Claude Code — not an
+agent runtime itself.
 
-Instead of relying on ad-hoc prompts, AI Harness provides a structured delivery model where specialized AI agents collaborate throughout the Software Development Lifecycle (SDLC), following shared engineering standards, project knowledge, reusable workflows, and automated quality gates.
+Instead of relying on ad-hoc prompts, AI Dev Harness provides a structured delivery model where specialized AI agents collaborate throughout the Software Development Lifecycle (SDLC), following shared engineering standards, project knowledge, reusable workflows, and automated quality gates.
 
 ---
 
@@ -137,7 +139,7 @@ Build enterprise software faster, safer, and more consistently by combining the 
 
 ## AI-Driven Lifecycle (AI DLC)
 
-AI Harness orchestrates specialist AI agents across the complete software delivery lifecycle.
+AI Dev Harness orchestrates specialist AI agents across the complete software delivery lifecycle.
 
 ```
 Business Need
@@ -184,7 +186,7 @@ A portable Markdown-based knowledge repository containing:
 
 ### AI Agents
 
-AI Harness includes specialist AI agents such as:
+AI Dev Harness includes specialist AI agents such as:
 
 - Business Analyst
 - Solution Architect
@@ -214,7 +216,7 @@ Every generated artifact follows predefined standards including:
 
 ### Automated Guardrails
 
-AI Harness automatically prevents unsafe operations including:
+AI Dev Harness automatically prevents unsafe operations including:
 
 - Force pushes
 - Direct production deployments
@@ -262,7 +264,7 @@ examples/fleetkeep/       → a fully configured copy of both layers (worked ref
 
 ## Documentation
 
-AI Harness is documented in layered guides. Start here and drill into whichever part you need.
+AI Dev Harness is documented in layered guides. Start here and drill into whichever part you need.
 
 | Document | Read it when you want to… |
 |----------|----------------------------|
