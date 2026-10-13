@@ -75,7 +75,7 @@ Write `.claude/hooks/hooks.env` from the answers:
 2. Ask whether to delete the reference-only trees now that the stack is chosen — the unused per-stack
    folders under `.ai/standards/project/**/<stack>/`, the unused `.ai/standards/universal/vcs/*`
    profiles, and an `examples/` directory if this repo has one. Delete only what they confirm.
-3. Append a one-line entry to `.ai/memory/decisions.md`: `YYYY-MM-DD | Initialized agent system for {{PROJECT_NAME}} | via /init-project | initializer`.
+3. Append a one-line entry to `.ai/memory/decisions.md`: `YYYY-MM-DD | Initialized agent system for {{PROJECT_NAME}} from harness v<version> | via /init-project | initializer`, where `<version>` is the contents of `.claude/HARNESS_VERSION`. Leave that file as it is: it records which template release this project was set up from.
 4. Summarize what was filled and suggest the first real command (e.g. `/ba <feature>` or `/agents:architect`).
 
 Project description: $ARGUMENTS

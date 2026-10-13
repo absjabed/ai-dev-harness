@@ -72,6 +72,10 @@ From a clone of this repo, copy into your project's repo root:
 .ai/  .claude/  .mcp.json  CLAUDE.md  AGENTS.md  COMMANDS.md  README.md
 ```
 
+`.claude/HARNESS_VERSION` comes along with `.claude/`: it records which template release you copied
+(it matches a `v<version>` tag here), and `/init-project` notes it in `.ai/memory/decisions.md`.
+Leave it as it is — later, `git log v<version>..` in this repo lists everything you don't have yet.
+
 Optionally bring `examples/fleetkeep/` along while you configure — it is a fully worked version of
 every file you are about to fill in, and `/init-project` offers to delete it at the end.
 

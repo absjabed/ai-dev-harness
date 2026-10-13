@@ -21,6 +21,7 @@ for any project once `.ai/` is filled in.
 | [`rules/`](rules) | Path-scoped rules: area-specific instructions Claude Code loads only when it reads or edits a matching file. `_example-area.md` is an inert example to copy. |
 | [`scripts/`](scripts) | Helper scripts: `devops-mode.sh` (toggle DevOps execute mode) and `md-to-docx.py` (Word copy of the release deployment guide). |
 | `settings.json` | Hook registration (which script fires on which event). |
+| `HARNESS_VERSION` | The template release this copy came from (e.g. `1.0.0`, matching git tag `v1.0.0` in the template repo). Recorded by `/init-project`; leave it unchanged in a project, so you can tell later what it runs and what an upgrade would bring (`git log v<version>..` in the template repo). |
 | `settings.local.json` | Local, machine-specific overrides — git-ignored. Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
 
 ---

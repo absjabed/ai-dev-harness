@@ -22,7 +22,7 @@ Every moving part of the harness: what it is, when it runs, and what you get bac
 | Layer | Path | Nature | Contains |
 |---|---|---|---|
 | Knowledge | `.ai/` | Markdown only — **nothing executes** | Agent personas, workflow playbooks, engineering standards, output templates, project config/context, memory logs |
-| Execution | `.claude/` | What Claude Code actually runs | Slash commands, sub-agent definitions, nine hooks, `settings.json`, helper scripts |
+| Execution | `.claude/` | What Claude Code actually runs | Slash commands, sub-agent definitions, nine hooks, `settings.json`, helper scripts, `HARNESS_VERSION` (which template release this is) |
 
 A command in `.claude/` pulls personas and standards from `.ai/` with `@`-includes, so the same
 command behaves differently — correctly — per project.

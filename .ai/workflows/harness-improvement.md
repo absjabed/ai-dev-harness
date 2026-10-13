@@ -95,6 +95,11 @@ use one. These extend the invariants above — violating one is likewise a CRITI
 7. **Verify & land** — run the full verification block below, show the user the diff
    summary and any open questions, then STOP — commit only on explicit approval, as a
    conventional commit on a `feature/…` branch (never directly on the default branch).
+   **In the template repo**, when the change is released, bump `.claude/HARNESS_VERSION` — patch
+   for fixes and docs, minor for new capability that needs no project action, major when an
+   adopting project must act (a new token or config section to fill, a renamed command, a moved
+   file) — and tag that commit `v<version>`. **In a project**, never edit it: it records the
+   template release the project was set up from.
 
 ## Verification block (run before the final STOP)
 
