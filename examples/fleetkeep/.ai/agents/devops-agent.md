@@ -37,7 +37,8 @@ against `rg-fleetkeep-prod` is blocked locally by `git-guard.sh`.
 - [ ] Required **environment variables** present for the target stage (see `.env.example`).
 - [ ] **DB migrations** planned — run `dotnet ef database update --project src/Api/FleetKeep.Infrastructure`; backward-compatible with running code.
 - [ ] **Rollback plan** documented (previous stack/version, how to revert).
-- [ ] **Health checks** verified post-deploy.
+- [ ] **Health checks** verified post-deploy — by the pipeline or a human; `e2e-guard.sh` blocks the
+      agent from production hosts.
 - [ ] `dotnet build -c Release` + any tests green on the release commit.
 
 ## Rules

@@ -51,6 +51,7 @@ The method lives in `.ai/workflows/`. Follow the matching playbook step by step:
 | Urgent production fix | `.ai/workflows/hotfix-process.md` |
 | Release | `.ai/workflows/release-process.md` |
 | Reviewing a diff | `.ai/workflows/code-review.md` |
+| Proving a change against a running system | `.ai/workflows/runtime-verification.md` |
 | Changing this harness | `.ai/workflows/harness-improvement.md` |
 
 Adopt the matching persona from `.ai/agents/` while you do it — `developer-agent.md`,
@@ -68,7 +69,11 @@ continue past one on your own judgement.
    to commit.
 1. **Technical spec approved** — before writing any implementation code.
 2. **Design approved** — for any UI surface, before building it.
-3. **Verification reported** — state plainly what you verified and what you did not.
+3. **Verification reported** — state plainly what you verified and what you did not. After review
+   and the security check, run the runtime checks in `.ai/workflows/runtime-verification.md` — API
+   calls, a browser run of the UI journeys, read-only DB checks, as the change needs — after
+   confirming the plan with the human. A failed or skipped planned check blocks the commit unless
+   the human explicitly accepts it.
 4. **Commit** — show the message and the change list; get a yes.
 5. **Pull request** — show the description; get a yes before opening anything.
 
@@ -93,6 +98,9 @@ another agent they do not exist, so treat the following as hard rules you enforc
 - If `FRONTEND_ENV_CHECK` is on, obey `FRONTEND_ENV_GOOD_HINT` for environment access.
 - If `DESIGN_TOKEN_CHECK` is on, never hardcode a colour — use the tokens in `DESIGN_TOKEN_DOC`.
 - If `TDD_CHECK` is on, write the failing test before the implementation.
+- **Never** send a request to, or open in a browser, any host matching `E2E_FORBIDDEN_HOSTS`.
+  Runtime checks use only the Test environments URLs in `.ai/config/project-config.md`; never
+  write to a database while checking, and never print or store a token or password.
 
 `hooks.env` is the single source for all of these values. Read it at the start of a session; it is
 short and it tells you what this project actually enforces.
@@ -106,6 +114,7 @@ Feature work produces documents, not just code. Use the templates in `.ai/templa
 ├── requirement-spec.md     user-stories.md      test-specs.md
 ├── technical-specs/        design/design-spec.md
 ├── review-report.md        security-report.md   pr-description.md
+├── test-specs/e2e-report.md   # runtime verification: API / UI / DB checks
 ├── deploy-notes.md         # deploy impact + fix version; unbranded, read by the release path
 └── STATE.md                # your own progress: phase, tasks, decisions, next action
 ```

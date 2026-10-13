@@ -57,9 +57,10 @@ Multi-step pipelines that chain several agents with human approval gates.
 
 | Command | Who uses it | What it does |
 |---------|-------------|--------------|
-| `/workflows:feature` | Lead / Dev | End-to-end feature build. Detects single feature vs epic (by whether `epic-breakdown.md` exists) and **consumes** the `/ba` + `/qa` artifacts — it does **not** generate stories, epic breakdowns, or test specs; if they're missing it stops and asks you to run `/ba` / `/qa`. Then technical spec → design gate → implement → test → review + security gate (parallel) → document & deploy notes → {PR}. Parallelises epic sub-features in isolated git worktrees. Keeps machine state at `.ai/features/<slug>/STATE.md` and resumes interrupted runs; offers opt-in per-task atomic commits at spec approval (default off). |
-| `/workflows:bugfix` | Dev | Reproduce → root cause → fix → verify → deploy notes → **review** → commit |
-| `/workflows:hotfix` | Dev / On-call | Emergency fix — fast, minimal, safe; writes deploy notes, then **review** before it lands |
+| `/workflows:feature` | Lead / Dev | End-to-end feature build. Detects single feature vs epic (by whether `epic-breakdown.md` exists) and **consumes** the `/ba` + `/qa` artifacts — it does **not** generate stories, epic breakdowns, or test specs; if they're missing it stops and asks you to run `/ba` / `/qa`. Then technical spec → design gate → implement → test → review + security gate (parallel) → document & deploy notes → runtime verification (API / UI / DB) → {PR}. Parallelises epic sub-features in isolated git worktrees. Keeps machine state at `.ai/features/<slug>/STATE.md` and resumes interrupted runs; offers opt-in per-task atomic commits at spec approval (default off). |
+| `/workflows:bugfix` | Dev | Reproduce → root cause → fix → verify → deploy notes → **review** → runtime checks → commit |
+| `/workflows:hotfix` | Dev / On-call | Emergency fix — fast, minimal, safe; writes deploy notes, then **review** and a smoke check before it lands |
+| `/workflows:verify` | Dev | Runtime verification on demand — for ad-hoc work, a `/agents:dev` change, or a re-check: proposes API calls / a real-browser UI run (Claude in Chrome, else Playwright) / read-only DB checks from the change, confirms the plan with you, runs them against the test environment, writes an e2e report. Never commits |
 | `/workflows:release` | Release owner | Security gate + release artifacts (parallel) → changelog → version bump → deployment guide (+ `.docx`) if switched on |
 
 **Example**
@@ -107,7 +108,7 @@ know what's running under the hood.
 | `orchestrator` | Master coordinator that delegates to the specialists below |
 | `developer` | Focused code-writing for implementation tasks |
 | `reviewer` | Read-only code review |
-| `qa-runner` | Test-running/writing with live browser access via Playwright |
+| `qa-runner` | Test-running/writing with live browser access via Playwright (runtime verification itself runs in the orchestrating session) |
 | `security-scanner` | Read-only security scan; the pre-commit / pre-release gate |
 | `release-manager` | Generates release notes, migration plan, rollback plan, checklist — plus, on request, the deployment guide |
 | `harness-engineer` | Authors changes to the harness itself — spawned per work package by `/harness:improve` |

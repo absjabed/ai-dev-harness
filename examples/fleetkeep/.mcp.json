@@ -6,7 +6,17 @@
     },
     "figma-bridge": {
       "command": "npx",
-      "args": ["-y", "@vkhanhqui/figma-mcp-go@latest"]
+      "args": [
+        "-y",
+        "@vkhanhqui/figma-mcp-go@latest"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
     }
   }
 }

@@ -31,10 +31,17 @@ change wins, and a migration in a hotfix must still be backward-compatible (roll
    incident. **BLOCKER findings must be resolved before step 6.** If the outage is actively burning
    and the fix is a one-line revert, say so explicitly in the pull request and have a human approve
    skipping — never skip it silently.
+5a. **Smoke verification** — per `.ai/workflows/runtime-verification.md`, but smoke only: the one broken
+   journey or request, run against a non-production environment with the fix deployed or running
+   locally — one level, a handful of checks, confirmed with the user before it runs. Production is
+   never a target. Like the review gate, it
+   may be skipped only with explicit human approval recorded in the pull request; a FAIL blocks
+   step 6.
 6. **Land it via pull request and forward-port** — open a pull request into `main`, then
    forward-port to the active development and `release/*` branches so the fix isn't lost next
    release. Never push directly to `main` and `develop`.
-7. **Deploy with monitoring** — follow the deploy notes from step 4a (update that file if reality
+7. **Deploy with monitoring** — production checks here are done by a human or by CI (the agent is
+   blocked from production hosts by `e2e-guard.sh`). Follow the deploy notes from step 4a (update that file if reality
    differs) and the DevOps deploy checklist (env vars / app config, any DB
    migration, rollback plan); watch Azure logs/metrics after rollout. Call out
    per-tenant impact (every query is scoped to the caller's tenant by the `TenantId` global query filter on `FleetKeepDbContext`).

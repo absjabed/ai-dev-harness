@@ -127,8 +127,8 @@ at every gate, and automated checks that run whether or not the model cooperates
 <code>[FILL IN]</code> block until you configure it.</p>
 <div class="grid">
   <div class="tile"><h4>16 agent personas</h4><p>BA, architect, designer, developer, QA, reviewer, security, DevOps, PM, release, orchestrator, critic and more.</p></div>
-  <div class="tile"><h4>26 slash commands</h4><p>Studios, specialists, workflows, utilities and harness maintenance.</p></div>
-  <div class="tile"><h4>8 automated hooks</h4><p>Block force pushes and protected-branch pushes, type-check and lint after edits, warn on sensitive files.</p></div>
+  <div class="tile"><h4>27 slash commands</h4><p>Studios, specialists, workflows, utilities and harness maintenance.</p></div>
+  <div class="tile"><h4>9 automated hooks</h4><p>Block force pushes, protected-branch pushes and any request to a production host; type-check and lint after edits; warn on sensitive files.</p></div>
   <div class="tile"><h4>Resumable workflows</h4><p><code>STATE.md</code> records phase, tasks and decisions, so a fresh session picks up exactly where the last one stopped.</p></div>
 </div>
 
@@ -144,6 +144,7 @@ mode, not a slogan.</p>
 <tr><td>You re-explain the stack, conventions and domain every session — and the answers drift</td><td>The filled <code>.ai/config/</code> and <code>.ai/context/</code> are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt</td></tr>
 <tr><td>Output quality depends on how well you phrased today's prompt</td><td>Personas and playbooks fix the <em>method</em>. <code>/agents:review</code> applies the same severity vocabulary on a Friday as on a Monday</td></tr>
 <tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>Reviewer and security scanner run <strong>in parallel</strong>, in separate contexts, and report rather than fix. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget</td></tr>
+<tr><td>The code passed review and tests — but nobody called the API or clicked through the screen</td><td>Runtime verification: after review and security, real API calls, a browser run of the journeys and read-only DB checks against the test environment. Failed or skipped planned checks block the commit until you accept them</td></tr>
 <tr><td>"Tests pass" — but nobody checks whether tests exist for that scope</td><td>Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened</td></tr>
 <tr><td>One bad command — a force push, a hard reset, a deploy to prod — undoes a day</td><td>Hooks <strong>hard-block</strong> them at the tool call, before the model's intent matters</td></tr>
 <tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads rejected patterns before proposing, so a "no" stays a no</td></tr>
@@ -166,9 +167,10 @@ forgetting, not the ones that come from judgment.</p>
 <thead><tr><th>Need</th><th>Why it matters</th></tr></thead>
 <tbody>
 <tr><td><strong>Claude Code</strong> at the repo root</td><td>Commands, sub-agents and hooks are discovered per repo from <code>.claude/</code></td></tr>
-<tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All eight hooks are <code>.sh</code>. Without bash they fail quietly and every guardrail is off while looking installed</td></tr>
+<tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All nine hooks are <code>.sh</code>. Without bash they fail quietly and every guardrail is off while looking installed</td></tr>
 <tr><td><strong>git</strong></td><td>Branch guards, changelog/standup commands, and the epic path's worktrees</td></tr>
-<tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian and a Figma bridge. Authenticate once with <code>/mcp</code>; everything degrades gracefully when absent</td></tr>
+<tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian, a Figma bridge and Playwright. Authenticate once with <code>/mcp</code>; everything degrades gracefully when absent</td></tr>
+<tr><td><em>for UI runtime checks</em> <strong>Claude in Chrome</strong></td><td>The default UI driver: start with <code>claude --chrome</code> (or <code>/chrome</code> → Enabled by default), install the extension, sign in with <code>/login</code>. Without it, Playwright is used</td></tr>
 </tbody>
 </table>
 <pre><code>bash -c 'echo bash-ok' &amp;&amp; git --version</code></pre>
@@ -183,6 +185,7 @@ forgetting, not the ones that come from judgment.</p>
   <div class="callout warn"><p><strong>Don't copy the template's <code>.gitignore</code>.</strong>
   Your project needs <code>.worktrees/</code> ignored — and must <em>not</em> ignore
   <code>.ai/features/</code>, because the epic path commits planning artifacts for worktrees to read.
+  Do ignore <code>.ai/features/**/e2e-screenshots/</code> — runtime-check screenshots can show personal data.
   Don't ignore <code>.claude/agent-memory/</code> either — committing it shares what the sub-agents
   learn with the team. Ignore only the per-developer <code>.claude/settings.local.json</code>.</p></div>
 </li>
@@ -282,9 +285,10 @@ same command behaves correctly on a different stack.</p>
 <table>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates</td></tr>
-<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → <strong>review</strong> → commit. BLOCKER findings block the commit</td></tr>
-<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; deploy notes, then <strong>review</strong> before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
+<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates; runtime verification (API / UI / DB) after review + security</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → <strong>review</strong> → runtime checks → commit. BLOCKERs and failed checks block the commit</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; deploy notes, then <strong>review</strong> and a smoke check before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
+<tr><td><code>/workflows:verify [&lt;slug&gt; | what changed]</code></td><td>Runtime verification on demand — API calls, a real-browser UI run, read-only DB checks — for ad-hoc work or a re-check. Never commits</td></tr>
 <tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump; then the deployment guide (+ <code>.docx</code>) if switched on — written after the confirmation gate, merged, never overwritten</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
@@ -326,7 +330,7 @@ sub-agent write to its own memory folder.</p>
 <tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td><td>Feature and bugfix implementation</td></tr>
 <tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
-<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td><td>Test writing and running, live browser checks</td></tr>
+<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td><td>Test writing and running, live browser checks (runtime verification runs in the orchestrating session)</td></tr>
 <tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td><td><code>/workflows:release</code></td></tr>
 <tr><td><code>critic</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
 <tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
@@ -343,6 +347,7 @@ review it like any other diff. For per-developer memory, set <code>memory: local
 <table>
 <thead><tr><th>Hook</th><th>Event</th><th>What it does</th></tr></thead>
 <tbody>
+<tr><td><code>e2e-guard.sh</code></td><td>PreToolUse (Bash, browser MCP tools)</td><td><strong>Blocks</strong> HTTP requests and Claude in Chrome / Playwright navigation to any host in <code>E2E_FORBIDDEN_HOSTS</code> — runtime checks never touch production</td></tr>
 <tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td><strong>Blocks</strong> <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches, deploys to the production stage. The first two are <strong>unconditional — there is no override flag</strong>: a deliberate history rewrite has to run from a terminal outside Claude Code</td></tr>
 <tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config</td></tr>
 <tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check + lint for the edited package; tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
@@ -354,9 +359,10 @@ review it like any other diff. For per-developer memory, set <code>memory: local
 </tbody>
 </table>
 <div class="callout"><p>All behaviour comes from <strong><code>.claude/hooks/hooks.env</code></strong> —
-25 keys covering version control, deploy guard, repo layout, quality commands, sensitive files,
-tenant isolation, frontend env, design tokens and the TDD nudge. Warnings go to stderr and are
-non-blocking; only the git guard and sensitive-file rules hard-block.</p></div>
+26 keys covering version control, deploy guard, repo layout, quality commands, sensitive files,
+tenant isolation, frontend env, design tokens, the TDD nudge and the runtime-verification guard.
+Warnings go to stderr and are non-blocking; only the git guard, the e2e guard and sensitive-file
+rules hard-block.</p></div>
 
 <h2 id="rules">Path-scoped rules</h2>
 <p>Claude Code loads every <code>.md</code> file under <code>.claude/rules/</code>. A rule with
@@ -369,7 +375,16 @@ lessons.</p>
 <h2 id="workflows">Workflows</h2>
 <p>Playbooks in <code>.ai/workflows/</code> are the method the commands follow — edit a playbook and
 the matching command changes behaviour. They cover feature development, bug fixing, hotfixes,
-releases, code review, story generation, and harness improvement.</p>
+runtime verification, releases, code review, story generation, and harness improvement.</p>
+<h3>Runtime verification</h3>
+<p>After review and the security scan, the feature, bugfix and hotfix workflows prove the change against a
+running system: the agent proposes the levels the change needs — <strong>API</strong> calls with
+<code>curl</code>, a <strong>UI</strong> run of the journeys in a real browser (Claude in Chrome by default,
+Playwright as fallback), read-only <strong>DB</strong> checks through a database MCP server — asks you once to
+confirm, runs them against the test environment and writes <code>test-specs/e2e-report.md</code>. A FAIL, or a
+planned check that did not run, blocks the commit unless you explicitly accept it. Hotfixes run a smoke
+check only; <code>/workflows:verify</code> does the same for ad-hoc work. Production hosts listed in
+<code>E2E_FORBIDDEN_HOSTS</code> are hard-blocked by <code>e2e-guard.sh</code>.</p>
 <h3>The epic path</h3>
 <p>When <code>/ba</code> produced an <code>epic-breakdown.md</code>, the feature workflow switches to
 six phases:</p>
@@ -404,7 +419,8 @@ never overwritten.</p>
 story, test plan, security report, PR description, release checklist, ADR, the branded artifact
 header, <code>feature-state.md</code> (which becomes <code>STATE.md</code>), <code>deploy-notes.md</code>
 (each feature's deploy impact, read by the release path), and <code>deployment-guide.md</code> +
-<code>release-guides-index.md</code> for the optional human-facing release guide.</p>
+<code>release-guides-index.md</code> for the optional human-facing release guide, and
+<code>e2e-report.md</code> for runtime verification results.</p>
 
 <h2 id="memory">Memory</h2>
 <table>
@@ -436,6 +452,7 @@ with <code>/utils:scope auto</code>.</p>
 ├── technical-specs/             # backend.md / frontend.md when fullstack
 ├── design/design-spec.md        # /agents:design
 ├── test-specs/test-report.md    # what was and wasn't verified
+├── test-specs/e2e-report.md     # runtime checks against a running system
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
 ├── deploy-notes.md              # deploy impact + fix version; never branded
@@ -446,9 +463,9 @@ With the deployment guide switched on, releases also write <code>docs/release/&l
 
 <h2 id="portability">Other AI agents</h2>
 <p>The harness splits into a <strong>method</strong> that travels and an <strong>enforcement
-mechanism</strong> that does not. <code>.ai/</code> is 85 files of plain markdown with no
-tool-specific syntax. The Claude Code coupling sits in the 26 commands (76 <code>@file</code>
-includes, 114 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 8 hooks wired to Claude Code's
+mechanism</strong> that does not. <code>.ai/</code> is 87 files of plain markdown with no
+tool-specific syntax. The Claude Code coupling sits in the 27 commands (77 <code>@file</code>
+includes, 121 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 9 hooks wired to Claude Code's
 event names.</p>
 <table>
 <thead><tr><th>Step</th><th>What it gives you</th><th>Cost</th></tr></thead>
@@ -487,6 +504,7 @@ those become instructions, and instructions are advisory.</p></div>
 <tr><td>Small change, no specs</td><td><code>/agents:dev "&lt;change&gt;"</code></td></tr>
 <tr><td>Bug</td><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td></tr>
 <tr><td>Production emergency</td><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td></tr>
+<tr><td>Prove a change on the running system</td><td><code>/workflows:verify "&lt;what changed&gt;"</code></td></tr>
 <tr><td>Release</td><td><code>/agents:security</code> → <code>/workflows:release &lt;version&gt;</code></td></tr>
 <tr><td>Review what I just wrote</td><td><code>/agents:review</code></td></tr>
 <tr><td>Daily check-in</td><td><code>/utils:status</code>, <code>/utils:standup</code></td></tr>

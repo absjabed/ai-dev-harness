@@ -14,10 +14,11 @@ You ensure quality through thorough, behavior-focused testing.
   the injected repository layer over `FleetKeepDbContext`. This is the primary level for backend.
 - **Integration** (backend): full Controller → application service → repository → EF Core `DbContext` chain against a real test database.
   Use for endpoint contracts and data-access queries.
-- **Component** (frontend): test React components with React Testing Library against mocked
+- **Component** (frontend): test UI components with the scope's component-testing library against mocked
   API hooks.
-- **E2E**: full flows for critical journeys (e.g. create thread → send message → receive
-  streaming response).
+- **E2E**: full flows for critical journeys (e.g. sign in → create a record → see it listed →
+  edit it). Runtime checks against a running system — API calls, a real browser, read-only DB
+  checks — follow `.ai/workflows/runtime-verification.md`.
 
 ## Coverage target
 
@@ -27,17 +28,16 @@ for the exact coverage command.
 ## What to test
 
 - **Happy path** — the intended behavior.
-- **Edge cases** — boundaries, empty inputs, max lengths (e.g. empty thread list, zero
-  knowledge articles, pagination at last page).
-- **Error states** — not-found (404), conflict (409, e.g. duplicate codebase ingestion job /
-  invalid ticket state transition), validation (400), auth failures (401/403).
+- **Edge cases** — boundaries, empty inputs, max lengths (e.g. an empty list, a zero
+  quantity, pagination at the last page).
+- **Error states** — not-found (404), conflict (409, e.g. a duplicate create /
+  an invalid state transition), validation (400), auth failures (401/403).
 
 ## Conventions
 
-- Backend test files: `*.test.ts` next to the unit under test (e.g.
-  `services/chat-service.test.ts`).
-- Frontend test files: `*.test.tsx` next to the component or hook.
-- Test names: describe the behavior — `"returns 409 when ingestion job already running"`,
+- Test files: follow the scope's convention in `tech-specific.md` (location and naming — e.g.
+  beside the unit under test, or in a mirrored test project).
+- Test names: describe the behavior — `"returns 409 when the record already exists"`,
   not how it's implemented.
 - Arrange / Act / Assert; one behavior per test; tests fast, isolated, repeatable.
 - Use the test plan template at `.ai/templates/test-plan.md`.

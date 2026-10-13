@@ -117,7 +117,7 @@ Everything that changes from project to project, and exactly where to change it.
 ### 12. Integrations (MCP)
 - **Files:** `.mcp.json` (repo root) + `allowed-tools:` grants in `.claude/commands/**`
 - The template ships Atlassian's remote MCP server (Jira/Confluence via OAuth — the file holds no
-  secrets). Swap or remove the server entry if your tracker differs; grant its tools only to the
+  secrets), the Figma bridge, and Playwright MCP for runtime UI checks (axis 14). Swap or remove the server entry if your tracker differs; grant its tools only to the
   commands that need them (`mcp__<server>`), and keep integration steps optional so everything
   works with no server connected. The binding rules are invariants 9–13 in
   `.ai/workflows/harness-improvement.md`; change integrations via `/harness:improve`.
@@ -140,6 +140,34 @@ Everything that changes from project to project, and exactly where to change it.
   deliverable (PDF, wiki page)? Swap the converter and the regenerate step only.
 - Not tracking releases by version at all? Leave the guide off; deploy notes still record each
   change's deploy impact, with the fix version `unknown — to be confirmed`.
+
+### 14. Runtime verification (API / UI / DB checks)
+- **Files:** `.ai/config/project-config.md` → *Test environments*; playbook
+  `.ai/workflows/runtime-verification.md`; template `.ai/templates/e2e-report.md`; `.mcp.json`
+  (`playwright`); `E2E_FORBIDDEN_HOSTS` in `.claude/hooks/hooks.env` (enforced by `e2e-guard.sh`)
+- After review and the security scan, `/workflows:feature`, `/workflows:bugfix` and
+  `/workflows:hotfix` (smoke only) propose API / UI / DB checks from the change, confirm the plan
+  with you once, and run them against the test environment; `/workflows:verify` does the same for
+  ad-hoc work. A FAIL or a planned check that did not run blocks the commit unless you accept it.
+- **UI driver:** Claude in Chrome by default — it needs each developer to start Claude Code with
+  `claude --chrome` (or `/chrome` → *Enabled by default*), the browser extension, and a claude.ai
+  login; a project file cannot switch it on. Playwright MCP (shipped in `.mcp.json`, fetched by
+  `npx`) is the fallback; set the UI driver to `playwright` to make it the default. Pin
+  `@playwright/mcp` to a version if your policy requires it.
+- **Database checks** are opt-in and engine-specific, so no server ships. Add a read-only database
+  MCP server for your engine to `.mcp.json` — connected as a **SELECT-only** user, to a local or
+  test database only, with credentials from an environment variable, never in the file — then name
+  it in *Test environments* and grant `mcp__<server>` in the `allowed-tools` of the four commands
+  above. Without one, DB checks are reported NOT RUN and API reads stand in.
+- **Never production:** list production host substrings in `E2E_FORBIDDEN_HOSTS`. `e2e-guard.sh`
+  hard-blocks HTTP clients in Bash/PowerShell and browser-tool navigation to them. It is global
+  on purpose — the agent never calls or browses production for any reason, so post-deploy production
+  checks are done by a human or CI. It cannot see a test runner's own config, so keep production
+  URLs out of test config too.
+- **Credentials:** API tests take a test token from a token *command* run inline per request, or
+  from an environment variable exported **before** starting Claude Code (an `export` inside the
+  session does not persist between tool calls). Screenshots stay local — add
+  `.ai/features/**/e2e-screenshots/` to the project's `.gitignore`.
 
 ---
 

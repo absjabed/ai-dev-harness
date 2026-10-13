@@ -22,7 +22,7 @@ Every moving part of the harness: what it is, when it runs, and what you get bac
 | Layer | Path | Nature | Contains |
 |---|---|---|---|
 | Knowledge | `.ai/` | Markdown only — **nothing executes** | Agent personas, workflow playbooks, engineering standards, output templates, project config/context, memory logs |
-| Execution | `.claude/` | What Claude Code actually runs | Slash commands, sub-agent definitions, eight hooks, `settings.json`, helper scripts |
+| Execution | `.claude/` | What Claude Code actually runs | Slash commands, sub-agent definitions, nine hooks, `settings.json`, helper scripts |
 
 A command in `.claude/` pulls personas and standards from `.ai/` with `@`-includes, so the same
 command behaves differently — correctly — per project.
@@ -31,7 +31,7 @@ command behaves differently — correctly — per project.
 
 ## Commands
 
-26 commands in five families. Type them in Claude Code as `/<name> <arguments>`.
+27 commands in five families. Type them in Claude Code as `/<name> <arguments>`.
 
 ### Studios — human-in-the-loop, you drive these
 
@@ -60,9 +60,10 @@ command behaves differently — correctly — per project.
 
 | Command | Purpose | Gates |
 |---|---|---|
-| `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | **5 STOP gates**: technical spec, design, verification, commit, PR |
-| `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → deploy notes → review → commit | Verification, then a **review gate** — BLOCKER findings block the commit |
-| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline, deploy notes, plus a **review gate** before the PR — skippable only with explicit human approval, never silently |
+| `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | **5 STOP gates**: technical spec, design, verification (tests + runtime checks), commit, PR |
+| `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → deploy notes → review → runtime checks → commit | Verification, a **review gate**, then runtime checks of the original bug — BLOCKERs and failed checks block the commit |
+| `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline, deploy notes, plus a **review gate** and a **smoke check** before the PR — skippable only with explicit human approval, never silently |
+| `/workflows:verify [<slug> \| what changed]` | Runtime verification on demand — ad-hoc work, a `/agents:dev` change, a re-check | You confirm the plan; failed or skipped planned checks are reported as blocking. Never commits |
 | `/workflows:release <version>` | Security gate, release artifacts, changelog, version bump; then the deployment guide (+ `.docx`) if switched on | Security findings block the release; the guide is written only after the confirmation gate, and merged — never overwritten |
 
 ### Utilities — `/utils:*`
@@ -126,7 +127,7 @@ its own memory folder.
 | `developer` | Read, Write, Edit, Bash | inherit | — | Feature/bugfix implementation |
 | `reviewer` | Read, Bash (no Write/Edit) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
-| `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | — | Test writing/running, live browser checks |
+| `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | — | Test writing/running, live browser checks (runtime verification runs in the orchestrating session, not here) |
 | `release-manager` | Read, Write, Edit, Bash | sonnet | — | `/workflows:release` |
 | `critic` | Read, Bash (no Write/Edit) | inherit | project | `/harness:improve` |
 | `harness-engineer` | Read, Write, Edit, Bash | inherit | project | `/harness:improve` work packages |
@@ -150,6 +151,7 @@ of the harness that works whether or not the model cooperates.
 | Hook | Event | What it does |
 |---|---|---|
 | `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited — generated migrations, sensitive config |
+| `e2e-guard.sh` | PreToolUse (Bash, browser MCP tools) | **Blocks** HTTP requests (curl, wget, Invoke-WebRequest…) and Claude in Chrome / Playwright navigation to any host in `E2E_FORBIDDEN_HOSTS` — runtime checks never touch production |
 | `git-guard.sh` | PreToolUse (Bash) | **Blocks** `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage. The first two are **unconditional — there is no override flag**: a deliberate history rewrite has to be run from a terminal outside Claude Code |
 | `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check + lint for the edited package; runs the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) |
 | `post-tool-batch.sh` | PostToolBatch | Full-project type-check after a batch of parallel edits |
@@ -174,8 +176,9 @@ An un-customised file is inert-safe: nothing blocks, nothing warns.
 | Frontend env | `FRONTEND_ENV_CHECK`, `FRONTEND_ENV_BAD_PATTERN`, `FRONTEND_ENV_GOOD_HINT` |
 | Design tokens | `DESIGN_TOKEN_CHECK`, `DESIGN_TOKEN_DOC`, `DESIGN_TOKEN_EXEMPT_GLOBS` |
 | TDD nudge | `TDD_CHECK`, `TEST_FILE_PATTERNS`, `TDD_EXEMPT_GLOBS` |
+| Runtime verification guard | `E2E_FORBIDDEN_HOSTS` |
 
-Warnings go to stderr and are non-blocking; only `git-guard.sh` and the sensitive-file rules hard-block.
+Warnings go to stderr and are non-blocking; only `git-guard.sh`, `e2e-guard.sh` and the sensitive-file rules hard-block.
 
 ---
 
@@ -199,8 +202,9 @@ Method documents the commands follow. Editing a playbook changes how the matchin
 | Playbook | Covers |
 |---|---|
 | `feature-development.md` | The 9-step feature path, the epic path, and the gate definitions |
-| `bug-fixing.md` | Reproduce → root cause → guard → fix → verify → blast radius → deploy notes → review → commit |
-| `hotfix-process.md` | Branch from production, minimal change, review gate, land via PR, forward-port, post-mortem |
+| `bug-fixing.md` | Reproduce → root cause → guard → fix → verify → blast radius → deploy notes → review → runtime checks → commit |
+| `hotfix-process.md` | Branch from production, minimal change, review gate, smoke check, land via PR, forward-port, post-mortem |
+| `runtime-verification.md` | After review + security: plan API / UI / DB checks from the change, confirm once, run against the test environment (never production), report, gate |
 | `release-process.md` | Changelog, verification, dependency/secret check, version bump, tag, notes |
 | `code-review.md` | Review order and the BLOCKER/WARNING/SUGGESTION/PRAISE vocabulary |
 | `story-generation.md` | How requirements become stories |
@@ -267,6 +271,7 @@ Output shapes every agent fills in, so artifacts look the same across people and
 | `test-plan.md` | Test specification structure |
 | `security-report.md` | Findings with severity |
 | `pr-description.md` | Pull/merge request body |
+| `e2e-report.md` | Runtime verification results — plan, environment, API / UI / DB checks with PASS / FAIL / NOT RUN and evidence |
 | `release-checklist.md` | Deployment checklist |
 | `deploy-notes.md` | Per-feature deploy impact, stamped with the fix version — written by the feature, bugfix and hotfix workflows, read by the release path; unbranded |
 | `deployment-guide.md` | Skeleton for the human-facing release guide under `docs/release/<version>/` (only if switched on) |
@@ -280,7 +285,7 @@ Output shapes every agent fills in, so artifacts look the same across people and
 
 | File | Holds |
 |---|---|
-| `.ai/config/project-config.md` | Identity, stack, commands, structure, conventions, "never do" rules, release deliverables |
+| `.ai/config/project-config.md` | Identity, stack, commands, structure, conventions, "never do" rules, test environments, release deliverables |
 | `.ai/config/{backend,frontend}/project-config.md` | The per-scope versions |
 | `.ai/config/current-scope.md` | Active scope (`auto` by default) — written by `/utils:scope` |
 | `.ai/config/branding.md` | Company, product, logo, colour, footer for generated documents |
@@ -332,6 +337,7 @@ window. Force it for a session with `/utils:scope backend`; return with `/utils:
 ├── technical-specs/             # backend.md / frontend.md when fullstack
 ├── design/design-spec.md        # /agents:design
 ├── test-specs/test-report.md    # verification: what was and wasn't checked
+├── test-specs/e2e-report.md     # runtime verification: API / UI / DB checks against a running system
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
 ├── deploy-notes.md              # deploy impact + fix version, read by the release path; never branded

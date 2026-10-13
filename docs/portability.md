@@ -9,10 +9,10 @@ specific). This document measures that split and gives recipes for closing the g
 
 | Part | Size | Portable? |
 |---|---|---|
-| `.ai/` — personas, playbooks, standards, templates, config, context, memory | 85 files, ~5,000 lines | **Yes.** Plain markdown, no tool-specific syntax |
-| `.claude/commands/` — 26 commands | 26 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 76 `@file` includes, 114 `$ARGUMENTS` references |
+| `.ai/` — personas, playbooks, standards, templates, config, context, memory | 87 files, ~5,300 lines | **Yes.** Plain markdown, no tool-specific syntax |
+| `.claude/commands/` — 27 commands | 27 files | **No.** `allowed-tools` / `disallowed-tools` / `argument-hint` frontmatter, 77 `@file` includes, 121 `$ARGUMENTS` references |
 | `.claude/agents/` — 8 sub-agents | 8 files | **No.** `tools` / `model` / `memory` / `effort` frontmatter; isolated-context spawning is a Claude Code feature |
-| `.claude/hooks/` — 8 scripts | 8 scripts | **Partly.** Ordinary bash with no `CLAUDE_*` dependencies inside, but wired to Claude Code's seven hook events and fed a JSON payload on stdin |
+| `.claude/hooks/` — 9 scripts | 9 scripts | **Partly.** Ordinary bash with no `CLAUDE_*` dependencies inside, but wired to Claude Code's seven hook events and fed a JSON payload on stdin |
 | `.claude/rules/` — path-scoped rules | 1 example | **Partly.** Plain markdown, but loading by `paths:` glob is Claude Code behaviour; `AGENTS.md` tells other agents to read matching rules themselves |
 | `.mcp.json` | 1 file | **Partly.** MCP is an open standard; clients differ on config location and format |
 | `CLAUDE.md` | 1 file | Equivalent exists elsewhere: `AGENTS.md`, `GEMINI.md`, `.cursorrules` |
@@ -168,8 +168,8 @@ the translation is known to be tractable.
 | Claude Code | Translate to |
 |---|---|
 | `description:` frontmatter | The tool's command description field |
-| `@file` include (76 of them) | Inline the file's contents, or the tool's own include syntax |
-| `$ARGUMENTS` (114 refs) | The tool's argument placeholder |
+| `@file` include (77 of them) | Inline the file's contents, or the tool's own include syntax |
+| `$ARGUMENTS` (121 refs) | The tool's argument placeholder |
 | `allowed-tools:` | The tool's permission list — or, failing that, a prose constraint in the prompt |
 | Sub-agent `tools:` / `model:` | Usually no equivalent; degrade to a single agent following the persona |
 | Hook events | Nothing direct — cover with Option 2 |
@@ -187,7 +187,7 @@ source; never hand-edit the generated files.
 
 | Agent | `.ai/` knowledge | Instructions file | Commands | Sub-agents | Hooks |
 |---|---|---|---|---|---|
-| **Claude Code** | Native | `CLAUDE.md` | 26, native | 8, isolated + tool-restricted | 8, enforced |
+| **Claude Code** | Native | `CLAUDE.md` | 27, native | 8, isolated + tool-restricted | 9, enforced |
 | **Codex CLI** | Read via `AGENTS.md` | `AGENTS.md` | Option 3 | No equivalent | Option 2 |
 | **Cursor** | Read via rules pointing at `.ai/` | `AGENTS.md` / `.cursorrules` | Option 3 | No equivalent | Option 2 |
 | **Gemini CLI** | Read via instructions file | `GEMINI.md` | Option 3 | No equivalent | Option 2 |

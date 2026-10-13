@@ -1,6 +1,6 @@
 ---
-description: Full bug fix workflow — reproduce → root cause → fix → verify → deploy notes → review → commit
-allowed-tools: Read, Write, Edit, Bash, Task
+description: Full bug fix workflow — reproduce → root cause → fix → verify → deploy notes → review → runtime checks → commit
+allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwright
 ---
 @.ai/agents/developer-agent.md
 @.ai/agents/qa-agent.md
@@ -42,4 +42,13 @@ exists, otherwise ask the user once; `unknown — to be confirmed` if nobody kno
 > PRAISE findings and an overall verdict."
 
 Show the verdict in chat. **BLOCKER findings must be resolved before you commit** — re-run the
-reviewer after fixing them. Then commit with a "fix:" prefix, including the deploy notes.
+reviewer after fixing them.
+
+**Runtime verification (step 7a) — before committing:** read and follow `.ai/workflows/runtime-verification.md`
+in this session, scoped to the bug: the original failing request, journey or data state must now be
+correct, plus checks on what the blast-radius step flagged. Confirm the plan with the user once,
+then run it and write `.ai/features/<slug>/test-specs/e2e-report.md`. A FAIL or a planned check that
+did not run blocks the commit unless the user explicitly accepts it.
+
+Before committing, re-read the e2e report for secrets and personal data (screenshots are never
+committed). Then commit with a "fix:" prefix, including the deploy notes and the e2e report.

@@ -40,8 +40,14 @@ weaken tenant isolation or the audit trail.
    scrutiny it tends to get, which is exactly when a wrong root cause slips through. **BLOCKER
    findings must be resolved before step 8.** Keep it proportionate — this is one agent on a small
    diff, not the full feature gate.
+7a. **Runtime verification** — per `.ai/workflows/runtime-verification.md`, scoped to the bug: first the
+   exact runtime reproduction from step 1 (the API call, UI journey or data state that was wrong)
+   must now behave correctly, then a few checks on what the blast-radius step flagged. Confirm the
+   plan with the user once; write the e2e report next to the deploy notes
+   (`.ai/features/<slug>/test-specs/e2e-report.md`). A FAIL, or a planned check that did not run,
+   blocks step 8 unless the user explicitly accepts it.
 8. **Commit** — Follow Conventional Commits and reference the tracker ticket, e.g.
    `FK-1234: <what was broken and how it's now fixed>`.
 
-**Report:** root cause, the fix, how it was verified, the review verdict, the deploy notes (fix
-version and deploy impact), and any related risk you found.
+**Report:** root cause, the fix, how it was verified, the review verdict, the runtime verification
+result, the deploy notes (fix version and deploy impact), and any related risk you found.

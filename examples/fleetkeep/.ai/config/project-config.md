@@ -186,6 +186,37 @@ FleetKeep/
 > - Never deploy to `rg-fleetkeep-prod` from a developer machine — production deploys run only
 >   from the `deploy-prod` workflow on `main`.
 
+## Test environments
+
+Read by runtime verification (`.ai/workflows/runtime-verification.md`) — the API, UI and DB checks
+run after review and the security scan. **Never list a production URL here**; production is
+hard-blocked by `E2E_FORBIDDEN_HOSTS` in `.claude/hooks/hooks.env`.
+
+- **API base URL:** local `https://localhost:7241` (default); dev
+  `https://api-fleetkeep-dev.azurewebsites.net` when a change needs Entra or Blob behaviour the
+  local run fakes.
+- **UI URL:** local `http://localhost:5173`, pointed at the local API.
+- **Start / health:** API `dotnet watch run --project src/Api/FleetKeep.Api`, health
+  `GET /health` → 200; SPA `npm run dev` in `src/Web`.
+- **API test auth:** token command, run inline per request after `az login` as an E2E test user in
+  the **dev** Entra tenant:
+  `$(az account get-access-token --scope api://fleetkeep-api-dev/.default --query accessToken -o tsv)`.
+  For the cross-tenant checks, export `FLEETKEEP_E2E_TOKEN_OTHER` (a token for a user in the other
+  test tenant) **before** starting Claude Code. Tokens are never written down.
+- **Test accounts:** two dev tenants, *Northwind Test Haulage* and *Contoso Test Coaches*, each with a
+  transport manager, a technician and a driver — listed (without passwords) in the team vault entry
+  *FleetKeep E2E accounts*. Cross-tenant checks sign in as one and request the other's records.
+- **UI driver:** `chrome` — Claude in Chrome, so a developer can watch the journey in their own
+  browser; Playwright MCP is the fallback.
+- **E2E test command:** `npm run test:e2e` in `src/Web` (Playwright, needs the API running).
+- **DB check:** none configured — FleetKeep's integration tests cover persistence against a
+  Testcontainers SQL Server, and runtime checks confirm writes with a follow-up API `GET`. To enable
+  DB checks, add a read-only SQL Server MCP server pointed at the local container (axis 14 of
+  `.ai/CUSTOMIZATION.md`).
+- **Seed / reset:** no seed script — each run creates the data it needs through the API under a
+  test tenant and records the ids. Most of it cannot be removed (vehicle deletes are soft, audit rows
+  are append-only), so list what was created in the report. Never reset a shared dev database.
+
 ## Release deliverables
 
 Read by the release agent (`.ai/agents/release-agent.md`). Every feature, bugfix and hotfix writes

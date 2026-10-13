@@ -30,6 +30,7 @@ propose a sensible default and mark it.
 - **Design system** (any UI) → component library, styling system, palette/token source file. Ask whether the UI is a separate SPA, server-rendered by the backend, or both (mid-migration) — the `design/` subtree covers whichever exist, and which scope loads it follows from that. Only if there is no UI at all, tell the user you'll delete the `.ai/standards/project/frontend/design/` subtree.
 - **Risk profile** → whether the codebase handles regulated/sensitive data or has thin safety nets; fill the `[FILL IN]` risk blocks in `.ai/workflows/{bug-fixing,hotfix-process}.md`, or delete them.
 - **Branding** → `{{COMPANY_NAME}}`, `{{LOGO_PATH}}`, `{{PRIMARY_COLOR}}`, `{{FOOTER_TEXT}}` (see `.ai/config/branding.md`).
+- **Test environments** → local/dev API base URL and UI URL, how to start each server and its health URL, how a developer gets a **test** token and which env var holds it, the test accounts/tenants (two tenants if multi-tenant), the e2e test command, seed/reset steps, and the **production hosts** to forbid (→ `E2E_FORBIDDEN_HOSTS`). Ask whether they want read-only DB checks: if yes, help them add a read-only database MCP server to `.mcp.json` for their engine (connected as a SELECT-only user, local/test database only, no secret in the file) and grant `mcp__<server>` in `allowed-tools` of `/workflows:feature`, `/workflows:bugfix`, `/workflows:hotfix` and `/workflows:verify`. Default UI driver: Claude in Chrome. Fills *Test environments* in `.ai/config/project-config.md`.
 - **Release deliverables** → whether someone outside the dev team deploys the product (if so, turn the deployment guide on and ask who reads it and what tools they use), whether they need a Word copy, the deployable units in deploy order, and the environment/tenant rollout order. Fills *Release deliverables* in `.ai/config/project-config.md`. Default when unsure: guide `off`, Word `off`.
 
 ## Step 3 — Fill the skeletons
@@ -65,6 +66,7 @@ Write `.claude/hooks/hooks.env` from the answers:
 - `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR`
 - `TYPECHECK_CMD`, `LINT_CMD`
 - `MIGRATIONS_GLOB` + `MIGRATIONS_REGEN_CMD` (if generated migrations exist), `SENSITIVE_CONFIG_GLOBS`
+- `E2E_FORBIDDEN_HOSTS` — the production hosts from the Test environments round (substrings that identify them)
 - Turn on `TENANT_ISOLATION_CHECK`/`FRONTEND_ENV_CHECK`/`DESIGN_TOKEN_CHECK` only if the user opted in, with their supporting values.
 
 ## Step 5 — Finish

@@ -42,9 +42,10 @@ This repo ships as a **template**: every project-specific value is a `{{TOKEN}}`
 | Need | Why |
 |---|---|
 | **Claude Code** (CLI, desktop app, or IDE extension), opened at the repo root | The harness is a set of slash commands, sub-agents and hooks it loads per repo |
-| **Bash** — Git Bash or WSL on Windows, on `PATH` | The 8 hooks in `.claude/hooks/` are `.sh` scripts. Without bash they fail silently and the guardrails don't run |
+| **Bash** — Git Bash or WSL on Windows, on `PATH` | The 9 hooks in `.claude/hooks/` are `.sh` scripts. Without bash they fail silently and the guardrails don't run |
 | **git** | Branch guards, changelog/release commands, and the epic workflow's worktrees |
-| *(optional)* an MCP server connection | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth). Authenticate once with `/mcp`. Everything degrades gracefully when not connected |
+| *(for UI runtime checks)* **Claude in Chrome** | The default UI driver: start with `claude --chrome` (or `/chrome` → *Enabled by default*), install the extension, sign in with `/login`. Without it, Playwright is used |
+| *(optional)* an MCP server connection | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth), a Figma bridge and Playwright. Authenticate once with `/mcp`. Everything degrades gracefully when not connected |
 
 ### 1. Put the harness in the repo
 
@@ -110,7 +111,7 @@ domain checks you want enforced.
 > **Working in this template repo itself** (rather than in a project you copied it into)? Then the
 > `{{TOKEN}}` and `[FILL IN]` blocks are the product, not a to-do list — leave them. Change the
 > harness with `/harness:improve`, and keep `examples/fleetkeep/` in step: portable files there are
-> verbatim copies, so the eight `hooks/*.sh`, `settings.json` and `scripts/` must stay
+> verbatim copies, so the nine `hooks/*.sh`, `settings.json` and `scripts/` must stay
 > byte-identical to the root (invariant 6 in `.ai/workflows/harness-improvement.md`).
 
 ---

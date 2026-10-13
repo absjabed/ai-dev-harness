@@ -109,6 +109,36 @@
 > [FILL IN: hard rules — e.g. don't bypass the service layer, don't hardcode resource names,
 > don't hand-write migrations, don't assume tooling exists that hasn't been set up]
 
+## Test environments
+
+Read by runtime verification (`.ai/workflows/runtime-verification.md`) — the API, UI and DB checks
+run after review and the security scan. **Never list a production URL here**; put production hosts
+in `E2E_FORBIDDEN_HOSTS` in `.claude/hooks/hooks.env`, which hard-blocks them.
+
+- **API base URL:** > [FILL IN: per scope — e.g. "local `http://localhost:3000`; dev
+  `https://api.dev.example.com`". Which one checks default to.]
+- **UI URL:** > [FILL IN: e.g. "local `http://localhost:5173`". Delete if there is no UI.]
+- **Start / health:** > [FILL IN: how to start each server locally and the URL that proves it is up —
+  e.g. "`npm run dev` in `api/`; health `GET /health` → 200".]
+- **API test auth:** > [FILL IN: how a check gets a token for a **test** account — either a token
+  command run inline per request (e.g. "`$(./scripts/dev-token.sh tester@example.test)`"), or an
+  environment variable the developer exports **before starting Claude Code** (e.g.
+  `E2E_API_TOKEN`; an `export` inside the session doesn't persist). Name a second identity for the
+  other tenant if the product is multi-tenant. The token itself is never written in the repo.]
+- **Test accounts:** > [FILL IN: which test users/tenants/roles exist and where they are documented
+  (not their passwords) — e.g. "two tenants (`acme-test`, `globex-test`), admin + member in each, see
+  the team vault entry *E2E accounts*". Two tenants are needed to test isolation.]
+- **UI driver:** `chrome` — Claude in Chrome drives a real Chrome window (needs `claude --chrome`
+  and the extension); Playwright MCP is the fallback. Set `playwright` to make the isolated browser
+  the default.
+- **E2E test command:** > [FILL IN: the project's own browser-test command, used when no browser
+  driver is connected — e.g. "`npm run test:e2e` in `web/`". Delete if none.]
+- **DB check:** > [FILL IN: the **read-only** database MCP server name and the local/test database
+  it points at — e.g. "`db-readonly` → local Postgres `app_dev`, connected as a SELECT-only role". Or
+  "none" — then DB checks are not run and API reads stand in. See `.ai/CUSTOMIZATION.md` axis 14.]
+- **Seed / reset:** > [FILL IN: how to get known test data and how to reset it — e.g. "`npm run
+  db:seed`; reset with `npm run db:reset` (local only)". Delete if not applicable.]
+
 ## Release deliverables
 
 Read by the release agent (`.ai/agents/release-agent.md`). Every feature, bugfix and hotfix writes

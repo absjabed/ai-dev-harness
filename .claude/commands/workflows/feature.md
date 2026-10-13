@@ -1,6 +1,6 @@
 ---
 description: Full end-to-end feature workflow — consumes BA/QA specs, handles single feature or epic, parallelises where possible
-allowed-tools: Read, Write, Edit, Bash, Task
+allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwright
 ---
 @.ai/agents/developer-agent.md
 @.ai/agents/designer-agent.md
@@ -59,7 +59,8 @@ prepend the branded artifact header to it.
 - **`STATE.md` exists → this is a RESUME.** Announce that to the user. **Trust but verify**: for
   each phase marked done under `## Phases`, confirm its artifact actually exists on disk — the
   technical spec(s) under `technical-specs/`, `design/design-spec.md` (if the design gate ran),
-  `test-specs/test-report.md`, `review-report.md`, `security-report.md`, `deploy-notes.md` — as
+  `test-specs/test-report.md`, `review-report.md`, `security-report.md`,
+  `test-specs/e2e-report.md`, `deploy-notes.md` — as
   applicable to that phase. Re-run any phase whose artifact is missing (uncheck it first). Then
   continue from
   `## Next action`.
@@ -160,7 +161,14 @@ completely, in order:
    explicit *No deploy impact* line if the change needs nothing beyond the standard pipeline run.
    Never a secret — `<placeholders>` only. This is not a gate: the file is included in the step 6
    commit, so write it before that STOP.
-6. **STOP** — get user confirmation before finalising. Show: test results, security scan summary (finding counts by severity), any CRITICAL/HIGH details, and the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan). Record the gate outcome in `STATE.md`.
+5b. **Runtime verification** (playbook step 7a) — read and follow `.ai/workflows/runtime-verification.md` in this session
+   (not a sub-agent — the user confirms the plan, handles any login, and decides on failures):
+   propose the API / UI / DB levels this change needs, **ask the user once to confirm or edit the
+   plan**, run the checks against the Test environments in `project-config.md` (UI with the
+   configured driver — Claude in Chrome by default, Playwright as fallback), and write
+   `.ai/features/$ARGUMENTS/test-specs/e2e-report.md`. Fix any FAIL and re-run before step 6; a FAIL
+   or a planned check that did not run may only pass step 6 if the user explicitly accepts it.
+6. **STOP** — get user confirmation before finalising. Show: test results, security scan summary (finding counts by severity), any CRITICAL/HIGH details, the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan), and the runtime verification summary from step 5b (PASS / FAIL / NOT RUN counts, every FAIL and NOT RUN — and confirm the e2e report holds no secret or personal data; screenshots are never committed). **Unresolved FAIL or NOT RUN blocks the commit unless the user explicitly accepts each one** — record the acceptance, in their words, in `STATE.md`. Record the gate outcome in `STATE.md`.
    - Atomic commits **off** (default): create a single conventional commit after confirmation.
    - Atomic commits **on**: show the list of per-task commits already on `feature/$ARGUMENTS` (plus any uncommitted remainder) for confirmation instead of creating one commit; commit any remainder only after confirmation.
 7. Generate the {{PR_TERM}} description at `.ai/features/$ARGUMENTS/pr-description.md`. Update
@@ -278,10 +286,16 @@ After all merges, run `git worktree prune`.
 
    Wait for both agents to complete. Include CRITICAL and HIGH findings in the {{PR_TERM}}
    description (step 1 below). CRITICAL findings must be resolved before creating the {{PR_TERM}}.
+0a. **Runtime verification** — once, on the integrated `epic/$ARGUMENTS` branch with its servers
+   running: follow `.ai/workflows/runtime-verification.md` in this session, covering every sub-feature's
+   journeys (their `test-specs.md`). Confirm the plan with the user once; write
+   `.ai/features/$ARGUMENTS/test-specs/e2e-report.md`. A FAIL or a planned check that did not run
+   blocks the {{PR_TERM}} unless the user explicitly accepts it; accepted gaps go in the
+   {{PR_TERM}} description.
 1. Write `.ai/features/$ARGUMENTS/pr-description.md` — a comprehensive {{PR_TERM}} description covering:
    - What the epic delivers (user-facing summary)
    - List of sub-features included, each with a brief description
-   - Testing summary (all sub-feature test reports)
+   - Testing summary (all sub-feature test reports, plus the Phase F runtime verification report and any accepted gaps)
    - Breaking changes (if any)
    - How to test end-to-end
 2. **STOP** — show the {{PR_TERM}} description to the user. Get confirmation before creating it.

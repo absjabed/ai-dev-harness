@@ -34,7 +34,7 @@ Full arguments, owners, and outputs live in [`COMMANDS.md`](../COMMANDS.md).
   `/agents:dev`, `/agents:devops`, `/agents:pm`, `/agents:qa`, `/agents:review`, `/agents:security`,
   `/agents:release-manager`
 - **Workflows** — `commands/workflows/`: `/workflows:feature`, `/workflows:bugfix`,
-  `/workflows:hotfix`, `/workflows:release`
+  `/workflows:hotfix`, `/workflows:verify`, `/workflows:release`
 - **Utilities** — `commands/utils/`: `/utils:status`, `/utils:standup`, `/utils:changelog`,
   `/utils:docs`, `/utils:docs-serve`, `/utils:scope`, `/utils:learn`
 - **Harness maintenance** — `commands/harness/`: `/harness:improve` (change the harness itself
@@ -55,6 +55,7 @@ inert-safe until you opt in. Registration is in `settings.json`:
 |-------------|----------|---------|
 | `pre-tool-use.sh` | `PreToolUse` (Edit/Write/MultiEdit) | Guard edits to sensitive/protected files before they happen. |
 | `git-guard.sh` | `PreToolUse` (Bash) | Block destructive git/deploy commands (e.g. `git push --force`). |
+| `e2e-guard.sh` | `PreToolUse` (Bash, `mcp__claude-in-chrome__*`, `mcp__playwright__*`) | Block runtime checks — HTTP requests, browser navigation — aimed at a host in `E2E_FORBIDDEN_HOSTS`. |
 | `post-tool-use.sh` | `PostToolUse` (Edit/Write/MultiEdit) | React to individual edits. |
 | `post-tool-batch.sh` | `PostToolBatch` | Run type-check / lint after a batch of edits. |
 | `post-tool-failure.sh` | `PostToolUseFailure` (Edit/Write/Bash) | Handle a failed tool call. |

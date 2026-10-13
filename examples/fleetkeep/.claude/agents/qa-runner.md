@@ -44,6 +44,12 @@ Apply @.ai/standards/universal/testing-principles.md.
 - Always check if the dev server is running before navigating (e.g. `curl -s <DEV_SERVER_URL> > /dev/null || echo "server not running"`)
 - Take a screenshot after every significant interaction — include screenshots in the test report
 - Check console for errors after each page action
-- If the app is behind auth and a login wall appears, note it in the report and test what is accessible without auth, or ask for test credentials
+- If the app is behind auth and a login wall appears, stop and report it — the user logs in, or the check is NOT RUN. Never ask for, type or store a password
+- Never navigate to or call a production host (`E2E_FORBIDDEN_HOSTS` in `.claude/hooks/hooks.env` hard-blocks them); use the URLs in `project-config.md` → Test environments
 
 Target 80% coverage on business logic. Write tests, run them, report results, fix failures.
+
+**Runtime verification is not yours.** The post-review API / UI / DB checks
+(`.ai/workflows/runtime-verification.md`) run in the orchestrating session, because the user confirms
+the plan, handles logins and decides on failures. If you are asked to run one, say so and return —
+don't plan or gate it yourself.

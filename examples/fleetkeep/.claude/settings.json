@@ -17,6 +17,19 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/git-guard.sh\""
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/e2e-guard.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "PowerShell|mcp__claude-in-chrome__.*|mcp__.*playwright.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/e2e-guard.sh\""
           }
         ]
       }

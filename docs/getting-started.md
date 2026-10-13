@@ -13,7 +13,7 @@ The harness is **two folders and a contract**:
   personas, the workflow playbooks, the engineering standards, the output templates, and the
   project's own config/context.
 - `.claude/` — the **Execution Layer**. The slash commands you type, the sub-agents they spawn, and
-  eight hooks that Claude Code runs automatically around your edits and commands.
+  nine hooks that Claude Code runs automatically around your edits and commands.
 
 The contract: **agents read `.ai/`, Claude Code runs `.claude/`, and everything project-specific
 lives in filled-in skeletons rather than in prompts.** That is what makes the same harness behave
@@ -30,6 +30,7 @@ irreversible. Each mechanism below answers a specific failure mode.
 | You re-explain the stack, conventions and domain every session — and the answers drift | The filled `.ai/config/` and `.ai/context/` are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt |
 | Output quality depends on how well you phrased today's prompt | Personas and playbooks fix the *method*. `/agents:review` applies the same severity vocabulary on a Friday as on a Monday |
 | AI-written code lands with a glance, because reviewing it is slower than accepting it | Reviewer and security scanner run **in parallel**, in separate contexts, and report rather than fix. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget |
+| The code passed review and tests — but nobody called the API or clicked through the screen | Runtime verification: after review and security, real API calls, a browser run of the journeys and read-only DB checks against the test environment. Failed or skipped planned checks block the commit until you accept them |
 | "Tests pass" — but nobody checks whether tests exist for that scope | Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened |
 | One bad command — a force push, a hard reset, a deploy to prod — undoes a day | Hooks **hard-block** them at the tool call, before the model's intent matters |
 | Why a decision was made lives in a Slack thread that's now gone | Append-only `decisions`, `learnings` and `design-taste` logs. The designer reads rejected patterns before proposing, so a "no" stays a no |
@@ -50,9 +51,10 @@ that come from forgetting, not the ones that come from judgment.
 | Need | Why it matters |
 |---|---|
 | **Claude Code** (CLI, desktop app, or IDE extension) opened at the repo root | Commands, sub-agents and hooks are discovered per repo from `.claude/` |
-| **Bash** on `PATH` — Git Bash or WSL on Windows | All eight hooks are `.sh`. Without bash they fail quietly and every guardrail is off while looking installed |
+| **Bash** on `PATH` — Git Bash or WSL on Windows | All nine hooks are `.sh`. Without bash they fail quietly and every guardrail is off while looking installed |
 | **git** | Branch guards, changelog/standup commands, and the epic path's worktrees |
-| *(optional)* an MCP server | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth) and a Figma bridge. Authenticate once with `/mcp`. Everything degrades gracefully when not connected |
+| *(optional)* an MCP server | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth), a Figma bridge and Playwright (fetched by `npx`). Authenticate once with `/mcp`. Everything degrades gracefully when not connected |
+| *(for UI runtime checks)* **Claude in Chrome** | The default UI driver. Each developer starts Claude Code with `claude --chrome` (or `/chrome` → *Enabled by default*), installs the extension, and is signed in with `/login`. Without it, Playwright is used |
 
 Quick check that bash is really there:
 
@@ -73,11 +75,12 @@ From a clone of this repo, copy into your project's repo root:
 Optionally bring `examples/fleetkeep/` along while you configure — it is a fully worked version of
 every file you are about to fill in, and `/init-project` offers to delete it at the end.
 
-**Do not copy this repo's `.gitignore`.** It is written for the template itself. The one line your project
+**Do not copy this repo's `.gitignore`.** It is written for the template itself. The lines your project
 must have:
 
 ```gitignore
 .worktrees/
+.ai/features/**/e2e-screenshots/
 ```
 
 Do **not** ignore `.ai/features/` — the epic path commits planning artifacts onto the epic branch,
@@ -107,6 +110,7 @@ It interviews you in rounds and then writes every skeleton. Have answers ready f
 | Design system | Component library, styling system, token source file; whether the UI is an SPA, server-rendered, or both |
 | Risk profile | Whether the codebase handles regulated data or has thin safety nets |
 | Branding | Company name, logo, primary colour, footer for generated documents |
+| Test environments | Local/dev API and UI URLs, how to start them, how to get a test token, test accounts, production hosts to forbid, optional read-only DB MCP |
 | Release deliverables | Whether someone outside the team deploys (turns on the deployment guide), its audience, a Word copy, the deployable units and rollout order |
 
 Prefer to do it by hand, or to adjust later? [`.ai/CUSTOMIZATION.md`](../.ai/CUSTOMIZATION.md) maps
@@ -193,6 +197,7 @@ Everything lands under `.ai/features/<slug>/`, each document carrying your brand
 | Small change, no formal specs needed | `/agents:dev "<change>"` |
 | A bug | `/workflows:bugfix "<symptom>"` |
 | Urgent production fix | `/workflows:hotfix "<symptom>"` |
+| Prove a change works against the running system | `/workflows:verify "<what changed>"` |
 | Cutting a release | `/agents:security` then `/workflows:release <version>` |
 | Daily check-in | `/utils:status`, `/utils:standup` |
 | Force a scope for the session | `/utils:scope backend` |

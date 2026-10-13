@@ -1,6 +1,6 @@
 ---
 description: Emergency hotfix — fast, minimal, safe, reviewed before it lands
-allowed-tools: Read, Write, Edit, Bash, Task
+allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwright
 ---
 @.ai/workflows/hotfix-process.md
 @.ai/standards/universal/security-baseline.md
@@ -41,4 +41,11 @@ is part of the reviewed diff.
 Show the verdict in chat. **BLOCKER findings must be resolved before the pull request is opened.**
 If the outage is actively burning and the fix is a trivial revert, you may ask the user to approve
 skipping this gate — state that you are asking, and record the skip in the pull request. Never skip
-it silently. Then land it via pull request and forward-port.
+it silently.
+
+**Smoke verification (step 5a):** read `.ai/workflows/runtime-verification.md` and run only the
+broken journey or request against a non-production environment. Propose it in one line and **wait
+for the user's yes** before running it (a UI check may drive their real Chrome). Write the e2e report
+(`.ai/features/<slug>/test-specs/e2e-report.md`). A FAIL — or the planned check not running — blocks
+the next step unless the user explicitly accepts it. Skipping the smoke check needs the user's
+explicit approval too, recorded in the pull request. Then land it via pull request and forward-port.

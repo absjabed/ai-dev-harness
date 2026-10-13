@@ -16,7 +16,7 @@ before delegating any work.
 
 **Resume rule (trust but verify):** if `STATE.md` already exists, this is a resume. For every
 phase it marks done, verify the phase's artifact actually exists on disk (technical spec, design
-spec, test report, review report, security report, `deploy-notes.md` as applicable); re-run any
+spec, test report, review report, security report, e2e report, `deploy-notes.md` as applicable); re-run any
 phase whose artifact is missing, then continue from the recorded next action.
 
 1. **Understand** — Read the consumed `requirement-spec.md`, `user-stories.md`, and `test-specs.md`.
@@ -58,6 +58,13 @@ phase whose artifact is missing, then continue from the recorded next action.
    "nothing to do" from "never captured". Never a secret in it: use `<placeholders>`. For an epic,
    each sub-feature writes its own inside its worktree, so it commits on the sub-feature branch.
    No new gate — the file rides the step 8 commit.
+7a. **Runtime verification** — with review and security passed and the docs done, prove the
+   change against a running system per `.ai/workflows/runtime-verification.md`: propose the levels the change needs (API calls, a
+   browser run of the UI journeys, read-only DB checks), confirm the plan with the user once, run
+   them against the configured test environment, and write
+   `.ai/features/<slug>/test-specs/e2e-report.md`. A FAIL, or a planned check that did not run,
+   blocks the commit unless the user explicitly accepts it (recorded in `STATE.md` and the
+   pull request description).
 8. **Commit** — A clear Conventional Commits message referencing the tracker ticket (e.g.
    `FK-1234: <summary>`) after user confirmation. If atomic commits were enabled,
    present the per-task commit list for confirmation instead of creating a single commit. CRITICAL
@@ -74,7 +81,8 @@ fresh checkouts that only see committed files — then each sub-feature builds i
 under `.worktrees/<sub-feature>` (ensure `.worktrees/` is in the project's `.gitignore`), so
 delegated agents never share a working tree; agents commit their outputs (code, specs, test
 report) on their branch, and each worktree is removed after its branch merges. Phase F runs
-the reviewer and security scanner in parallel on the full epic diff before the pull request.
+the reviewer and security scanner in parallel on the full epic diff, then runtime verification on
+the integrated epic branch (once — not per sub-feature), before the pull request.
 Track sub-feature status and dependency groups in the epic's `STATE.md`, updated per phase,
 per group, and per merge.
 

@@ -14,8 +14,8 @@ not style (linters/type-checking handle style).
 ## Review checklist
 
 - **Correctness** — does it do what it claims? Logic sound?
-- **Edge cases** — boundaries, empty/null, concurrency (e.g. concurrent ticket status updates,
-  duplicate codebase ingestion jobs).
+- **Edge cases** — boundaries, empty/null, concurrency (e.g. two users updating the same
+  record, a duplicate create).
 - **Error handling** — typed errors thrown/propagated; no swallowed errors.
 - **Layering** — backend: handlers don't touch the injected repository layer over `FleetKeepDbContext` directly; services own logic;
   no raw DB objects returned to clients. Frontend: no API calls in components; no business logic
