@@ -95,7 +95,8 @@ use one. These extend the invariants above — violating one is likewise a CRITI
 7. **Verify & land** — run the full verification block below, show the user the diff
    summary and any open questions, then STOP — commit only on explicit approval, as a
    conventional commit on a `feature/…` branch (never directly on the default branch).
-   **In the template repo**, when the change is released, bump `.claude/HARNESS_VERSION` — patch
+   **In the template repo**, when the change is released, bump `.claude/HARNESS_VERSION` **and**
+   the version in the `docs/index.html` sidebar (`Setup &amp; component guide · v<version>`) — patch
    for fixes and docs, minor for new capability that needs no project action, major when an
    adopting project must act (a new token or config section to fill, a renamed command, a moved
    file) — and tag that commit `v<version>`. **In a project**, never edit it: it records the
@@ -109,6 +110,8 @@ grep -rn '{{' <changed root files>                          # tokens only where 
 # if examples/ exists:
 for d in examples/*/; do for f in .claude/hooks/*.sh; do cmp "$f" "$d$f"; done; done
 git diff --stat                                             # matches the plan's file list
+# template repo only — the guide's sidebar shows the same version as the marker:
+[ -f docs/index.html ] && { grep -qF "v$(cat .claude/HARNESS_VERSION)</span>" docs/index.html || echo "docs/index.html sidebar version != .claude/HARNESS_VERSION"; }
 ```
 
 Plus: every `@.ai/...` include and path named in changed files exists; every doc
