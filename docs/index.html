@@ -182,7 +182,9 @@ forgetting, not the ones that come from judgment.</p>
   <p>Optionally bring <code>examples/fleetkeep/</code> for reference while configuring.</p>
   <div class="callout warn"><p><strong>Don't copy the template's <code>.gitignore</code>.</strong>
   Your project needs <code>.worktrees/</code> ignored — and must <em>not</em> ignore
-  <code>.ai/features/</code>, because the epic path commits planning artifacts for worktrees to read.</p></div>
+  <code>.ai/features/</code>, because the epic path commits planning artifacts for worktrees to read.
+  Don't ignore <code>.claude/agent-memory/</code> either — committing it shares what the sub-agents
+  learn with the team. Ignore only the per-developer <code>.claude/settings.local.json</code>.</p></div>
 </li>
 <li>
   <h3>Run <code>/init-project</code></h3>
