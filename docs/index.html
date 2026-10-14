@@ -147,15 +147,15 @@ main a{color:var(--accent);text-underline-offset:2px}
 
 <main>
 <h1>AI Dev Harness</h1>
-<p class="lede">A governed AI development lifecycle for Claude Code. Copy it into a repo, answer one
-interview, and specialist agents deliver features through the same gates, standards and guardrails
-every time.</p>
+<p class="lede">A development workflow for Claude Code. Copy it into a repo and answer one setup
+interview. From then on, specialist agents build each feature through the same approval steps,
+standards and safety checks.</p>
 
 <h2 id="what">What it is</h2>
-<p>AI Dev Harness is a development-workflow layer that runs <em>inside</em> an agent harness —
-Claude Code — not an agent runtime itself. The harness replaces ad-hoc prompting with a delivery model: specs before code, a human approving
-at every gate, and automated checks that run whether or not the model cooperates. It is a
-<strong>template</strong> — every project-specific value is a <code>{{TOKEN}}</code> or a
+<p>AI Dev Harness is a development-workflow layer. It runs <em>inside</em> an agent harness (Claude
+Code) and is not an agent runtime itself. In place of ad-hoc prompting, you get specs written before
+code, a person approving each gate, and automated checks that run whether or not the model
+cooperates. It ships as a template: every project-specific value is a <code>{{TOKEN}}</code> or a
 <code>[FILL IN]</code> block until you configure it.</p>
 <div class="grid">
   <div class="tile"><h4>16 agent personas</h4><p>BA, architect, designer, developer, QA, reviewer, security, DevOps, PM, release, orchestrator, critic and more.</p></div>
@@ -165,52 +165,51 @@ at every gate, and automated checks that run whether or not the model cooperates
 </div>
 
 <h2 id="why">Why use it</h2>
-<p>AI can already write the code. What it does badly, left unsupervised, is everything around the
-code: knowing this project's conventions, proving the change works, and stopping before something
-irreversible. That gap is what the harness closes — each mechanism below answers a specific failure
-mode, not a slogan.</p>
+<p>AI can already write the code. Left unsupervised, it does badly at the work around the code:
+following this project's conventions, proving the change works, and stopping before something
+irreversible. Each row below pairs one of those failures with the part of the harness that handles
+it.</p>
 
 <table>
 <thead><tr><th>Without a harness</th><th>What the harness does</th></tr></thead>
 <tbody>
-<tr><td>You re-explain the stack, conventions and domain every session — and the answers drift</td><td>The filled <code>.ai/config/</code> and <code>.ai/context/</code> are loaded automatically, scoped to the task. The project's rules are a file, not a memory of a prompt</td></tr>
+<tr><td>You re-explain the stack, conventions and domain every session, and the answers drift</td><td>The filled <code>.ai/config/</code> and <code>.ai/context/</code> load automatically, scoped to the task. The project's rules live in files you can read and review</td></tr>
 <tr><td>Output quality depends on how well you phrased today's prompt</td><td>Personas and playbooks fix the <em>method</em>. <code>/agents:review</code> applies the same severity vocabulary on a Friday as on a Monday</td></tr>
-<tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>Reviewer and security scanner run <strong>in parallel</strong>, in separate contexts, and report rather than fix. CRITICAL findings block the commit — the gate isn't optional and isn't yours to forget</td></tr>
-<tr><td>The code passed review and tests — but nobody called the API or clicked through the screen</td><td>Runtime verification: after review and security, real API calls, a browser run of the journeys and read-only DB checks against the test environment. Failed or skipped planned checks block the commit until you accept them</td></tr>
-<tr><td>"Tests pass" — but nobody checks whether tests exist for that scope</td><td>Verification is scope-aware: real tests where a runner exists, a clean build plus a documented manual reproduction where none does, and the report states which happened</td></tr>
-<tr><td>One bad command — a force push, a hard reset, a deploy to prod — undoes a day</td><td>Hooks <strong>hard-block</strong> them at the tool call, before the model's intent matters</td></tr>
-<tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads rejected patterns before proposing, so a "no" stays a no</td></tr>
-<tr><td>A long session loses the thread, and the next one starts cold</td><td><code>STATE.md</code> records phase, tasks and decisions; re-running resumes and re-verifies each "done" phase's artifact before trusting it</td></tr>
+<tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>A reviewer and a security scanner run in parallel, in separate contexts, and report findings without changing code. CRITICAL findings block the commit, and nobody has to remember to run the check</td></tr>
+<tr><td>The code passed review and tests, but nobody called the API or clicked through the screen</td><td>After review and the security scan, runtime verification makes real API calls, runs the user journeys in a browser and checks the database read-only, all against the test environment. A failed or skipped check blocks the commit until you accept it</td></tr>
+<tr><td>"Tests pass", but nobody checks whether that part of the code has tests at all</td><td>Verification depends on the scope: real tests where a test runner exists, otherwise a clean build plus a documented manual reproduction. The report says which one happened</td></tr>
+<tr><td>One bad command (a force push, a hard reset, a deploy to production) undoes a day's work</td><td>Hooks block these commands at the tool call, whatever the model intended</td></tr>
+<tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads the rejected patterns before proposing anything, so a rejected idea doesn't come back</td></tr>
+<tr><td>A long session loses the thread, and the next one starts cold</td><td><code>STATE.md</code> records the phase, tasks and decisions. Re-running the workflow resumes from there and checks that each finished phase's output still exists</td></tr>
 <tr><td>Parallel work on one feature collides in the working tree</td><td>The epic path gives each sub-feature its own git worktree, merged in dependency order</td></tr>
-<tr><td>Every repo grows its own private way of working with AI</td><td>The same harness, the same commands, the same gates across projects. A joiner learns it once</td></tr>
+<tr><td>Every repo grows its own private way of working with AI</td><td>Every project uses the same commands and approval steps, so someone joining a team learns them once</td></tr>
 </tbody>
 </table>
 
 <h3>What it costs</h3>
-<p>Ceremony. The full path — <code>/ba</code> → <code>/qa</code> → <code>/workflows:feature</code>
-with five STOP gates — is built for work that deserves a spec. For a typo or a one-line fix that
-overhead is real and not worth paying: use <code>/agents:dev</code> or
-<code>/workflows:bugfix</code> instead. The harness also can't make a codebase testable, and it
-won't catch a bad decision you approve at a gate. It removes the failures that come from
-forgetting, not the ones that come from judgment.</p>
+<p>Process overhead. The full path (<code>/ba</code> → <code>/qa</code> → <code>/workflows:feature</code>,
+with five STOP gates) is built for work that deserves a spec. For a typo or a one-line fix it isn't
+worth it, so use <code>/agents:dev</code> or <code>/workflows:bugfix</code> instead. The harness
+also can't make a codebase testable, and it won't catch a bad decision you approve at a gate. It
+prevents mistakes of forgetting; mistakes of judgment are still yours to catch.</p>
 
 <h2 id="map">Harness map</h2>
-<p>Every path through the harness on one page. Read each lane left to right; yellow boxes are the
-points where it stops and asks you. On a narrow screen, scroll the diagram sideways.</p>
+<p>Each lane is one path through the harness, read left to right. Yellow boxes are where it stops
+and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <div class="dg-wrap">
 <svg viewBox="0 0 1040 708" role="img" aria-labelledby="dg-title dg-desc" class="dg">
-<title id="dg-title">Harness map — every path</title>
+<title id="dg-title">Harness map: every path</title>
 <desc id="dg-desc">Swimlane diagram of the harness paths: setup, feature, bug fix, hotfix, ad-hoc verification, release and harness change, with STOP gates, parallel sub-agents and runtime checks marked.</desc>
 <defs><marker id="dg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-ah"/></marker></defs>
 <text x="10" y="26" class="dg-h">Every path, at a glance</text>
 <rect x="300" y="14" width="18" height="14" rx="3" class="dg-n dg-proc"/>
 <text x="324" y="25.5" class="dg-lg">Step</text>
 <rect x="370.4" y="14" width="18" height="14" rx="3" class="dg-n dg-gate"/>
-<text x="394.4" y="25.5" class="dg-lg">STOP — asks you</text>
+<text x="394.4" y="25.5" class="dg-lg">STOP: asks you</text>
 <rect x="507.9" y="14" width="18" height="14" rx="3" class="dg-n dg-par"/>
 <text x="531.9" y="25.5" class="dg-lg">Sub-agent(s)</text>
 <rect x="627.0999999999999" y="14" width="18" height="14" rx="3" class="dg-n dg-rv"/>
-<text x="651.0999999999999" y="25.5" class="dg-lg">Runtime checks — block unless accepted</text>
+<text x="651.0999999999999" y="25.5" class="dg-lg">Runtime checks: block unless accepted</text>
 <rect x="904.8999999999999" y="14" width="18" height="14" rx="3" class="dg-n dg-opt"/>
 <text x="928.8999999999999" y="25.5" class="dg-lg">Optional / conditional</text>
 <rect x="4" y="64" width="1032" height="78" rx="6" class="dg-lane"/>
@@ -466,9 +465,9 @@ points where it stops and asks you. On a narrow screen, scroll the diagram sidew
 <thead><tr><th>Need</th><th>Why it matters</th></tr></thead>
 <tbody>
 <tr><td><strong>Claude Code</strong> at the repo root</td><td>Commands, sub-agents and hooks are discovered per repo from <code>.claude/</code></td></tr>
-<tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All nine hooks are <code>.sh</code>. Without bash they fail quietly and every guardrail is off while looking installed</td></tr>
+<tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All nine hooks are <code>.sh</code> scripts. Without bash they fail quietly, and every guardrail is off even though it looks installed</td></tr>
 <tr><td><strong>git</strong></td><td>Branch guards, changelog/standup commands, and the epic path's worktrees</td></tr>
-<tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian, a Figma bridge and Playwright. Authenticate once with <code>/mcp</code>; everything degrades gracefully when absent</td></tr>
+<tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian, a Figma bridge and Playwright. Authenticate once with <code>/mcp</code>. Without a server, the features that use it are skipped and everything else still works</td></tr>
 <tr><td><em>for UI runtime checks</em> <strong>Claude in Chrome</strong></td><td>The default UI driver: start with <code>claude --chrome</code> (or <code>/chrome</code> → Enabled by default), install the extension, sign in with <code>/login</code>. Without it, Playwright is used</td></tr>
 </tbody>
 </table>
@@ -485,17 +484,18 @@ points where it stops and asks you. On a narrow screen, scroll the diagram sidew
   copied (it matches a <code>v&lt;version&gt;</code> tag); leave it unchanged, so <code>git log v&lt;version&gt;..</code> in the
   template repo later shows what you don't have yet.</p>
   <div class="callout warn"><p><strong>Don't copy the template's <code>.gitignore</code>.</strong>
-  Your project needs <code>.worktrees/</code> ignored — and must <em>not</em> ignore
-  <code>.ai/features/</code>, because the epic path commits planning artifacts for worktrees to read.
-  Do ignore <code>.ai/features/**/e2e-screenshots/</code> — runtime-check screenshots can show personal data.
-  Don't ignore <code>.claude/agent-memory/</code> either — committing it shares what the sub-agents
-  learn with the team. Ignore only the per-developer <code>.claude/settings.local.json</code>.</p></div>
+  Your project's own <code>.gitignore</code> should ignore <code>.worktrees/</code>,
+  <code>.ai/features/**/e2e-screenshots/</code> (runtime-check screenshots can show personal data) and
+  the per-developer <code>.claude/settings.local.json</code>. Keep <code>.ai/features/</code> tracked,
+  because the epic path commits planning artifacts for the worktrees to read. Keep
+  <code>.claude/agent-memory/</code> tracked too, so what the sub-agents learn is shared with the
+  team.</p></div>
 </li>
 <li>
   <h3>Run <code>/init-project</code></h3>
   <p>It interviews you across identity, repo topology, stack, commands, conventions, version control,
-  security, design system, risk profile, branding, test environments and release deliverables — then fills every skeleton and writes
-  <code>.claude/hooks/hooks.env</code>.</p>
+  security, design system, risk profile, branding, test environments and release deliverables. Then
+  it fills every skeleton and writes <code>.claude/hooks/hooks.env</code>.</p>
   <p>Shape the tree while you're there: single-project repos delete the <code>backend/</code> and
   <code>frontend/</code> subfolders; headless projects delete the design subtree; unused per-stack
   reference folders can go.</p>
@@ -503,13 +503,15 @@ points where it stops and asks you. On a narrow screen, scroll the diagram sidew
 <li>
   <h3>Verify nothing is unfilled</h3>
   <pre><code>grep -rnE '\{\{[A-Z][A-Z0-9_]*\}\}' .ai .claude CLAUDE.md | grep -vE 'CUSTOMIZATION.md|agents/harness-|workflows/harness-improvement|commands/init-project.md|standards/project/[a-z]+/(dotnet|node|react|angular)/|standards/universal/vcs/|examples/'</code></pre>
-  <p>Empty output means done. It scans <code>.claude/</code> as well as <code>.ai/</code> — commands
-  and sub-agents carry tokens too, and an unfilled one there stays invisible until a command misbehaves.</p>
+  <p>Empty output means you're done. It scans <code>.claude/</code> as well as <code>.ai/</code>,
+  because commands and sub-agents carry tokens too, and an unfilled one there goes unnoticed until a
+  command misbehaves.</p>
 </li>
 <li>
   <h3>Switch the guardrails on</h3>
-  <p><code>hooks.env</code> is <strong>inert-safe</strong>: a blank value or <code>*_CHECK="off"</code>
-  skips that check silently. An un-customised file blocks nothing while looking fully installed.</p>
+  <p><code>hooks.env</code> is inert until you fill it: a blank value or <code>*_CHECK="off"</code>
+  skips that check silently. A file you haven't customised blocks nothing, even though the hooks look
+  installed.</p>
   <table>
   <thead><tr><th>Key</th><th>If left unset</th></tr></thead>
   <tbody>
@@ -531,43 +533,43 @@ points where it stops and asks you. On a narrow screen, scroll the diagram sidew
 <table>
 <thead><tr><th>Step</th><th>What happens</th><th>Gate</th></tr></thead>
 <tbody>
-<tr><td>Inputs</td><td>Reads the BA/QA artifacts; stops if any are missing</td><td>—</td></tr>
-<tr><td>State</td><td>Writes <code>STATE.md</code>; re-running resumes and re-verifies each "done" phase</td><td>—</td></tr>
-<tr><td>Scope</td><td>Resolves backend / frontend / fullstack and loads only that context</td><td>—</td></tr>
+<tr><td>Inputs</td><td>Reads the BA/QA artifacts; stops if any are missing</td><td>none</td></tr>
+<tr><td>State</td><td>Writes <code>STATE.md</code>; re-running resumes and re-verifies each "done" phase</td><td>none</td></tr>
+<tr><td>Scope</td><td>Resolves backend / frontend / fullstack and loads only that context</td><td>none</td></tr>
 <tr><td>Technical spec</td><td>Written, then shown to you; asks once about per-task atomic commits</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>Design</td><td>For any UI surface: UX → visual design → Artifact preview → approval loop</td><td><span class="pill block">STOP</span></td></tr>
-<tr><td>Implement</td><td>Delegated to a developer sub-agent with fresh context</td><td>—</td></tr>
-<tr><td>Verify</td><td>Tests where a runner exists; clean build + documented manual check where none does — and it says which</td><td><span class="pill block">STOP</span></td></tr>
-<tr><td>Review + security</td><td>Reviewer and security scanner run <strong>in parallel</strong> on the diff</td><td>CRITICAL blocks</td></tr>
+<tr><td>Implement</td><td>Delegated to a developer sub-agent with fresh context</td><td>none</td></tr>
+<tr><td>Verify</td><td>Tests where a test runner exists, otherwise a clean build plus a documented manual check. The report says which</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Review + security</td><td>The reviewer and the security scanner run in parallel on the diff</td><td>CRITICAL blocks</td></tr>
 <tr><td>Commit</td><td>Message shown for confirmation</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>PR</td><td>Description generated and shown before anything is opened</td><td><span class="pill block">STOP</span></td></tr>
 </tbody>
 </table>
-<div class="callout"><p>Five STOP gates is the point, not friction: a human approves the spec, the
-design, the verification, the commit and the PR.</p></div>
+<div class="callout"><p>The five STOP gates are where you approve the work: the spec, the design,
+the verification results, the commit and the PR.</p></div>
 
 <h2 id="layers">The two layers</h2>
 <table>
 <thead><tr><th>Layer</th><th>Path</th><th>Nature</th><th>Contains</th></tr></thead>
 <tbody>
-<tr><td>Knowledge</td><td><code>.ai/</code></td><td>Markdown only — nothing executes</td><td>Personas, playbooks, standards, templates, project config/context, memory</td></tr>
+<tr><td>Knowledge</td><td><code>.ai/</code></td><td>Markdown only; nothing in it runs</td><td>Personas, playbooks, standards, templates, project config/context, memory</td></tr>
 <tr><td>Execution</td><td><code>.claude/</code></td><td>What Claude Code runs</td><td>Commands, sub-agents, hooks, <code>settings.json</code>, scripts, <code>HARNESS_VERSION</code></td></tr>
 </tbody>
 </table>
-<p>Commands pull personas and standards from <code>.ai/</code> with <code>@</code>-includes, so the
-same command behaves correctly on a different stack.</p>
+<p>Commands pull in personas and standards from <code>.ai/</code> with <code>@</code>-includes, so
+the same command works on a different stack once that stack's files are filled in.</p>
 
 <h2 id="commands">Commands</h2>
-<h3>Studios — you drive these</h3>
+<h3>Studios (you drive these)</h3>
 <table>
 <thead><tr><th>Command</th><th>Purpose</th><th>Produces</th></tr></thead>
 <tbody>
 <tr><td><code>/init-project</code></td><td>Interview, then fill every skeleton</td><td>A configured harness</td></tr>
-<tr><td><code>/ba &lt;slug&gt;</code></td><td>BA Studio — interactive requirements</td><td><code>requirement-spec.md</code> (with the release fix version), <code>user-stories.md</code>, and <code>epic-breakdown.md</code> for epics</td></tr>
-<tr><td><code>/qa &lt;slug&gt;</code></td><td>QA Studio — test design from those specs</td><td><code>test-specs.md</code></td></tr>
+<tr><td><code>/ba &lt;slug&gt;</code></td><td>BA Studio: interactive requirements</td><td><code>requirement-spec.md</code> (with the release fix version), <code>user-stories.md</code>, and <code>epic-breakdown.md</code> for epics</td></tr>
+<tr><td><code>/qa &lt;slug&gt;</code></td><td>QA Studio: test design from those specs</td><td><code>test-specs.md</code></td></tr>
 </tbody>
 </table>
-<h3>Specialists — <code>/agents:*</code></h3>
+<h3>Specialists: <code>/agents:*</code></h3>
 <table>
 <thead><tr><th>Command</th><th>Produces</th></tr></thead>
 <tbody>
@@ -579,7 +581,7 @@ same command behaves correctly on a different stack.</p>
 <tr><td><code>/agents:pm</code></td><td>Status reports, planning, changelogs</td></tr>
 <tr><td><code>/agents:qa</code></td><td>Tests and a verification report</td></tr>
 <tr><td><code>/agents:release-manager</code></td><td>Release notes, migration plan, rollback plan, deployment checklist from the in-scope deploy notes; the deployment guide if switched on</td></tr>
-<tr><td><code>/agents:review</code></td><td><code>review-report.md</code> — BLOCKER / WARNING / SUGGESTION / PRAISE with file:line</td></tr>
+<tr><td><code>/agents:review</code></td><td><code>review-report.md</code> with BLOCKER / WARNING / SUGGESTION / PRAISE findings and file:line references</td></tr>
 <tr><td><code>/agents:security</code></td><td><code>security-report.md</code> with severities</td></tr>
 </tbody>
 </table>
@@ -587,72 +589,73 @@ same command behaves correctly on a different stack.</p>
 <table>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>End-to-end feature or epic delivery, 5 STOP gates; runtime verification (API / UI / DB) after review + security</td></tr>
-<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → <strong>review</strong> → runtime checks → commit. BLOCKERs and failed checks block the commit</td></tr>
-<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>Fast, minimal production fix; deploy notes, then <strong>review</strong> and a smoke check before the PR, then forward-port. Skippable only with explicit human approval, recorded in the PR — never silently</td></tr>
-<tr><td><code>/workflows:verify [&lt;slug&gt; | what changed]</code></td><td>Runtime verification on demand — API calls, a real-browser UI run, read-only DB checks — for ad-hoc work or a re-check. Never commits</td></tr>
-<tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security gate, release artifacts, changelog, version bump; then the deployment guide (+ <code>.docx</code>) if switched on — written after the confirmation gate, merged, never overwritten</td></tr>
+<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>A feature or epic from spec to PR, with 5 STOP gates and runtime verification (API / UI / DB) after review and the security scan</td></tr>
+<tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → review → runtime checks → commit. A BLOCKER or a failed check stops the commit</td></tr>
+<tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>A fast, minimal production fix. Deploy notes, then a review and a smoke check before the PR, then a forward-port. The review and smoke check can be skipped only with a person's explicit approval, recorded in the PR</td></tr>
+<tr><td><code>/workflows:verify [&lt;slug&gt; | what changed]</code></td><td>Runtime verification on demand (API calls, a UI run in a real browser, read-only DB checks) for ad-hoc work or a re-check. It never commits</td></tr>
+<tr><td><code>/workflows:release &lt;version&gt;</code></td><td>Security scan, release artifacts, changelog and version bump. If switched on, the deployment guide (and its <code>.docx</code>) comes after the confirmation gate and is merged into any existing guide</td></tr>
 <tr><td><code>/utils:status</code> · <code>/utils:standup</code> · <code>/utils:changelog</code></td><td>Health check, standup, changelog from git</td></tr>
 <tr><td><code>/utils:docs</code> · <code>/utils:docs-serve</code></td><td>Generate docs; serve <code>.ai/</code> as MkDocs on :8000</td></tr>
 <tr><td><code>/utils:learn "&lt;lesson&gt;"</code> · <code>/utils:scope &lt;scope&gt;</code></td><td>Record a learning (or an area-specific <code>.claude/rules/</code> file); force a scope</td></tr>
-<tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness; change it through an author → critic → revise loop. A released change bumps <code>.claude/HARNESS_VERSION</code> (patch: fixes/docs · minor: new capability · major: projects must act) and is tagged <code>v&lt;version&gt;</code></td></tr>
+<tr><td><code>/harness:ask</code> · <code>/harness:improve</code></td><td>Ask about the harness, or change it through an author → critic → revise loop. Each release bumps <code>.claude/HARNESS_VERSION</code> (patch for fixes and docs, minor for new features, major when projects must act) and gets a <code>v&lt;version&gt;</code> tag</td></tr>
 </tbody>
 </table>
 
 <h2 id="personas">Agent personas</h2>
-<p>Role definitions in <code>.ai/agents/</code> — responsibilities, method, output format and explicit
-"never do" lists. Commands include them; they are not separately invocable.</p>
+<p>Role definitions in <code>.ai/agents/</code>, each with responsibilities, method, output format
+and a "never do" list. Commands include them; you can't run a persona on its own.</p>
 <table>
 <thead><tr><th>Persona</th><th>Role</th></tr></thead>
 <tbody>
 <tr><td><code>architect</code></td><td>Architecture and technical decisions</td></tr>
-<tr><td><code>ba</code> / <code>ba-studio</code></td><td>Requirements — non-interactive / human-operated</td></tr>
-<tr><td><code>qa</code> / <code>qa-studio</code></td><td>Test strategy — non-interactive / human-operated</td></tr>
+<tr><td><code>ba</code> / <code>ba-studio</code></td><td>Requirements, written by the agent alone or in an interview with you</td></tr>
+<tr><td><code>qa</code> / <code>qa-studio</code></td><td>Test strategy, written by the agent alone or in an interview with you</td></tr>
 <tr><td><code>designer</code></td><td>UI/UX, Artifact previews, design-system and accessibility validation</td></tr>
 <tr><td><code>developer</code></td><td>Implementation against an approved spec</td></tr>
 <tr><td><code>reviewer</code></td><td>Code review method and severity vocabulary</td></tr>
 <tr><td><code>security</code></td><td>Security checklist and reporting</td></tr>
 <tr><td><code>devops</code> · <code>release</code> · <code>pm</code></td><td>Deploy surface · release packaging · status and planning</td></tr>
 <tr><td><code>orchestrator</code></td><td>Decomposes a request and delegates</td></tr>
-<tr><td><code>critic</code></td><td>Adversarial verifier — exists to break authored work</td></tr>
+<tr><td><code>critic</code></td><td>Adversarial verifier that tries to break authored work</td></tr>
 <tr><td><code>harness-engineer</code> · <code>harness-guide</code></td><td>Change the harness · explain the harness</td></tr>
 </tbody>
 </table>
 
 <h2 id="subagents">Sub-agents</h2>
-<p>Spawned automatically, each with its own context window and a <strong>restricted tool set</strong>.
+<p>Commands spawn these automatically, each with its own context window and a limited set of tools.
 The reviewer and critic get no <code>Write</code> or <code>Edit</code> tool and are told never to change
-code, so a review doesn't quietly turn into a fix. That is least privilege, not a sandbox: both keep
+code, so a review doesn't quietly turn into a fix. The limit is not a sandbox, though: both keep
 <code>Bash</code> (the reviewer saves its report through it), and <code>memory: project</code> lets a
 sub-agent write to its own memory folder.</p>
 <table>
 <thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th><th>Spawned by</th></tr></thead>
 <tbody>
-<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>—</td><td>Complex multi-part tasks</td></tr>
-<tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>—</td><td>Feature and bugfix implementation</td></tr>
+<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>none</td><td>Complex multi-part tasks</td></tr>
+<tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>none</td><td>Feature and bugfix implementation</td></tr>
 <tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
-<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>—</td><td>Test writing and running, live browser checks (runtime verification runs in the orchestrating session)</td></tr>
-<tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>—</td><td><code>/workflows:release</code></td></tr>
+<tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>none</td><td>Test writing and running, live browser checks (runtime verification runs in the main session instead)</td></tr>
+<tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>none</td><td><code>/workflows:release</code></td></tr>
 <tr><td><code>critic</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
 <tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
 </tbody>
 </table>
 <p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
-folder — a <code>MEMORY.md</code> index plus topic files it writes as it learns (recurring defects,
-easy-to-miss files, project quirks). The first 200 lines (25&nbsp;KB) of the index load into its prompt
-on every run. Project scope is meant to be <strong>committed</strong>, so every developer's runs benefit;
-review it like any other diff. For per-developer memory, set <code>memory: local</code>
-(<code>.claude/agent-memory-local/</code>, kept out of git). It is off when auto memory is disabled.</p>
+folder: a <code>MEMORY.md</code> index plus topic files it writes as it learns, such as recurring
+defects, easy-to-miss files and project quirks. The first 200 lines (25&nbsp;KB) of the index load into
+its prompt on every run. Project memory is meant to be committed, so every developer's runs benefit
+from it; review changes to it like any other diff. For per-developer memory, set
+<code>memory: local</code> (stored in <code>.claude/agent-memory-local/</code> and kept out of git).
+Sub-agent memory is off when auto memory is disabled.</p>
 
 <h2 id="hooks">Hooks &amp; guardrails</h2>
 <table>
 <thead><tr><th>Hook</th><th>Event</th><th>What it does</th></tr></thead>
 <tbody>
-<tr><td><code>e2e-guard.sh</code></td><td>PreToolUse (Bash, browser MCP tools)</td><td><strong>Blocks</strong> HTTP requests and Claude in Chrome / Playwright navigation to any host in <code>E2E_FORBIDDEN_HOSTS</code> — runtime checks never touch production</td></tr>
-<tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td><strong>Blocks</strong> <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches, deploys to the production stage. The first two are <strong>unconditional — there is no override flag</strong>: a deliberate history rewrite has to run from a terminal outside Claude Code</td></tr>
+<tr><td><code>e2e-guard.sh</code></td><td>PreToolUse (Bash, browser MCP tools)</td><td>Blocks HTTP requests, and Claude in Chrome or Playwright navigation, to any host in <code>E2E_FORBIDDEN_HOSTS</code>, so runtime checks never reach production</td></tr>
+<tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td>Blocks <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches and deploys to the production stage. The first two have no override flag, so a deliberate history rewrite has to run from a terminal outside Claude Code</td></tr>
 <tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config</td></tr>
-<tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check + lint for the edited package; tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
+<tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check and lint for the edited package, plus the tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
 <tr><td><code>post-tool-batch.sh</code></td><td>PostToolBatch</td><td>Full-project type-check after parallel edits</td></tr>
 <tr><td><code>post-tool-failure.sh</code></td><td>PostToolUseFailure</td><td>Classifies the failure and feeds back a hint</td></tr>
 <tr><td><code>stop-check.sh</code></td><td>Stop</td><td>Flags uncommitted changes on feature/epic branches</td></tr>
@@ -660,106 +663,111 @@ review it like any other diff. For per-developer memory, set <code>memory: local
 <tr><td><code>compact-restore.sh</code></td><td>SessionStart (compact)</td><td>Re-injects orientation after compaction</td></tr>
 </tbody>
 </table>
-<div class="callout"><p>All behaviour comes from <strong><code>.claude/hooks/hooks.env</code></strong> —
-26 keys covering version control, deploy guard, repo layout, quality commands, sensitive files,
-tenant isolation, frontend env, design tokens, the TDD nudge and the runtime-verification guard.
-Warnings go to stderr and are non-blocking; only the git guard, the e2e guard and sensitive-file
-rules hard-block.</p></div>
+<div class="callout"><p>All hook behaviour comes from <code>.claude/hooks/hooks.env</code>, which has
+26 keys. They cover version control, the deploy guard, repo layout, quality commands, sensitive
+files, tenant isolation, frontend env, design tokens, the TDD nudge and the runtime-verification
+guard. Warnings go to stderr and don't block anything. Only the git guard, the e2e guard and the
+sensitive-file rules block.</p></div>
 
 <h2 id="rules">Path-scoped rules</h2>
 <p>Claude Code loads every <code>.md</code> file under <code>.claude/rules/</code>. A rule with
-<code>paths:</code> frontmatter loads only when Claude reads or edits a matching file, so
-area-specific knowledge costs no context anywhere else; a rule without it loads every session. The
-template ships one inert example, <code>_example-area.md</code> — copy it, point <code>paths:</code>
-at real code, replace the text. <code>/utils:learn</code> offers this route for area-specific
-lessons.</p>
+<code>paths:</code> frontmatter loads only when Claude reads or edits a matching file, so knowledge
+about one area of the code uses no context elsewhere. A rule without <code>paths:</code> loads in
+every session. The template ships one example, <code>_example-area.md</code>, that never loads: copy
+it, point <code>paths:</code> at real code and replace the text. <code>/utils:learn</code> offers to
+save a lesson this way when it applies to one area only.</p>
 
 <h2 id="workflows">Workflows</h2>
-<p>Playbooks in <code>.ai/workflows/</code> are the method the commands follow — edit a playbook and
-the matching command changes behaviour. They cover feature development, bug fixing, hotfixes,
+<p>The playbooks in <code>.ai/workflows/</code> are the method the commands follow, so editing a
+playbook changes how the matching command behaves. They cover feature development, bug fixing, hotfixes,
 runtime verification, releases, code review, story generation, and harness improvement.</p>
 <h3 id="runtime">Runtime verification</h3>
-<p>After review and the security scan, the feature, bugfix and hotfix workflows prove the change against a
-running system: the agent proposes the levels the change needs — <strong>API</strong> calls with
-<code>curl</code>, a <strong>UI</strong> run of the journeys in a real browser (Claude in Chrome by default,
-Playwright as fallback), read-only <strong>DB</strong> checks through a database MCP server — asks you once to
-confirm, runs them against the test environment and writes <code>test-specs/e2e-report.md</code>. A FAIL, or a
-planned check that did not run, blocks the commit unless you explicitly accept it. Hotfixes run a smoke
-check only; <code>/workflows:verify</code> does the same for ad-hoc work. Production hosts listed in
-<code>E2E_FORBIDDEN_HOSTS</code> are hard-blocked by <code>e2e-guard.sh</code>.</p>
+<p>After review and the security scan, the feature, bugfix and hotfix workflows test the change
+against a running system. The agent proposes the checks the change needs: API calls with
+<code>curl</code>, a run of the user journeys in a real browser (Claude in Chrome by default, with
+Playwright as the fallback), and read-only database checks through a database MCP server. It asks
+you once to confirm the plan, runs the checks against the test environment, and writes
+<code>test-specs/e2e-report.md</code>. A FAIL, or a planned check that didn't run, blocks the commit
+unless you explicitly accept it. Hotfixes run a single smoke check, and <code>/workflows:verify</code>
+runs the same process for ad-hoc work. <code>e2e-guard.sh</code> blocks any production host listed in
+<code>E2E_FORBIDDEN_HOSTS</code>.</p>
 <table>
 <thead><tr><th>Level</th><th>Proposed when the change touches</th><th>What runs</th></tr></thead>
 <tbody>
-<tr><td><strong>API</strong></td><td>Endpoints, contracts, validation, auth, tenancy</td><td><code>curl</code> against the test base URL: happy path, 400, 401, 403, another tenant's record (must be refused), 404, 409</td></tr>
-<tr><td><strong>UI</strong></td><td>Pages, components, forms, routing, client state</td><td>The <code>test-specs.md</code> journeys in Claude in Chrome (default) or Playwright: screenshots, console errors, failed network calls</td></tr>
-<tr><td><strong>DB</strong></td><td>Schema, migrations, data access, backfills</td><td><code>SELECT</code>-only checks through a read-only database MCP server: rows written, tenant key set, nothing else touched</td></tr>
+<tr><td><strong>API</strong></td><td>Endpoints, request and response contracts, validation, auth or tenancy</td><td><code>curl</code> against the test base URL: the happy path, 400, 401, 403, 404 and 409, plus a request for another tenant's record, which must be refused</td></tr>
+<tr><td><strong>UI</strong></td><td>Pages, components, forms, routing or client state</td><td>The journeys from <code>test-specs.md</code>, run in Claude in Chrome (default) or Playwright, with screenshots, console errors and failed network calls recorded</td></tr>
+<tr><td><strong>DB</strong></td><td>Schema, migrations, data access or backfills</td><td><code>SELECT</code>-only checks through a read-only database MCP server: the expected rows were written with the tenant key set, and nothing else changed</td></tr>
 </tbody>
 </table>
-<div class="callout warn"><p><strong>Safety rules.</strong> It runs in your session, not a sub-agent — you confirm the plan,
-do any login yourself and decide on failures. Before a UI journey it checks the signed-in account is a
-listed test account, because Claude in Chrome uses your real profile. API tokens come from a token
-command run inline per request, or an environment variable exported <em>before</em> starting Claude Code
-— never printed or stored. The database is never written. Screenshots stay local (ignore
-<code>.ai/features/**/e2e-screenshots/</code>), and the report is re-checked for secrets and personal data
-at the commit STOP. Production checks after a deploy are a human's or CI's job.</p></div>
-<p>Set it up in <code>project-config.md</code> → <em>Test environments</em> (URLs, start commands, test-token
-source, test accounts, optional read-only DB server) and <code>E2E_FORBIDDEN_HOSTS</code>. Claude in Chrome
-needs <code>claude --chrome</code> (or <code>/chrome</code> → Enabled by default), the extension and a
-<code>/login</code> sign-in; a project file cannot turn it on, and it isn't available in WSL.</p>
+<div class="callout warn"><p><strong>Safety rules.</strong> Runtime verification runs in your own
+session rather than in a sub-agent, so you confirm the plan, do any login yourself and decide what
+happens on a failure. Claude in Chrome uses your real browser profile, so before a UI journey the
+agent checks that the signed-in account is one of the listed test accounts. API tokens come from a
+token command run inline in each request, or from an environment variable exported <em>before</em>
+starting Claude Code. The agent never prints or stores them, and never writes to the database.
+Screenshots stay local (ignore <code>.ai/features/**/e2e-screenshots/</code>), and the report is
+checked for secrets and personal data at the commit STOP. Checking production after a deploy is
+left to a person or to CI.</p></div>
+<p>To set it up, fill <em>Test environments</em> in <code>project-config.md</code> (URLs, start
+commands, where the test token comes from, test accounts and an optional read-only DB server) and
+set <code>E2E_FORBIDDEN_HOSTS</code>. Claude in Chrome needs <code>claude --chrome</code> (or
+<code>/chrome</code> → Enabled by default), the browser extension and a <code>/login</code> sign-in.
+A project file can't turn it on, and it doesn't work in WSL.</p>
 <h3>The epic path</h3>
 <p>When <code>/ba</code> produced an <code>epic-breakdown.md</code>, the feature workflow switches to
 six phases:</p>
 <div class="flow"><span>A validate</span><em>→</em><span>B design gate</span><em>→</em><span>C epic branch</span><em>→</em><span>D parallel build</span><em>→</em><span>E sequential merge</span><em>→</em><span>F review + PR</span></div>
-<p>Phase D isolates each sub-feature in its own <strong>git worktree</strong> under
-<code>.worktrees/</code>, so delegated agents never share a working tree. Worktrees only see
-committed files — which is why planning artifacts are committed onto the epic branch first.</p>
+<p>Phase D builds each sub-feature in its own git worktree under <code>.worktrees/</code>, so the
+delegated agents never share a working tree. A worktree only sees committed files, which is why the
+planning artifacts are committed to the epic branch first.</p>
 
 <h2 id="release">Release flow</h2>
-<p>Deploy knowledge is captured while it is fresh, not reconstructed from <code>git log</code> later:</p>
+<p>Each change records what it needs at deploy time while the work is fresh, so nobody has to piece it together from <code>git log</code> later:</p>
 <div class="flow"><span>/ba: fix version</span><em>→</em><span>feature / bugfix / hotfix: deploy-notes.md</span><em>→</em><span>/workflows:release</span></div>
-<p><code>/ba</code> records each spec's <strong>fix version</strong> (from the tracker, or by asking —
-never guessed). The feature, bugfix and hotfix workflows write <code>.ai/features/&lt;slug&gt;/deploy-notes.md</code>
-— settings, migrations, manual steps, verify checks, rollback, or an explicit <em>No deploy impact</em>.
-<code>/workflows:release</code> selects notes by fix version for its internal artifacts and, if the
-<strong>deployment guide</strong> is switched on in <code>project-config.md</code>, assembles
-<code>docs/release/&lt;version&gt;/deployment-guide-&lt;version&gt;.md</code> after the confirmation gate,
-optionally with a Word copy from <code>.claude/scripts/md-to-docx.py</code>. Existing guides are merged,
-never overwritten.</p>
+<p><code>/ba</code> records each spec's fix version, taken from the tracker or asked for, and never
+guessed. The feature, bugfix and hotfix workflows write
+<code>.ai/features/&lt;slug&gt;/deploy-notes.md</code>, which lists settings, migrations, manual steps,
+checks to run after the deploy and how to roll back, or says plainly that there is no deploy impact.
+<code>/workflows:release</code> picks the notes for its version by fix version and uses them in its
+internal artifacts. If the deployment guide is switched on in <code>project-config.md</code>, it also
+assembles <code>docs/release/&lt;version&gt;/deployment-guide-&lt;version&gt;.md</code> after the
+confirmation gate, with an optional Word copy from <code>.claude/scripts/md-to-docx.py</code>. An
+existing guide is merged into, never overwritten.</p>
 
 <h2 id="standards">Standards &amp; templates</h2>
 <table>
 <thead><tr><th>Tree</th><th>Nature</th></tr></thead>
 <tbody>
-<tr><td><code>standards/universal/</code></td><td>Portable principles — coding, API design, security baseline, testing, accessibility, UI/UX, frontend craft, git workflow</td></tr>
-<tr><td><code>standards/project/**/tech-specific.md</code></td><td>Your stack's concrete rules — what agents actually read</td></tr>
-<tr><td><code>standards/project/frontend/design/</code></td><td>The closed design system: palette, tokens, component specs. Governs <em>whatever</em> UI exists, server-rendered included</td></tr>
-<tr><td><code>standards/**/&lt;stack&gt;/</code> and <code>universal/vcs/</code></td><td><strong>Reference-only</strong> worked examples — never loaded by a command</td></tr>
+<tr><td><code>standards/universal/</code></td><td>Principles that apply to any stack: coding, API design, security baseline, testing, accessibility, UI/UX, frontend craft and git workflow</td></tr>
+<tr><td><code>standards/project/**/tech-specific.md</code></td><td>Your stack's concrete rules. These are the files the agents read</td></tr>
+<tr><td><code>standards/project/frontend/design/</code></td><td>The design system (palette, tokens, component specs). It applies to whatever UI the project has, including server-rendered pages</td></tr>
+<tr><td><code>standards/**/&lt;stack&gt;/</code> and <code>universal/vcs/</code></td><td>Worked examples for reference only. No command loads them</td></tr>
 </tbody>
 </table>
-<p>Templates in <code>.ai/templates/</code> shape every output: technical spec, design spec, user
-story, test plan, security report, PR description, release checklist, ADR, the branded artifact
-header, <code>feature-state.md</code> (which becomes <code>STATE.md</code>), <code>deploy-notes.md</code>
-(each feature's deploy impact, read by the release path), and <code>deployment-guide.md</code> +
-<code>release-guides-index.md</code> for the optional human-facing release guide, and
-<code>e2e-report.md</code> for runtime verification results.</p>
+<p>The templates in <code>.ai/templates/</code> set the shape of each output: technical spec, design
+spec, user story, test plan, security report, PR description, release checklist, ADR and the branded
+artifact header. <code>feature-state.md</code> becomes <code>STATE.md</code>. <code>deploy-notes.md</code>
+holds each feature's deploy impact for the release path, <code>deployment-guide.md</code> and
+<code>release-guides-index.md</code> are for the optional release guide, and
+<code>e2e-report.md</code> holds runtime verification results.</p>
 
 <h2 id="memory">Memory</h2>
 <table>
 <thead><tr><th>Location</th><th>Written by</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><code>.ai/memory/decisions.md</code></td><td>Agents, <code>/init-project</code></td><td>Precedent-setting or hard-to-reverse decisions, with the reason</td></tr>
-<tr><td><code>.ai/memory/learnings.md</code></td><td>Agents, <code>/utils:learn</code></td><td>Non-obvious reusable lessons — pitfalls, approaches abandoned and why</td></tr>
+<tr><td><code>.ai/memory/learnings.md</code></td><td>Agents, <code>/utils:learn</code></td><td>Lessons worth reusing that aren't obvious, such as pitfalls and abandoned approaches with the reason</td></tr>
 <tr><td><code>.ai/memory/design-taste.md</code></td><td>Designer</td><td>Approved and rejected design choices, in the user's own words</td></tr>
-<tr><td><code>.claude/agent-memory/</code></td><td>Sub-agents with <code>memory: project</code></td><td>Per-sub-agent learnings — recurring defects, easy-to-miss files; created on first run</td></tr>
+<tr><td><code>.claude/agent-memory/</code></td><td>Sub-agents with <code>memory: project</code></td><td>Each sub-agent's own learnings, such as recurring defects and easy-to-miss files. Created on first run</td></tr>
 </tbody>
 </table>
-<p>All four are committed — the harness's institutional memory. The designer reads
-design-taste before proposing, so a rejected pattern stays rejected.</p>
+<p>All four are committed, so what one session learns carries over to the next. The designer reads
+the design-taste log before proposing, so a rejected pattern isn't proposed again.</p>
 
 <h2 id="scope">Scope model</h2>
-<p>Every context-loading command resolves a scope first: a forced scope in
-<code>.ai/config/current-scope.md</code> wins; otherwise it infers <strong>backend / frontend /
-fullstack</strong> from your request using the stack signals filled in at init, and loads only that
+<p>Every command that loads project context works out a scope first. A scope forced in
+<code>.ai/config/current-scope.md</code> wins. Otherwise the command infers backend, frontend or
+fullstack from your request, using the stack signals filled in at setup, and loads only that
 scope's config, context and standards. Force it with <code>/utils:scope backend</code>; release it
 with <code>/utils:scope auto</code>.</p>
 
@@ -783,23 +791,23 @@ Every document except <code>STATE.md</code> and <code>deploy-notes.md</code> ope
 With the deployment guide switched on, releases also write <code>docs/release/&lt;version&gt;/</code>.</p>
 
 <h2 id="portability">Other AI agents</h2>
-<p>The harness splits into a <strong>method</strong> that travels and an <strong>enforcement
-mechanism</strong> that does not. <code>.ai/</code> is 87 files of plain markdown with no
+<p>The harness has two parts: the method, which works with other agents, and the enforcement,
+which doesn't. <code>.ai/</code> is 87 files of plain markdown with no
 tool-specific syntax. The Claude Code coupling sits in the 27 commands (77 <code>@file</code>
 includes, 121 <code>$ARGUMENTS</code> refs), the 8 sub-agents, and the 9 hooks wired to Claude Code's
 event names.</p>
 <table>
 <thead><tr><th>Step</th><th>What it gives you</th><th>Cost</th></tr></thead>
 <tbody>
-<tr><td><strong><code>AGENTS.md</code></strong> <span class="pill">done</span></td><td>The whole method as instructions — which files to read, how to scope, which playbook, the gates to stop at — a review before any commit, then the five feature-path gates — and the guardrails to self-enforce. Works with Codex, Cursor, Gemini, Copilot</td><td>None ongoing; it defers to <code>CLAUDE.md</code> and <code>.ai/</code> so it can't drift</td></tr>
-<tr><td><strong>Git hooks + CI</strong></td><td>Guardrails that hold regardless of <em>who</em> edits — agent or human. Recipes for <code>pre-push</code> and <code>pre-commit</code> that re-use <code>hooks.env</code> verbatim</td><td>About half a day; CI is the real boundary since <code>--no-verify</code> skips local hooks</td></tr>
-<tr><td><strong>Command generators</strong></td><td>Slash-command ergonomics inside one specific non-Claude tool</td><td>Highest — generated output rots on every harness change unless CI fails on staleness</td></tr>
+<tr><td><strong><code>AGENTS.md</code></strong> <span class="pill">done</span></td><td>The whole method as written instructions: which files to read, how to pick a scope, which playbook to follow, where to stop and ask (a review before any commit, then the five feature-path gates) and which guardrails to enforce. Works with Codex, Cursor, Gemini and Copilot</td><td>Nothing ongoing. It points to <code>CLAUDE.md</code> and <code>.ai/</code> for the details, so it can't get out of date</td></tr>
+<tr><td><strong>Git hooks + CI</strong></td><td>Guardrails that hold whoever makes the edit, agent or person. Recipes for <code>pre-push</code> and <code>pre-commit</code> hooks that read the same <code>hooks.env</code></td><td>About half a day. CI is what really enforces them, because <code>--no-verify</code> skips local hooks</td></tr>
+<tr><td><strong>Command generators</strong></td><td>Slash-command convenience inside one specific non-Claude tool</td><td>The highest. The generated files go stale with every harness change unless CI fails the build when they do</td></tr>
 </tbody>
 </table>
-<div class="callout warn"><p><strong>Three things never port:</strong> hard blocks at the tool call,
-tool-restricted sub-agents spawned without edit tools, and parallel isolated review. Elsewhere
-those become instructions, and instructions are advisory.</p></div>
-<p>Full detail, recipes and the support matrix: <code>docs/portability.md</code>.</p>
+<div class="callout warn"><p><strong>What doesn't port:</strong> blocking a command at the tool call,
+sub-agents spawned without edit tools, and reviews running in parallel in separate contexts. On
+other agents these become written instructions, which the agent may or may not follow.</p></div>
+<p>The recipes and the support matrix are in <code>docs/portability.md</code>.</p>
 
 <h2 id="trouble">Troubleshooting</h2>
 <table>
@@ -810,7 +818,7 @@ those become instructions, and instructions are advisory.</p></div>
 <tr><td>Workflow says artifacts missing</td><td>Studios haven't run</td><td><code>/ba &lt;slug&gt;</code> then <code>/qa &lt;slug&gt;</code></td></tr>
 <tr><td>Agents cite the wrong stack</td><td>A config or tech-specific file is still a skeleton</td><td>Re-run the verify grep</td></tr>
 <tr><td>Too much context loaded</td><td>Scope guessed wide</td><td><code>/utils:scope backend</code></td></tr>
-<tr><td>Resume starts in the wrong place</td><td><code>STATE.md</code> claims a phase done but its artifact is missing</td><td>It re-runs automatically; delete <code>STATE.md</code> to start clean</td></tr>
+<tr><td>Resume starts in the wrong place</td><td><code>STATE.md</code> claims a phase done but its artifact is missing</td><td>The phase re-runs automatically. Delete <code>STATE.md</code> to start over</td></tr>
 <tr><td>Docs have no logo or footer</td><td><code>.ai/config/branding.md</code> unfilled</td><td>Fill it, drop a logo in <code>.ai/branding/</code></td></tr>
 </tbody>
 </table>
@@ -838,12 +846,12 @@ those become instructions, and instructions are advisory.</p></div>
 
 <footer>
 <p>Source docs: <code>docs/getting-started.md</code>, <code>docs/components.md</code> and
-<code>docs/portability.md</code> in this repository. Deeper references: <code>COMMANDS.md</code>
+<code>docs/portability.md</code> in this repository. More detail: <code>COMMANDS.md</code>
 (every command), <code>.ai/CUSTOMIZATION.md</code> (the 13 variability axes),
 <code>AGENTS.md</code> (non-Claude agents), <code>.ai/README.md</code> and
 <code>.claude/README.md</code> (per-layer detail), and <code>examples/fleetkeep/</code> (a fully
 configured worked example).</p>
-<p><strong>AI Dev Harness</strong> · <strong>Private repository — all rights reserved.</strong> Not licensed for distribution,
+<p><strong>AI Dev Harness</strong> · <strong>Private repository. All rights reserved.</strong> Not licensed for distribution,
 publication, or use outside the organisations that hold rights to it. Portions derive from an
 internal base template; that prior work's terms continue to apply. This covers the harness template
 itself, not the code you build with it.</p>
