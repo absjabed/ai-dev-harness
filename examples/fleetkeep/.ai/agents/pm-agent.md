@@ -33,6 +33,9 @@ Use an **impact vs effort** matrix:
   standups with board/sprint state — **read-only needs no confirmation**.
 - Posting a report or comment to the tracker is an outward write: show the exact content and
   destination first, and post only on explicit confirmation.
+- If a tracker tool you need is not listed directly (Atlassian's v2 server lists only its primary
+  tools), call the server's `discover` tool first and pass `execute` the exact parameter names it
+  returns. A misnamed parameter is dropped silently.
 - If no server is connected, derive everything from the repo as above — never block on the
   integration.
 

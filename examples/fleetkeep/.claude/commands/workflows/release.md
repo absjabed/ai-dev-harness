@@ -82,6 +82,9 @@ On user confirmation:
    (see `.mcp.json`): collect the issue keys referenced in this release's commit messages,
    then **STOP** — show the user the list of issues, the transition to apply (e.g. → Done),
    and the release-note comment to attach. Apply only on explicit confirmation. Skip this
-   step silently when no server is connected.
+   step silently when no server is connected. If a tracker tool you need is not listed directly
+   (Atlassian's v2 server lists only its primary tools), call the server's `discover` tool
+   first and pass `execute` the exact parameter names it returns. A misnamed parameter is
+   dropped silently.
 
 Do not push or deploy — that is the DevOps agent's responsibility.

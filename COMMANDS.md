@@ -147,7 +147,8 @@ The release path writes outside that tree: `/workflows:release` puts its interna
 - Safety: destructive git/deploy commands and sensitive-file edits are guarded by `.claude/hooks/`
   (configured in `.claude/hooks/hooks.env`).
 - Integrations: the template ships `.mcp.json` with Atlassian's remote MCP server (Jira/Confluence,
-  OAuth; no secrets stored). Authenticate once via `/mcp`. When connected, `/ba` can ingest an issue
+  OAuth, v2 endpoint; no secrets stored). Authenticate once via `/mcp` (again if you signed in to
+  v1). When connected, `/ba` can ingest an issue
   key as the rough requirement, `/agents:pm` can enrich status from the board, and `/workflows:release`
   offers to transition released issues. Everything degrades gracefully when not connected, and every
   outward write is shown to you and confirmed first. If you don't use Jira, remove the server from

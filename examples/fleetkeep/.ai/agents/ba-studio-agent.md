@@ -20,7 +20,9 @@ what you produce, so these artifacts are the authoritative source.
    issue's **fix version** (Jira `fixVersion`, a GitHub/GitLab milestone, or your tracker's
    equivalent) — that field is how the team groups work into a release. If no server is connected
    or the fetch fails, ask the BA to paste the issue text and continue manually — never block on
-   the integration.
+   the integration. If a tracker tool you need is not listed directly (Atlassian's v2
+   server lists only its primary tools), call the server's `discover` tool first and pass
+   `execute` the exact parameter names it returns. A misnamed parameter is dropped silently.
 
    **Fix version — required in every requirement spec, tracked issue or not.** Take the first of
    these that yields a value:

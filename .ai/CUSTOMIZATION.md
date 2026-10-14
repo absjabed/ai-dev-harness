@@ -119,7 +119,12 @@ This section lists everything that changes from project to project and where to 
 - **Files:** `.mcp.json` (repo root) + `allowed-tools:` grants in `.claude/commands/**`
 - The template ships Atlassian's remote MCP server (Jira/Confluence via OAuth; the file holds no
   secrets), the Figma bridge, and Playwright MCP for runtime UI checks (axis 14). If your tracker
-  differs, swap or remove the server entry. Grant its tools (`mcp__<server>`) only to the commands that
+  differs, swap or remove the server entry. It points at Atlassian's v2 endpoint
+  (`https://mcp.atlassian.com/v2/mcp`), which lists only its primary tools directly. Other tools go
+  through its `discover` and `execute` tools: call `discover` first and use the exact parameter names it
+  returns, because a misnamed parameter is dropped silently. The `mcp__atlassian` grant covers both.
+  v2 is a separate OAuth resource, so a sign-in made against v1 must be redone with `/mcp`. Grant its
+  tools (`mcp__<server>`) only to the commands that
   need them, and keep integration steps optional so everything works with no server connected. The
   binding rules are invariants 9 to 13 in `.ai/workflows/harness-improvement.md`. Change integrations
   through `/harness:improve`.
