@@ -1,10 +1,10 @@
-# `.claude/` — Execution Layer
+# `.claude/`: Execution Layer
 
-> The **how**: everything Claude Code actually runs — slash commands, spawnable sub-agents,
-> safety/quality hooks, and settings.
+> The how: everything Claude Code runs (slash commands, spawnable sub-agents,
+> safety/quality hooks, and settings).
 
-Files here stay **generic**. They reference project knowledge in [`.ai/`](../.ai/README.md) with
-`@.ai/...` includes, which Claude Code expands inline at run time. That is why the same commands work
+Files here stay generic. They reference project knowledge in [`.ai/`](../.ai/README.md) with
+`@.ai/...` includes, which Claude Code expands inline at run time, so the same commands work
 for any project once `.ai/` is filled in.
 
 ← Back to the [main README](../README.md) · Full command reference in [`COMMANDS.md`](../COMMANDS.md)
@@ -16,13 +16,13 @@ for any project once `.ai/` is filled in.
 | Path | What it holds |
 |------|---------------|
 | [`commands/`](commands) | The slash commands you type. Top-level studios (`init-project`, `ba`, `qa`) plus four families: [`agents/`](commands/agents), [`workflows/`](commands/workflows), [`utils/`](commands/utils), [`harness/`](commands/harness). |
-| [`agents/`](agents) | Spawnable **sub-agents** — isolated workers with their own tool permissions: `developer`, `reviewer`, `qa-runner`, `security-scanner`, `release-manager`, `orchestrator`, `harness-engineer`, `critic`. Workflows spawn these behind the scenes. |
-| [`hooks/`](hooks) | Safety/quality hooks (see below) plus **`hooks.env`** — the single config for all hook behavior. |
+| [`agents/`](agents) | Spawnable sub-agents, which are isolated workers with their own tool permissions: `developer`, `reviewer`, `qa-runner`, `security-scanner`, `release-manager`, `orchestrator`, `harness-engineer`, `critic`. Workflows spawn these behind the scenes. |
+| [`hooks/`](hooks) | Safety/quality hooks (see below) plus `hooks.env`, the single config for all hook behavior. |
 | [`rules/`](rules) | Path-scoped rules: area-specific instructions Claude Code loads only when it reads or edits a matching file. `_example-area.md` is an inert example to copy. |
 | [`scripts/`](scripts) | Helper scripts: `devops-mode.sh` (toggle DevOps execute mode) and `md-to-docx.py` (Word copy of the release deployment guide). |
 | `settings.json` | Hook registration (which script fires on which event). |
 | `HARNESS_VERSION` | The template release this copy came from (e.g. `1.0.0`, matching git tag `v1.0.0` in the template repo). Recorded by `/init-project`; leave it unchanged in a project, so you can tell later what it runs and what an upgrade would bring (`git log v<version>..` in the template repo). |
-| `settings.local.json` | Local, machine-specific overrides — git-ignored. Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
+| `settings.local.json` | Local, machine-specific overrides (git-ignored). Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
 
 ---
 
@@ -30,33 +30,33 @@ for any project once `.ai/` is filled in.
 
 Full arguments, owners, and outputs live in [`COMMANDS.md`](../COMMANDS.md).
 
-- **Studios** (human-in-the-loop): `/init-project`, `/ba`, `/qa`
-- **Specialists** — `commands/agents/`: `/agents:architect`, `/agents:ba`, `/agents:design`,
+- Studios (human-in-the-loop): `/init-project`, `/ba`, `/qa`
+- Specialists (`commands/agents/`): `/agents:architect`, `/agents:ba`, `/agents:design`,
   `/agents:dev`, `/agents:devops`, `/agents:pm`, `/agents:qa`, `/agents:review`, `/agents:security`,
   `/agents:release-manager`
-- **Workflows** — `commands/workflows/`: `/workflows:feature`, `/workflows:bugfix`,
+- Workflows (`commands/workflows/`): `/workflows:feature`, `/workflows:bugfix`,
   `/workflows:hotfix`, `/workflows:verify`, `/workflows:release`
-- **Utilities** — `commands/utils/`: `/utils:status`, `/utils:standup`, `/utils:changelog`,
+- Utilities (`commands/utils/`): `/utils:status`, `/utils:standup`, `/utils:changelog`,
   `/utils:docs`, `/utils:docs-serve`, `/utils:scope`, `/utils:learn`
-- **Harness maintenance** — `commands/harness/`: `/harness:improve` (change the harness itself
+- Harness maintenance (`commands/harness/`): `/harness:improve` (change the harness itself
   through an author → critic → revise → recheck loop; see `.ai/workflows/harness-improvement.md`)
-  and `/harness:ask` (read-only Q&A about the harness — answers cite the exact files they came from)
+  and `/harness:ask` (read-only Q&A about the harness; answers cite the exact files they came from)
 
-> Each specialist command loads its matching **role definition** from
-> [`.ai/agents/`](../.ai/agents) — the command is the button you press; the role is who the agent is.
+> Each specialist command loads its matching role definition from
+> [`.ai/agents/`](../.ai/agents). The command is what you run; the role definition describes the agent.
 
 ---
 
 ## Hooks
 
-All hooks are **config-driven via `hooks.env`** — a blank value means "skip," so the system is
+All hooks are config-driven via `hooks.env`. A blank value means "skip," so the system is
 inert-safe until you opt in. Registration is in `settings.json`:
 
 | Hook script | Fires on | Purpose |
 |-------------|----------|---------|
 | `pre-tool-use.sh` | `PreToolUse` (Edit/Write/MultiEdit) | Guard edits to sensitive/protected files before they happen. |
 | `git-guard.sh` | `PreToolUse` (Bash) | Block destructive git/deploy commands (e.g. `git push --force`). |
-| `e2e-guard.sh` | `PreToolUse` (Bash, `mcp__claude-in-chrome__*`, `mcp__playwright__*`) | Block runtime checks — HTTP requests, browser navigation — aimed at a host in `E2E_FORBIDDEN_HOSTS`. |
+| `e2e-guard.sh` | `PreToolUse` (Bash, `mcp__claude-in-chrome__*`, `mcp__playwright__*`) | Block runtime checks (HTTP requests, browser navigation) aimed at a host in `E2E_FORBIDDEN_HOSTS`. |
 | `post-tool-use.sh` | `PostToolUse` (Edit/Write/MultiEdit) | React to individual edits. |
 | `post-tool-batch.sh` | `PostToolBatch` | Run type-check / lint after a batch of edits. |
 | `post-tool-failure.sh` | `PostToolUseFailure` (Edit/Write/Bash) | Handle a failed tool call. |
