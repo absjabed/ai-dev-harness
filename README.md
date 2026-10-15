@@ -1,10 +1,10 @@
 # AI Dev Harness
 
+**A development harness layer for Claude Code:** specialist agents, engineering standards, workflows and quality gates that sit on top of Claude Code's own agent runtime and take work from spec to PR.
+
 > Led by people and powered by AI, with governance built into the design.
 
 AI Dev Harness is an AI-Driven Lifecycle (AI DLC) framework that turns AI-assisted coding into a repeatable software engineering process with defined controls. It is a template: copy it into a repo, run `/init-project`, and the agents pick up that project's stack, standards and guardrails.
-It is a development-workflow layer that runs inside an agent harness (Claude Code). It is not an
-agent runtime itself.
 
 AI Dev Harness replaces ad-hoc prompting with a structured delivery model. Specialized AI agents work together across the Software Development Lifecycle (SDLC) and follow shared engineering standards, project knowledge, reusable workflows and automated quality gates.
 
