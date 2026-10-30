@@ -195,7 +195,7 @@ def functions(lizard, filename, code):
         info = lizard.analyze_file.analyze_source_code(filename, code)
     except Exception:  # an unparsable file must not crash the gate
         return []
-    return info.function_list
+    return [f for f in info.function_list if f.name != "*global*"]  # lizard's code-outside-functions bucket
 
 
 def crap(cc, covered):
