@@ -29,7 +29,10 @@ allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwr
 Bug to fix: $ARGUMENTS
 
 Follow the bug-fixing workflow completely. Guard the fix first — a failing test where the scope has
-a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify.
+a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify: where
+the quality gate is configured, run the quality gate loop from `developer-agent.md` with
+`.claude/scripts/quality-gate.sh --base <branch the fix started from>` (no `--mutation`; at most 3
+failing runs; never weaken a check). Still failing → stop and show the user before the review gate.
 Then do step 6a: write `.ai/features/<slug>/deploy-notes.md` (fix version from the spec if one
 exists, otherwise ask the user once; `unknown — to be confirmed` if nobody knows; an explicit
 *No deploy impact* line if the fix needs nothing beyond the standard pipeline run).
@@ -51,4 +54,6 @@ then run it and write `.ai/features/<slug>/test-specs/e2e-report.md`. A FAIL or 
 did not run blocks the commit unless the user explicitly accepts it.
 
 Before committing, re-read the e2e report for secrets and personal data (screenshots are never
-committed). Then commit with a "fix:" prefix, including the deploy notes and the e2e report.
+committed). Show the user the final gate output (verdict, diff coverage, touched functions, any
+suppression with its reason) with the review verdict. Then commit with a "fix:" prefix, including
+the deploy notes and the e2e report.

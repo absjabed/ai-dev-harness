@@ -24,7 +24,12 @@ not style (linters/type-checking handle style).
   starts; unbounded list renders in frontend.
 - **Security** — apply `security-baseline.md` (input validation, no secrets, parameterized
   queries via EF Core 8, no raw interpolated SQL; every query is scoped to the caller's tenant by the `TenantId` global query filter on `FleetKeepDbContext` enforced).
-- **Tests** — are the right behaviors tested (happy/edge/error)? Coverage of new logic?
+- **Tests** — are the right behaviors tested (happy/edge/error)? Coverage of new logic? Where
+  the test report has a `## Quality gate` section, read its numbers rather than re-deriving them;
+  a test that only executes code without asserting on the result is a WARNING.
+- **Gate gaming** — any lint/type suppression, coverage exclusion, skipped or focused test,
+  removed assertion, or change to a threshold or to lint/coverage/mutation config in the diff.
+  Each needs a reason stated in the test report; one without a reason is a **BLOCKER**.
 - **Documentation** — public API/behavior changes reflected in `README`/docs.
 - **Naming & conventions** — matches project idioms.
 

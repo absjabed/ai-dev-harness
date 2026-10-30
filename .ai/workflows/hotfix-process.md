@@ -12,7 +12,11 @@ smallest reversible change wins.
 3. **Guard the fix** — reproduce it: a failing test where the affected scope has a test runner, or a
    concrete manual/driven reproduction where it has none, so the regression can't silently return.
 4. **Verify** — run the affected scope's gates (build always; lint/type-check/test where defined) and
-   re-run the reproduction. State what you verified.
+   re-run the reproduction. State what you verified. Where the quality gate is configured, run
+   `.claude/scripts/quality-gate.sh --base {{DEFAULT_BRANCH}}` once: no `--mutation` (too slow
+   for an incident), and its ratchet means touched legacy code only has to not get worse. Put
+   its output in the {{PR_TERM}}. A FAIL is fixed, or explicitly accepted by a human and
+   recorded in the {{PR_TERM}} — never silently ignored.
 4a. **Deploy notes** — capture the release impact while the deploy plan is fresh, before the review
    gate: write `.ai/features/<slug>/deploy-notes.md` from `.ai/templates/deploy-notes.md`, where
    `<slug>` is the branch name minus its `fix/` or `hotfix/` prefix — the same `.ai/features/` path

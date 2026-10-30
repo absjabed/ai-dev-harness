@@ -19,7 +19,7 @@ for any project once `.ai/` is filled in.
 | [`agents/`](agents) | Spawnable sub-agents, which are isolated workers with their own tool permissions: `developer`, `reviewer`, `qa-runner`, `security-scanner`, `release-manager`, `orchestrator`, `harness-engineer`, `critic`. Workflows spawn these behind the scenes. |
 | [`hooks/`](hooks) | Safety/quality hooks (see below) plus `hooks.env`, the single config for all hook behavior. |
 | [`rules/`](rules) | Path-scoped rules: area-specific instructions Claude Code loads only when it reads or edits a matching file. `_example-area.md` is an inert example to copy. |
-| [`scripts/`](scripts) | Helper scripts: `devops-mode.sh` (toggle DevOps execute mode) and `md-to-docx.py` (Word copy of the release deployment guide). |
+| [`scripts/`](scripts) | Helper scripts: `quality-gate.sh` (one PASS/FAIL for the change: build, type-check, lint, tests, diff coverage, complexity, CRAP, suppressions, optional mutation), `quality-metrics.py` (its coverage/complexity/CRAP engine), `devops-mode.sh` (toggle DevOps execute mode) and `md-to-docx.py` (Word copy of the release deployment guide). |
 | `settings.json` | Hook registration (which script fires on which event). |
 | `HARNESS_VERSION` | The template release this copy came from (e.g. `1.0.0`, matching git tag `v1.0.0` in the template repo). Recorded by `/init-project`; leave it unchanged in a project, so you can tell later what it runs and what an upgrade would bring (`git log v<version>..` in the template repo). |
 | `settings.local.json` | Local, machine-specific overrides (git-ignored). Copy `settings.local.json.example` to start one; Claude Code also writes this file itself as you grant permissions. |
@@ -50,14 +50,15 @@ Full arguments, owners, and outputs live in [`COMMANDS.md`](../COMMANDS.md).
 ## Hooks
 
 All hooks are config-driven via `hooks.env`. A blank value means "skip," so the system is
-inert-safe until you opt in. Registration is in `settings.json`:
+inert-safe until you opt in. Warnings reach Claude as `additionalContext` JSON (it never sees the
+stderr of a hook that exits 0). Registration is in `settings.json`:
 
 | Hook script | Fires on | Purpose |
 |-------------|----------|---------|
-| `pre-tool-use.sh` | `PreToolUse` (Edit/Write/MultiEdit) | Guard edits to sensitive/protected files before they happen. |
+| `pre-tool-use.sh` | `PreToolUse` (Edit/Write/MultiEdit) | Guard edits to sensitive/protected files before they happen; block added suppressions when `SUPPRESSION_CHECK=block`. |
 | `git-guard.sh` | `PreToolUse` (Bash) | Block destructive git/deploy commands (e.g. `git push --force`). |
 | `e2e-guard.sh` | `PreToolUse` (Bash, `mcp__claude-in-chrome__*`, `mcp__playwright__*`) | Block runtime checks (HTTP requests, browser navigation) aimed at a host in `E2E_FORBIDDEN_HOSTS`. |
-| `post-tool-use.sh` | `PostToolUse` (Edit/Write/MultiEdit) | React to individual edits. |
+| `post-tool-use.sh` | `PostToolUse` (Edit/Write/MultiEdit) | React to individual edits: lint/type-check failures, domain checks, added suppressions (`warn`). |
 | `post-tool-batch.sh` | `PostToolBatch` | Run type-check / lint after a batch of edits. |
 | `post-tool-failure.sh` | `PostToolUseFailure` (Edit/Write/Bash) | Handle a failed tool call. |
 | `stop-check.sh` | `Stop` | Final checks when a turn ends. |

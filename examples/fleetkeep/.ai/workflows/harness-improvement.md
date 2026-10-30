@@ -23,7 +23,9 @@ before they land. Used by `/harness:improve`.
    services) outside comments or `e.g.` examples.
 4. **Inert-safety** — every hook check is opt-in via `.claude/hooks/hooks.env`; a blank
    value or `*_CHECK="off"` must mean *exactly* the pre-change behavior. Warnings go to
-   stderr; hooks exit 0 unless they are a deliberate hard block (`exit 2`).
+   stderr **and** to Claude as `hookSpecificOutput.additionalContext` JSON on stdout — Claude
+   never sees the stderr of a hook that exits 0, so a stderr-only warning reaches nobody; hooks
+   exit 0 unless they are a deliberate hard block (`exit 2`, whose stderr Claude does see).
 5. **Gate integrity** — never weaken, reorder around, or make skippable an existing STOP
    gate or hard block. New autonomy (auto-commits, spawned agents, external writes) is
    opt-in and sits *behind* a gate, off by default.
@@ -105,7 +107,7 @@ use one. These extend the invariants above — violating one is likewise a CRITI
 ## Verification block (run before the final STOP)
 
 ```bash
-bash -n .claude/hooks/*.sh                                  # every hook parses
+bash -n .claude/hooks/*.sh .claude/scripts/*.sh            # every hook and script parses
 grep -rn '{{' <changed root files>                          # tokens only where intended
 # if examples/ exists:
 for d in examples/*/; do for f in .claude/hooks/*.sh; do cmp "$f" "$d$f"; done; done

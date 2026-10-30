@@ -60,6 +60,12 @@ This section lists everything that changes from project to project and where to 
 - **Files:** `.ai/config/project-config.md`, `CLAUDE.md`, `.claude/hooks/hooks.env`
 - **Tokens:** `{{INSTALL_CMD}}` `{{DEV_CMD}}` `{{BUILD_CMD}}` `{{TEST_CMD}}` `{{LINT_CMD}}` `{{TYPECHECK_CMD}}` `{{MIGRATE_CMD}}`
 - The hooks run `TYPECHECK_CMD`/`LINT_CMD` after edits. Set them in `hooks.env` to enable this.
+- The quality gate (`.claude/scripts/quality-gate.sh`) runs at the workflows' verify steps. Set
+  `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `COVERAGE_REPORTS` and the limits (`COVERAGE_MIN`,
+  `COMPLEXITY_MAX`, `CRAP_MAX`) in `hooks.env`, plus `COVERAGE_EXEMPT_GLOBS` for code no test
+  can reach; `MUTATION_CMD` is optional and slow. Complexity
+  and CRAP need `pip install lizard`. Turn on the linter's own complexity rule too, so the agent
+  hears about it on every edit, not only at the gate.
 
 ### 5. Conventions & principles
 - **Files:** `.ai/standards/project/**`, `CLAUDE.md`; universal principles in `.ai/standards/universal/*` (portable);
@@ -109,6 +115,9 @@ This section lists everything that changes from project to project and where to 
 ### 10. Hook behavior toggles
 - **File:** `.claude/hooks/hooks.env` (the single source for all hook behavior)
 - If a value is empty or `*_CHECK="off"`, that check is skipped. An un-customized template is inert-safe.
+- `SUPPRESSION_CHECK` (`off` | `warn` | `block`) catches an agent silencing a check to pass the
+  gate; `warn` is the recommended setting. Put the lint, coverage and mutation config files in
+  `SENSITIVE_CONFIG_GLOBS` so edits to the thresholds themselves are flagged too.
 
 ### 11. Agent model & reasoning effort
 - **Files:** frontmatter of `.claude/agents/*` and `.claude/commands/**`

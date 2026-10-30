@@ -150,10 +150,10 @@ the harness works whether or not the model cooperates.
 
 | Hook | Event | What it does |
 |---|---|---|
-| `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited, for generated migrations and sensitive config |
+| `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited, for generated migrations and sensitive config; in `SUPPRESSION_CHECK=block` mode it also blocks an edit that adds a lint suppression, coverage exclusion or skipped test |
 | `e2e-guard.sh` | PreToolUse (Bash, browser MCP tools) | Blocks HTTP requests (curl, wget, Invoke-WebRequest…) and Claude in Chrome / Playwright navigation to any host in `E2E_FORBIDDEN_HOSTS`, so runtime checks never touch production |
 | `git-guard.sh` | PreToolUse (Bash) | Blocks `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage. The first two are **unconditional, with no override flag**. A deliberate history rewrite has to be run from a terminal outside Claude Code |
-| `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check and lint for the edited package, plus the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) |
+| `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check and lint for the edited package, plus the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) and, in `warn` mode, the suppression guard. A failure or warning goes back to Claude |
 | `post-tool-batch.sh` | PostToolBatch | Full-project type-check after a batch of parallel edits |
 | `post-tool-failure.sh` | PostToolUseFailure | Classifies a failed tool call (type error, lint, test) and feeds back a hint |
 | `stop-check.sh` | Stop | Reminds about uncommitted changes on feature/epic branches |
@@ -171,14 +171,43 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 | Deploy guard | `DEPLOY_CMD`, `PROD_STAGE` |
 | Repo layout | `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` |
 | Quality commands | `TYPECHECK_CMD`, `LINT_CMD` |
+| Quality gate | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS`, `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD` |
 | Sensitive files | `MIGRATIONS_GLOB`, `MIGRATIONS_REGEN_CMD`, `SENSITIVE_CONFIG_GLOBS` |
 | Tenant isolation | `TENANT_ISOLATION_CHECK`, `TENANT_KEY` |
 | Frontend env | `FRONTEND_ENV_CHECK`, `FRONTEND_ENV_BAD_PATTERN`, `FRONTEND_ENV_GOOD_HINT` |
 | Design tokens | `DESIGN_TOKEN_CHECK`, `DESIGN_TOKEN_DOC`, `DESIGN_TOKEN_EXEMPT_GLOBS` |
 | TDD nudge | `TDD_CHECK`, `TEST_FILE_PATTERNS`, `TDD_EXEMPT_GLOBS` |
+| Suppression guard | `SUPPRESSION_CHECK`, `SUPPRESSION_PATTERNS` |
 | Runtime verification guard | `E2E_FORBIDDEN_HOSTS` |
 
-Warnings go to stderr and are non-blocking; only `git-guard.sh`, `e2e-guard.sh` and the sensitive-file rules hard-block.
+Warnings are non-blocking. They go to stderr and also to Claude, as `additionalContext` JSON:
+Claude never sees the stderr of a hook that exits 0. The Stop reminder goes to you instead, as
+a `systemMessage`. Only `git-guard.sh`, `e2e-guard.sh`, the
+sensitive-file rules and `SUPPRESSION_CHECK=block` hard-block.
+
+### The quality gate (`.claude/scripts/quality-gate.sh`)
+
+One command that measures the change and prints PASS or FAIL with the numbers, so a workflow's
+"verified" is a measurement, not the agent's own claim. It judges only what the change touched
+(`--base <branch>` sets what it is measured against):
+
+| Check | Configured by | Fails when |
+|---|---|---|
+| Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
+| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt), or no report came from this run |
+| Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
+| CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests |
+| Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
+| Mutation | `MUTATION_CMD`, with `--mutation` | The mutation tool's own threshold is missed |
+
+The ratchet keeps legacy code workable: a touched function that was already over a limit and did
+not get worse only warns. Complexity and CRAP need python 3 and `pip install lizard`; a
+configured check that cannot run is a FAIL, never a silent pass. The output ends with a table of
+the touched functions, which the workflows show at their final STOP as the change's shape. Logs go
+under `.git/quality-gate/`. `PASS (partial: …)` means the build or tests are not configured, so the
+gate did not run them. In the feature workflow, the developer agent's last run adds `--mutation`.
+The orchestrating session then re-runs the gate without it: the mutation result is recorded for
+that exact code and reported again. Bugfix runs the gate without mutation; hotfix runs it once.
 
 ---
 

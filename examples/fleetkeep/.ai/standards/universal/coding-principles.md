@@ -21,3 +21,6 @@ Language-agnostic principles every agent applies to every change.
   singletons from deep in the logic (e.g. services should receive their data-access
   dependencies rather than importing them directly).
 - **Leave it cleaner than you found it**, but keep refactors separate from behavior changes.
+- **Keep branching low.** Complex functions are where untested paths hide. Where the project
+  sets `COMPLEXITY_MAX` / `CRAP_MAX`, the quality gate enforces it on every function a change
+  touches; meet it by splitting and testing, never by suppressing a check.

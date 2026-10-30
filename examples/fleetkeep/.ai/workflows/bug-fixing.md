@@ -19,7 +19,12 @@ weaken tenant isolation or the audit trail.
    scope's standards.
 5. **Verify** — Run the affected scope's quality gates (build, plus lint/type-check/test where the
    scope defines them). Where a scope has no test runner, confirm a clean build and re-run your
-   reproduction. State clearly what you verified and what you did not.
+   reproduction. State clearly what you verified and what you did not. Where
+   `.claude/hooks/hooks.env` configures the quality gate, run
+   `.claude/scripts/quality-gate.sh --base <branch the fix started from>` (no `--mutation`) in
+   the quality gate loop of `developer-agent.md`: its PASS is the proof. Its ratchet fits a fix:
+   legacy code you touch only has to not get worse. Still FAIL after 3 runs → stop and show the
+   user before the review gate.
 6. **Assess blast radius** — What else could this affect? Check callers, related endpoints/
    components, and any shared contract other layers or services depend on (a schema change in
    particular must be mirrored wherever else it is mapped — see the scope standards). Call out any
@@ -49,5 +54,5 @@ weaken tenant isolation or the audit trail.
 8. **Commit** — Follow Conventional Commits and reference the tracker ticket, e.g.
    `FK-1234: <what was broken and how it's now fixed>`.
 
-**Report:** root cause, the fix, how it was verified, the review verdict, the runtime verification
-result, the deploy notes (fix version and deploy impact), and any related risk you found.
+**Report:** root cause, the fix, how it was verified (the quality gate output, where configured),
+the review verdict, the runtime verification result, the deploy notes (fix version and deploy impact), and any related risk you found.

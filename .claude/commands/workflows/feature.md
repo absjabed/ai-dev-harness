@@ -128,12 +128,20 @@ completely, in order:
    > 3. Load the scope context files for [backend/frontend/fullstack as determined for this feature].
    > 4. Work through the `## Tasks` checklist in order, following all loaded standards; tick each task off in `STATE.md` as it completes.
    > 5. Follow the atomic-commit decision recorded in `STATE.md`: if **on**, commit each completed task on `feature/$ARGUMENTS` as `feat($ARGUMENTS): <task>`; if **off** (the default), do not commit — leave all changes in the working tree.
-   > 6. Verify per the loaded scope: where the scope has a test runner, write comprehensive tests covering `test-specs.md`, run them, and confirm they pass; where the scope has none (e.g. a legacy scope with no test project), confirm a clean build and drive the affected flow manually.
-   > 7. Generate the test/verification report at `.ai/features/$ARGUMENTS/test-specs/test-report.md`.
-   > Return: the completed task list, test results, and a one-paragraph summary of what was built."
+   > 6. Verify per the loaded scope: where the scope has a test runner, write comprehensive tests covering `test-specs.md`, run them, and confirm they pass; where the scope has none (e.g. a legacy scope with no test project), confirm a clean build and drive the affected flow manually. Then run the quality gate loop from `developer-agent.md`: `.claude/scripts/quality-gate.sh --base [base-branch]`, at most 3 failing runs, never weakening a check, with `--mutation` on the last run only.
+   > 7. Generate the test/verification report at `.ai/features/$ARGUMENTS/test-specs/test-report.md`, with the final gate output under `## Quality gate`.
+   > Return: the completed task list, test results, the gate verdict, and a one-paragraph summary of what was built."
 
-   When the agent returns, verify `## Tasks` is fully checked and the test report exists, then
-   update `STATE.md`.
+   When the agent returns, verify `## Tasks` is fully checked and the test report exists. Then
+   **re-run the quality gate yourself** (`.claude/scripts/quality-gate.sh --base [base-branch]`,
+   no `--mutation`: the gate reports the mutation result recorded for this exact code; only if it
+   says none was recorded, run it once with `--mutation`, in the background if slow) and replace
+   the `## Quality gate` section of the test report with this run's output — your run is the one
+   that counts. If it prints `NOT CONFIGURED`, record that and rely on the agent's manual
+   verification; if `PASS (partial: …)`, confirm the agent ran the named build or tests by hand. If it
+   **FAILs, STOP** before step 5: show the user the failures and continue only on their direction,
+   or with each failure explicitly accepted in their words (recorded in `STATE.md` and later the
+   {{PR_TERM}} description). Update `STATE.md`.
 5. **Review & security gate (parallel)** — spawn both agents concurrently on the current
    feature diff (`git diff HEAD` when atomic commits are off; `git diff [base-branch]...HEAD`
    plus any uncommitted changes when they are on). Spawn both agents concurrently — they are
@@ -168,7 +176,7 @@ completely, in order:
    configured driver — Claude in Chrome by default, Playwright as fallback), and write
    `.ai/features/$ARGUMENTS/test-specs/e2e-report.md`. Fix any FAIL and re-run before step 6; a FAIL
    or a planned check that did not run may only pass step 6 if the user explicitly accepts it.
-6. **STOP** — get user confirmation before finalising. Show: test results, security scan summary (finding counts by severity), any CRITICAL/HIGH details, the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan), and the runtime verification summary from step 5b (PASS / FAIL / NOT RUN counts, every FAIL and NOT RUN — and confirm the e2e report holds no secret or personal data; screenshots are never committed). **Unresolved FAIL or NOT RUN blocks the commit unless the user explicitly accepts each one** — record the acceptance, in their words, in `STATE.md`. Record the gate outcome in `STATE.md`.
+6. **STOP** — get user confirmation before finalising. Show: test results, the quality gate result as the change's shape (verdict, diff coverage, the touched-functions table, mutation result, every suppression with its reason) so the user can review structure and names without reading every line, security scan summary (finding counts by severity), any CRITICAL/HIGH details, the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan), and the runtime verification summary from step 5b (PASS / FAIL / NOT RUN counts, every FAIL and NOT RUN — and confirm the e2e report holds no secret or personal data; screenshots are never committed). **Unresolved FAIL or NOT RUN blocks the commit unless the user explicitly accepts each one** — record the acceptance, in their words, in `STATE.md`. Record the gate outcome in `STATE.md`.
    - Atomic commits **off** (default): create a single conventional commit after confirmation.
    - Atomic commits **on**: show the list of per-task commits already on `feature/$ARGUMENTS` (plus any uncommitted remainder) for confirmation instead of creating one commit; commit any remainder only after confirmation.
 7. Generate the {{PR_TERM}} description at `.ai/features/$ARGUMENTS/pr-description.md`. Update
@@ -248,10 +256,10 @@ For each **dependency group** (sub-features that can run in parallel):
 > 3. Read the approved specs under `.ai/features/$ARGUMENTS/$FEATURE/` — `requirement-spec.md`, `user-stories.md`, `test-specs.md`, and `design/design-spec.md` if present (build the UI against it).
 > 4. Read `.ai/features/$ARGUMENTS/epic-breakdown.md` to understand what other sub-features exist and avoid overlap
 > 5. Create the technical spec under `.ai/features/$ARGUMENTS/$FEATURE/technical-specs/` (split backend.md / frontend.md if fullstack), then implement following all standards
-> 6. Verify per the loaded scope — write & run tests where the scope has a runner, else confirm a clean build + drive the flow manually; generate a report at `.ai/features/$ARGUMENTS/$FEATURE/test-specs/test-report.md`
+> 6. Verify per the loaded scope — write & run tests where the scope has a runner, else confirm a clean build + drive the flow manually; then run the quality gate loop from `developer-agent.md` inside this worktree (`.claude/scripts/quality-gate.sh --base epic/$ARGUMENTS`, at most 3 failing runs, never weakening a check, `--mutation` on the last run only); generate a report at `.ai/features/$ARGUMENTS/$FEATURE/test-specs/test-report.md` with the final gate output under `## Quality gate` (a gate still failing is reported, not hidden)
 > 7. Write the deploy notes at `.ai/features/$ARGUMENTS/$FEATURE/deploy-notes.md` from `.ai/templates/deploy-notes.md` — **inside this worktree**, not the main working tree (a stray copy there is invisible from here and would block the Phase E merge as an untracked-file conflict). Stamp them with the **Fix version** from the Source issue block of `.ai/features/$ARGUMENTS/$FEATURE/requirement-spec.md` (`unknown — to be confirmed` if that is what it says or the field is absent — never guess a version), name the target deployment-guide section, and if this sub-feature needs nothing beyond the standard pipeline run still write the file with an explicit *No deploy impact* line. Never a secret — `<placeholders>` only.
 > 8. Commit on `feature/$ARGUMENTS/$FEATURE` with message: `feat($FEATURE): [what was implemented]` — include the artifacts you wrote under `.ai/features/$ARGUMENTS/$FEATURE/` (technical specs, test report, deploy notes); the worktree is discarded after merge, so uncommitted work is lost.
-> Return: branch name, commit hash, and a one-paragraph summary of what was built."
+> Return: branch name, commit hash, the gate verdict, and a one-paragraph summary of what was built."
 
   - Wait for all agents in the group to complete before starting the next dependency group.
   - After each group completes, update `STATE.md`: mark the group's sub-features `implemented`
@@ -270,7 +278,11 @@ For each sub-feature branch (in dependency order):
    because the worktree is dirty, STOP and ask the user — do not force-remove)
 5. Update `STATE.md`: mark the sub-feature `merged` and set `## Next action`
 
-After all merges, run `git worktree prune`.
+After all merges, run `git worktree prune`. Then run the quality gate once on the integrated
+branch (`.claude/scripts/quality-gate.sh --base [base-branch]`, no `--mutation`: each sub-feature
+already ran it) and save its output to `.ai/features/$ARGUMENTS/test-specs/quality-gate.md`. A
+sub-feature whose agent reported its gate still failing, or a FAIL here, **STOPs** for the user's
+direction or explicit acceptance (recorded in `STATE.md` and the {{PR_TERM}} description).
 
 ### Phase F — Final Review and PR
 
@@ -295,7 +307,7 @@ After all merges, run `git worktree prune`.
 1. Write `.ai/features/$ARGUMENTS/pr-description.md` — a comprehensive {{PR_TERM}} description covering:
    - What the epic delivers (user-facing summary)
    - List of sub-features included, each with a brief description
-   - Testing summary (all sub-feature test reports, plus the Phase F runtime verification report and any accepted gaps)
+   - Testing summary (all sub-feature test reports, the integrated quality gate result from Phase E, plus the Phase F runtime verification report and any accepted gaps)
    - Breaking changes (if any)
    - How to test end-to-end
 2. **STOP** — show the {{PR_TERM}} description to the user. Get confirmation before creating it.

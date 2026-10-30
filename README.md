@@ -46,6 +46,7 @@ This repo ships as a template: every project-specific value is a `{{TOKEN}}` or 
 | **Claude Code** (CLI, desktop app, or IDE extension), opened at the repo root | The harness is a set of slash commands, sub-agents and hooks it loads per repo |
 | **Bash** (Git Bash or WSL on Windows), on `PATH` | The 9 hooks in `.claude/hooks/` are `.sh` scripts. Without bash they fail silently and the guardrails don't run |
 | **git** | Branch guards, changelog/release commands, and the epic workflow's worktrees |
+| *(for the quality gate's complexity and CRAP checks)* **python 3** + `pip install lizard` | Only when `COMPLEXITY_MAX` or `CRAP_MAX` is set; a missing tool is a FAIL, never a silent pass |
 | *(for UI runtime checks)* **Claude in Chrome** | The default UI driver: start with `claude --chrome` (or `/chrome` → *Enabled by default*), install the extension, sign in with `/login`. Without it, Playwright is used |
 | *(optional)* an MCP server connection | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth), a Figma bridge and Playwright. Authenticate once with `/mcp`. Everything degrades gracefully when not connected |
 
@@ -101,8 +102,10 @@ VCS-provider files are examples you copy from.
 
 Also check that the guardrails are live. `.claude/hooks/hooks.env` is the single config for all hook
 behavior, and it is inert-safe: a blank value or `*_CHECK="off"` skips that check. An
-un-customized file blocks nothing, so set `PROTECTED_BRANCHES`, `TYPECHECK_CMD` / `LINT_CMD` and the
-domain checks you want enforced.
+un-customized file blocks nothing, so set `PROTECTED_BRANCHES`, `TYPECHECK_CMD` / `LINT_CMD`, the
+quality gate values and the domain checks you want enforced. Then run
+`.claude/scripts/quality-gate.sh --base HEAD~1` once (the last commit plus any uncommitted work; it needs at least two commits): it should print real checks,
+not `NOT CONFIGURED` or `PASS (partial: …)`.
 
 ### 4. Start working
 
@@ -224,6 +227,11 @@ AI Dev Harness automatically blocks unsafe operations, including:
 - Security violations
 - Missing test coverage
 - Low-quality pull requests
+
+At each verify step, a quality gate measures the change instead of trusting the agent's word:
+build, type-check, lint, tests, coverage of the changed lines, complexity and CRAP of the touched
+functions, and optionally mutation testing. The agent must fix failures at the cause. A suppression
+guard catches it silencing a check instead.
 
 ---
 

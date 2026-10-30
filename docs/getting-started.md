@@ -53,6 +53,7 @@ failures that come from forgetting a step, but failures of judgment still get th
 | **Claude Code** (CLI, desktop app, or IDE extension) opened at the repo root | Commands, sub-agents and hooks are discovered per repo from `.claude/` |
 | **Bash** on `PATH` (Git Bash or WSL on Windows) | All nine hooks are `.sh` scripts. Without bash they fail quietly, and every guardrail is off even though it looks installed |
 | **git** | Branch guards, changelog/standup commands, and the epic path's worktrees |
+| *(for the quality gate's complexity and CRAP checks)* **python 3** + `pip install lizard` | Only when `COMPLEXITY_MAX` or `CRAP_MAX` is set; the gate reports a FAIL, not a silent pass, if they are missing |
 | *(optional)* an MCP server | `.mcp.json` ships Atlassian (Jira/Confluence, OAuth), a Figma bridge and Playwright (fetched by `npx`). Authenticate once with `/mcp`. Everything still works, with reduced function, when a server is not connected |
 | *(for UI runtime checks)* **Claude in Chrome** | The default UI driver. Each developer starts Claude Code with `claude --chrome` (or `/chrome` → *Enabled by default*), installs the extension, and signs in with `/login`. Without it, Playwright is used |
 
@@ -153,6 +154,8 @@ An un-customised file blocks nothing, even though the hooks look fully installed
 |---|---|
 | `PROTECTED_BRANCHES` | Direct pushes to main/develop are not blocked |
 | `TYPECHECK_CMD` / `LINT_CMD` + `PACKAGE_DIRS` | No type-check or lint runs after edits |
+| `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `COVERAGE_REPORTS` + the limits | The quality gate prints `NOT CONFIGURED` and the workflows fall back to the agent's own verification |
+| `SUPPRESSION_CHECK` | Nothing notices an agent silencing a lint rule or skipping a test to get past the gate |
 | `MIGRATIONS_GLOB` | Generated migrations can be hand-edited without warning |
 | `SENSITIVE_CONFIG_GLOBS` | No warning before editing secrets-bearing config |
 | `TENANT_ISOLATION_CHECK` + `TENANT_KEY` | No tenant-scoping check on data-access edits |

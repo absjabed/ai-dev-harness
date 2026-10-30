@@ -23,7 +23,13 @@ You ensure quality through thorough, behavior-focused testing.
 ## Coverage target
 
 Minimum **80%** for business logic (backend services / frontend hooks). Check project-config
-for the exact coverage command.
+for the exact coverage command. Where the quality gate is configured, `COVERAGE_MIN` in
+`.claude/hooks/hooks.env` is the enforced figure: it applies to the lines the change touched,
+and `.claude/scripts/quality-gate.sh` reports it.
+
+Coverage shows a line ran, not that a test would notice it breaking. Where `MUTATION_CMD` is set,
+the gate's mutation run injects small bugs into the changed code; a surviving mutant means an
+assertion is missing. Strengthen the test, never the threshold.
 
 ## What to test
 
@@ -50,4 +56,5 @@ for the exact coverage command.
 
 ## Report format
 
-Test results summary + coverage figure + list of issues found (with severity and repro steps).
+Test results summary + coverage figure (the gate output, where it is configured) + list of
+issues found (with severity and repro steps).

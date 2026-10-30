@@ -4,7 +4,9 @@
 # Registered in .claude/settings.json for matcher "Edit|Write|MultiEdit".
 # Config-driven: reads .claude/hooks/hooks.env. Blank values ⇒ that guard is skipped.
 #
-# Behavior: non-blocking except the migrations guard. Warnings go to stderr; exit 2 = hard block.
+# Behavior: non-blocking except the migrations guard and SUPPRESSION_CHECK="block". Warnings go
+# to stderr and, as hookSpecificOutput.additionalContext JSON on stdout, to Claude (Claude never
+# sees the stderr of a hook that exits 0). exit 2 = hard block; Claude sees its stderr as the reason.
 
 set -euo pipefail
 
@@ -15,8 +17,17 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MIGRATIONS_GLOB="${MIGRATIONS_GLOB:-}"
 MIGRATIONS_REGEN_CMD="${MIGRATIONS_REGEN_CMD:-}"
 SENSITIVE_CONFIG_GLOBS="${SENSITIVE_CONFIG_GLOBS:-}"
+SUPPRESSION_CHECK="${SUPPRESSION_CHECK:-off}"
+SUPPRESSION_PATTERNS="${SUPPRESSION_PATTERNS:-}"
 
 payload="$(cat)"
+
+# The edit's new and old text, for the suppression check (written only in block mode).
+TEXT_DIR=""
+if [[ "$SUPPRESSION_CHECK" == "block" && -n "$SUPPRESSION_PATTERNS" ]]; then
+  TEXT_DIR="$(mktemp -d 2>/dev/null || echo '')"
+  trap '[[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
+fi
 
 read -r TOOL FILE <<EOF
 $(printf '%s' "$payload" | node -e '
@@ -26,22 +37,52 @@ process.stdin.on("data", c => raw += c).on("end", () => {
     const j = JSON.parse(raw);
     const ti = j.tool_input || {};
     const file = ti.file_path || ti.path || ti.notebook_path || "";
+    const dir = process.argv[1];
+    if (dir) {
+      const pick = k => [ti[k], ...(ti.edits || []).map(e => e[k])].filter(s => typeof s === "string").join("\n");
+      require("fs").writeFileSync(dir + "/new", pick("new_string") + "\n" + (ti.content || ""));
+      require("fs").writeFileSync(dir + "/old", pick("old_string"));
+    }
     process.stdout.write(`${j.tool_name || ""} ${file}`);
   } catch (_) {
     process.stdout.write(" ");
   }
 });
-' 2>/dev/null || echo " ")
+' "$TEXT_DIR" 2>/dev/null || echo " ")
 EOF
+FILE="$(printf '%s' "$FILE" | tr '\\' '/')"   # Windows paths arrive with backslashes; the checks below match on "/"
+
+# note <text>: record a warning for both the user (stderr) and Claude (JSON at exit).
+CONTEXT=""
+note() { printf '%s\n' "$1" >&2; CONTEXT+="$1"$'\n'; }
+emit_context() {
+  [[ -z "$CONTEXT" ]] && return 0
+  printf '%s' "$CONTEXT" | node -e '
+let r = "";
+process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.stringify(
+  { hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: r.trim() } })));
+' 2>/dev/null || true
+}
+
+# in_source_globs: is $FILE source code (SOURCE_GLOBS; blank ⇒ every file)? Docs that merely
+# mention a suppression are not suppressions.
+in_source_globs() {
+  [[ -z "${SOURCE_GLOBS:-}" ]] && return 0
+  local g
+  set -f
+  for g in $SOURCE_GLOBS; do [[ "$FILE" == $g ]] && { set +f; return 0; }; done
+  set +f
+  return 1
+}
 
 # Warn when editing a real .env file (but allow .env.example). (Always on — universal.)
-if [[ "$FILE" == *.env && "$FILE" != *.env.example ]]; then
-  echo "WARNING: $TOOL is about to modify an .env file ($FILE). Confirm this is intentional and contains no committed secrets." >&2
+if [[ "$FILE" == *.env && "$FILE" != *.env.example && "$FILE" != */.claude/hooks/hooks.env ]]; then
+  note "WARNING: $TOOL is about to modify an .env file ($FILE). Confirm this is intentional and contains no committed secrets."
 fi
 
 # Warn when editing production configuration. (Always on — universal.)
 if [[ "$FILE" == *production* || "$FILE" == *prod.* || "$FILE" == *.prod.* ]]; then
-  echo "WARNING: $TOOL is editing a production configuration file ($FILE)." >&2
+  note "WARNING: $TOOL is editing a production configuration file ($FILE)."
 fi
 
 # Block direct edits to generated migration files (config-driven).
@@ -55,10 +96,28 @@ fi
 if [[ -n "$SENSITIVE_CONFIG_GLOBS" ]]; then
   for glob in $SENSITIVE_CONFIG_GLOBS; do
     if [[ "$FILE" == $glob ]]; then
-      echo "WARNING: Editing sensitive config ($FILE). Verify permissions, names, and environment values are correct." >&2
+      note "WARNING: Editing sensitive config ($FILE). Verify permissions, names, and environment values are correct."
       break
     fi
   done
 fi
 
+# Block an edit that adds a lint/type/coverage suppression or a skipped/focused test
+# (SUPPRESSION_CHECK="block"; warn mode lives in post-tool-use.sh). A human can still add one.
+if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" ]] && in_source_globs; then
+  # A Write replaces the whole file, so the old text is what is on disk now.
+  if [[ ! -s "$TEXT_DIR/old" && -f "$FILE" ]]; then cat -- "$FILE" > "$TEXT_DIR/old" 2>/dev/null || true; fi
+  NEW_HITS="$(grep -E -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
+  NEW_COUNT=0
+  [[ -n "$NEW_HITS" ]] && NEW_COUNT="$(printf '%s\n' "$NEW_HITS" | wc -l | tr -d ' ')"
+  OLD_COUNT="$(grep -cE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/old" 2>/dev/null || true)"
+  if [[ "$NEW_COUNT" -gt "${OLD_COUNT:-0}" ]]; then
+    echo "BLOCKED: this edit adds a suppression or skipped test to $FILE:" >&2
+    printf '%s\n' "$NEW_HITS" | head -5 >&2
+    echo "Fix the cause (refactor, add the missing test) instead. If it is truly needed, ask the user to add it themselves." >&2
+    exit 2
+  fi
+fi
+
+emit_context
 exit 0

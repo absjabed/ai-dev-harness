@@ -21,8 +21,38 @@ You implement features to spec while following every project standard.
 5. **Write tests** — unit-test business logic with fake repositories; cover happy path, edge
    cases, and error states.
 6. **Self-review** — re-read your diff as the Reviewer agent would.
-7. **Verify** — run `dotnet build -warnaserror` (type-check) and `dotnet test`; both must pass.
+7. **Verify** — run the quality gate loop below. Where the gate is not configured, run
+   `dotnet build -warnaserror` (type-check) and `dotnet test`; both must pass.
 8. **Commit** — conventional commit message.
+
+## Quality gate loop
+
+`.claude/scripts/quality-gate.sh` measures the change: build, type-check, lint, tests, coverage of
+the changed lines, complexity and CRAP of the functions you touched, added suppressions and, with
+`--mutation`, whether the tests catch injected bugs. It prints PASS or FAIL with the numbers. The
+gate's verdict is what counts, not your own reading of the output.
+
+1. Run it with the base the workflow gives you, without `--mutation`.
+2. On FAIL, fix the cause and run it again:
+   - lint, type or test failure → fix the code (or the test, if the test is wrong; say so).
+   - coverage under the minimum → test the changed lines that never ran.
+   - complexity or CRAP over the limit → split the function or remove branching. Testing it
+     also lowers CRAP.
+   - surviving mutants → strengthen the assertions in the tests that should have caught them.
+3. Never make it pass by weakening it: no new lint/type suppression, coverage exclusion, skipped
+   or focused test, deleted assertion, or edit to a threshold or to the lint/coverage/mutation
+   config. If one is genuinely needed, stop and give the reason instead.
+4. Once it passes, do one clean-up pass on what you wrote (clearer names, smaller functions, dead
+   code out). If the workflow asks for mutation testing, the run after the clean-up adds
+   `--mutation` (it is slow, so only this last run uses it); otherwise run it plain. Leave it
+   passing.
+5. Stop after 3 failing runs in total. Report what still fails and what you tried; do not loop.
+6. Paste the final gate output into the test report under `## Quality gate`, with the reason for
+   any suppression it lists.
+
+`NOT CONFIGURED` means the project has not set it up: verify by hand as in step 7.
+`PASS (partial: …)` means the gate could not run the build or tests it names: run those by hand
+and say so in the test report.
 
 ## Code quality requirements
 
@@ -39,8 +69,8 @@ Imperative mood, ≤72-char subject. One logical change per commit.
 
 ## Self-check before completing
 
-- Does it type-check (`dotnet build -warnaserror`) and run?
-- Do tests pass (`dotnet test`)? Is new logic covered?
+- Does the quality gate pass (or, where it is not configured, does it type-check with
+  `dotnet build -warnaserror` and do tests pass with `dotnet test`)? Is new logic covered?
 - Does it follow the layering, DI, error, and `ApiResponse<T>` — `{ data, error, traceId }` conventions?
 
 ## Decision logging
@@ -60,5 +90,6 @@ Imperative mood, ≤72-char subject. One logical change per commit.
 - Leave `console.log`/print/debug statements.
 - Skip error handling or input validation.
 - Write business logic without tests.
+- Silence a check to get past the quality gate (see the loop above).
 - Call Azure SQL Database from a handler or directly from a service — go through the injected repository layer over `FleetKeepDbContext`.
 - Return raw Azure SQL Database/EF Core 8 objects to clients — map to typed response types.
