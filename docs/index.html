@@ -161,7 +161,7 @@ cooperates. It ships as a template: every project-specific value is a <code>{{TO
 <div class="grid">
   <div class="tile"><h4>16 agent personas</h4><p>BA, architect, designer, developer, QA, reviewer, security, DevOps, PM, release, orchestrator, critic and more.</p></div>
   <div class="tile"><h4>27 slash commands</h4><p>Studios, specialists, workflows, utilities and harness maintenance.</p></div>
-  <div class="tile"><h4>9 automated hooks</h4><p>Block force pushes, protected-branch pushes and any request to a production host; type-check and lint after edits; warn on sensitive files.</p></div>
+  <div class="tile"><h4>9 automated hooks</h4><p>Block force pushes, protected-branch pushes and any request to a production host; type-check and lint after edits; warn on sensitive files and on silenced checks or skipped tests.</p></div>
   <div class="tile"><h4>Resumable workflows</h4><p><code>STATE.md</code> records phase, tasks and decisions, so a fresh session picks up exactly where the last one stopped.</p></div>
 </div>
 
@@ -179,6 +179,7 @@ it.</p>
 <tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>A reviewer and a security scanner run in parallel, in separate contexts, and report findings without changing code. CRITICAL findings block the commit, and nobody has to remember to run the check</td></tr>
 <tr><td>The code passed review and tests, but nobody called the API or clicked through the screen</td><td>After review and the security scan, runtime verification makes real API calls, runs the user journeys in a browser and checks the database read-only, all against the test environment. A failed or skipped check blocks the commit until you accept it</td></tr>
 <tr><td>"Tests pass", but nobody checks whether that part of the code has tests at all</td><td>Verification depends on the scope: real tests where a test runner exists, otherwise a clean build plus a documented manual reproduction. The report says which one happened</td></tr>
+<tr><td>The agent gets the checks to pass by silencing them, or writes code nobody can follow</td><td>The quality gate measures what the change touched: coverage of the changed lines, complexity and CRAP of each function, and optional mutation testing. The suppression guard catches a silenced lint rule, a coverage exclusion or a skipped test</td></tr>
 <tr><td>One bad command (a force push, a hard reset, a deploy to production) undoes a day's work</td><td>Hooks block these commands at the tool call, whatever the model intended</td></tr>
 <tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads the rejected patterns before proposing anything, so a rejected idea doesn't come back</td></tr>
 <tr><td>A long session loses the thread, and the next one starts cold</td><td><code>STATE.md</code> records the phase, tasks and decisions. Re-running the workflow resumes from there and checks that each finished phase's output still exists</td></tr>
@@ -523,9 +524,13 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   <tr><td><code>MIGRATIONS_GLOB</code></td><td>Generated migrations can be hand-edited silently</td></tr>
   <tr><td><code>SENSITIVE_CONFIG_GLOBS</code></td><td>No warning before editing secrets-bearing config</td></tr>
   <tr><td><code>TENANT_ISOLATION_CHECK</code> + <code>TENANT_KEY</code></td><td>No tenant-scoping check on data access</td></tr>
+  <tr><td><code>GATE_BUILD_CMD</code>, <code>GATE_TEST_CMD</code>, <code>COVERAGE_REPORTS</code> + the limits</td><td>The quality gate prints <code>NOT CONFIGURED</code> and the workflows fall back to the agent's own verification</td></tr>
+  <tr><td><code>SUPPRESSION_CHECK</code></td><td>Nothing notices an agent silencing a lint rule or skipping a test to get past the gate</td></tr>
   </tbody>
   </table>
-  <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.</p>
+  <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.
+  Then run the quality gate once on the last commit plus uncommitted work (needs at least two commits):</p>
+  <pre><code>.claude/scripts/quality-gate.sh --base HEAD~1</code></pre>
 </li>
 </ol>
 
@@ -544,7 +549,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <tr><td>Implement</td><td>Delegated to a developer sub-agent with fresh context</td><td>none</td></tr>
 <tr><td>Verify</td><td>The quality gate, run by the developer agent and then re-run by the workflow itself: build, lint, tests, coverage of the changed lines, complexity and CRAP, mutation. Where it isn't configured, tests where a test runner exists, otherwise a clean build plus a documented manual check. The report says which</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>Review + security</td><td>The reviewer and the security scanner run in parallel on the diff</td><td>CRITICAL blocks</td></tr>
-<tr><td>Commit</td><td>Message shown for confirmation</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Commit</td><td>Message shown for confirmation, with the gate's verdict and its table of touched functions, so you review the change's shape instead of every line</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>PR</td><td>Description generated and shown before anything is opened</td><td><span class="pill block">STOP</span></td></tr>
 </tbody>
 </table>
@@ -813,6 +818,7 @@ with <code>/utils:scope auto</code>.</p>
 ├── design/design-spec.md        # /agents:design
 ├── test-specs/test-report.md    # what was and wasn't verified
 ├── test-specs/e2e-report.md     # runtime checks against a running system
+├── test-specs/quality-gate.md   # epics: the gate run on the integrated branch
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
 ├── deploy-notes.md              # deploy impact + fix version; never branded
@@ -869,6 +875,7 @@ other agents these become written instructions, which the agent may or may not f
 <tr><td>Prove a change on the running system</td><td><code>/workflows:verify "&lt;what changed&gt;"</code></td></tr>
 <tr><td>Release</td><td><code>/agents:security</code> → <code>/workflows:release &lt;version&gt;</code></td></tr>
 <tr><td>Review what I just wrote</td><td><code>/agents:review</code></td></tr>
+<tr><td>Check my change against the quality gate</td><td><code>.claude/scripts/quality-gate.sh --base main</code> (add <code>--mutation</code> for mutation testing)</td></tr>
 <tr><td>Daily check-in</td><td><code>/utils:status</code>, <code>/utils:standup</code></td></tr>
 <tr><td>Capture a lesson</td><td><code>/utils:learn "&lt;lesson&gt;"</code></td></tr>
 <tr><td>Question about the harness</td><td><code>/harness:ask "&lt;question&gt;"</code></td></tr>
