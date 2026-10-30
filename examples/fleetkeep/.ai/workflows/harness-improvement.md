@@ -108,6 +108,7 @@ use one. These extend the invariants above — violating one is likewise a CRITI
 
 ```bash
 bash -n .claude/hooks/*.sh .claude/scripts/*.sh            # every hook and script parses
+git ls-files -s .claude | grep -E '\.(sh|py)$' | grep -v '^100755'   # empty: all executable (settings.json runs hooks directly)
 grep -rn '{{' <changed root files>                          # tokens only where intended
 # if examples/ exists:
 for d in examples/*/; do for f in .claude/hooks/*.sh; do cmp "$f" "$d$f"; done; done
