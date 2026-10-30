@@ -176,7 +176,7 @@ completely, in order:
    configured driver — Claude in Chrome by default, Playwright as fallback), and write
    `.ai/features/$ARGUMENTS/test-specs/e2e-report.md`. Fix any FAIL and re-run before step 6; a FAIL
    or a planned check that did not run may only pass step 6 if the user explicitly accepts it.
-6. **STOP** — get user confirmation before finalising. Show: test results, the quality gate result as the change's shape (verdict, diff coverage, the touched-functions table, mutation result, every suppression with its reason) so the user can review structure and names without reading every line, security scan summary (finding counts by severity), any CRITICAL/HIGH details, the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan), and the runtime verification summary from step 5b (PASS / FAIL / NOT RUN counts, every FAIL and NOT RUN — and confirm the e2e report holds no secret or personal data; screenshots are never committed). **Unresolved FAIL or NOT RUN blocks the commit unless the user explicitly accepts each one** — record the acceptance, in their words, in `STATE.md`. Record the gate outcome in `STATE.md`.
+6. **STOP** — get user confirmation before finalising. First, if any source or test file changed after the recorded gate run (fixes for review, security or runtime findings), run the gate again the same way and replace the test report's `## Quality gate` section: the run you show must be the final code's (its first line names the change id). Show: test results, the quality gate result as the change's shape (verdict, diff coverage, the touched-functions table, mutation result, every suppression with its reason) so the user can review structure and names without reading every line, security scan summary (finding counts by severity), any CRITICAL/HIGH details, the deploy notes from step 5a (fix version, deploy impact — and confirm they hold no secret, since they were written after the scan), and the runtime verification summary from step 5b (PASS / FAIL / NOT RUN counts, every FAIL and NOT RUN — and confirm the e2e report holds no secret or personal data; screenshots are never committed). **Unresolved FAIL or NOT RUN blocks the commit unless the user explicitly accepts each one** — record the acceptance, in their words, in `STATE.md`. Record the gate outcome in `STATE.md`.
    - Atomic commits **off** (default): create a single conventional commit after confirmation.
    - Atomic commits **on**: show the list of per-task commits already on `feature/$ARGUMENTS` (plus any uncommitted remainder) for confirmation instead of creating one commit; commit any remainder only after confirmation.
 7. Generate the pull request description at `.ai/features/$ARGUMENTS/pr-description.md`. Update
@@ -304,10 +304,13 @@ direction or explicit acceptance (recorded in `STATE.md` and the pull request de
    `.ai/features/$ARGUMENTS/test-specs/e2e-report.md`. A FAIL or a planned check that did not run
    blocks the pull request unless the user explicitly accepts it; accepted gaps go in the
    pull request description.
+0b. **Final gate** — if any source or test file changed after the Phase E gate run (fixes for
+   review or runtime findings), run it again the same way and replace `quality-gate.md`, so the
+   pull request reports the final code's run. A FAIL here STOPs as in Phase E.
 1. Write `.ai/features/$ARGUMENTS/pr-description.md` — a comprehensive pull request description covering:
    - What the epic delivers (user-facing summary)
    - List of sub-features included, each with a brief description
-   - Testing summary (all sub-feature test reports, the integrated quality gate result from Phase E, plus the Phase F runtime verification report and any accepted gaps)
+   - Testing summary (all sub-feature test reports, the final integrated quality gate run (Phase E, or step 0b if it re-ran), plus the Phase F runtime verification report and any accepted gaps)
    - Breaking changes (if any)
    - How to test end-to-end
 2. **STOP** — show the pull request description to the user. Get confirmation before creating it.

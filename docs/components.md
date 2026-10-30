@@ -209,6 +209,24 @@ gate did not run them. In the feature workflow, the developer agent's last run a
 The orchestrating session then re-runs the gate without it: the mutation result is recorded for
 that exact code and reported again. Bugfix runs the gate without mutation; hotfix runs it once.
 
+The first line of every run names a **change id**, a hash of the changed source and test files, so
+two runs with the same id measured the same code. What the workflows keep is the run on the final
+code: if review or runtime fixes change it, the gate runs again. Feature and epic keep it in the
+test report (`test-specs/test-report.md`, and `test-specs/quality-gate.md` for the integrated epic),
+bugfix in `.ai/features/<slug>/test-specs/test-report.md`, hotfix in the PR description.
+
+`--baseline` measures the whole codebase instead of a change. It runs the tests, then writes
+`.ai/reports/quality-baseline.md`: overall coverage, how many functions are over each limit, the
+complexity spread, the 20 worst functions by CRAP and the source files no report covers. It never
+fails, and no gate reads it. `/init-project` runs it to choose the limits and the exemptions;
+re-run it to see the trend.
+
+The limits are tunable values, not gates. Tightening one is always fine. After `/init-project` has
+set them, loosening one, or widening
+`COVERAGE_EXEMPT_GLOBS`, needs the user's explicit words and a line in `.ai/memory/decisions.md`
+(old → new, and why). Removing a check or making its FAIL non-blocking is weakening a gate, which
+the harness-improvement invariants forbid.
+
 ---
 
 ## Path-scoped rules (`.claude/rules/`)

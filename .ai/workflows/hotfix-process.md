@@ -16,7 +16,8 @@ smallest reversible change wins.
    `.claude/scripts/quality-gate.sh --base {{DEFAULT_BRANCH}}` once: no `--mutation` (too slow
    for an incident), and its ratchet means touched legacy code only has to not get worse. Put
    its output in the {{PR_TERM}}. A FAIL is fixed, or explicitly accepted by a human and
-   recorded in the {{PR_TERM}} — never silently ignored.
+   recorded in the {{PR_TERM}} — never silently ignored. If review or smoke-check fixes change the code afterwards,
+   run it once more: the {{PR_TERM}} carries the final code's run.
 4a. **Deploy notes** — capture the release impact while the deploy plan is fresh, before the review
    gate: write `.ai/features/<slug>/deploy-notes.md` from `.ai/templates/deploy-notes.md`, where
    `<slug>` is the branch name minus its `fix/` or `hotfix/` prefix — the same `.ai/features/` path

@@ -24,7 +24,9 @@ Fix causes, not symptoms.
    `.claude/scripts/quality-gate.sh --base <branch the fix started from>` (no `--mutation`) in
    the quality gate loop of `developer-agent.md`: its PASS is the proof. Its ratchet fits a fix:
    legacy code you touch only has to not get worse. Still FAIL after 3 runs → stop and show the
-   user before the review gate.
+   user before the review gate. Before the commit, run it once more on the final code (after any
+   review or runtime fixes) and save that run to `.ai/features/<slug>/test-specs/test-report.md`
+   under `## Quality gate`, so the result outlives the session.
 6. **Assess blast radius** — What else could this affect? Check callers, related endpoints/
    components, and any shared contract other layers or services depend on (a schema change in
    particular must be mirrored wherever else it is mapped — see the scope standards). Call out any

@@ -65,7 +65,11 @@ This section lists everything that changes from project to project and where to 
   `COMPLEXITY_MAX`, `CRAP_MAX`) in `hooks.env`, plus `COVERAGE_EXEMPT_GLOBS` for code no test
   can reach; `MUTATION_CMD` is optional and slow. Complexity
   and CRAP need `pip install lizard`. Turn on the linter's own complexity rule too, so the agent
-  hears about it on every edit, not only at the gate.
+  hears about it on every edit, not only at the gate. Run `quality-gate.sh --baseline` before
+  choosing the limits: it writes `.ai/reports/quality-baseline.md` with the whole codebase's
+  coverage, complexity spread and worst functions. Re-run it now and then to see the trend.
+  Tightening a limit is always fine; loosening one after setup is a recorded decision (invariant 5 in
+  `.ai/workflows/harness-improvement.md`).
 
 ### 5. Conventions & principles
 - **Files:** `.ai/standards/project/**`, `CLAUDE.md`; universal principles in `.ai/standards/universal/*` (portable);

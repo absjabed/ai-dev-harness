@@ -2,6 +2,7 @@
 # Quality gate: one deterministic pass/fail for the current change, with the numbers.
 #
 #   .claude/scripts/quality-gate.sh [--base <ref>] [--mutation]
+#   .claude/scripts/quality-gate.sh --baseline
 #
 #   --base <ref>   what the change is measured against: the branch the work started from
 #                  (default HEAD = uncommitted changes only). Committed and uncommitted work
@@ -9,6 +10,14 @@
 #   --mutation     also run MUTATION_CMD (slow). It runs only when every other check passed,
 #                  and its result is recorded for this exact change: a later run without
 #                  --mutation on unchanged code reports it instead of running it again.
+#   --baseline     measure the whole codebase instead of a change: run GATE_TEST_CMD, then write
+#                  coverage, complexity and CRAP for every tracked source file (the harness's own
+#                  .ai/ and .claude/ left out) to .ai/reports/quality-baseline.md. A snapshot for
+#                  choosing the limits and seeing the trend: it judges nothing, and no other run
+#                  reads it. It exits non-zero only when it could not write the file.
+#
+# The first line names a change id (a hash of the changed source and test files): two runs with
+# the same id measured the same code.
 #
 # Checks, each skipped while its hooks.env value is blank:
 #   build        GATE_BUILD_CMD, from the repo root
@@ -24,7 +33,8 @@
 # means the build or the tests are not configured, so the gate did not run them: verify those
 # by hand. Full
 # logs go under .git/quality-gate/, so nothing new needs gitignoring.
-# Exit 0 = PASS, PASS (partial) or NOT CONFIGURED; 1 = FAIL; 2 = usage error.
+# Exit 0 = PASS, PASS (partial), NOT CONFIGURED or a written baseline; 1 = FAIL or no baseline
+# written; 2 = usage error.
 
 set -o pipefail   # no -u: macOS ships bash 3.2, where empty arrays trip it
 
@@ -34,60 +44,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BASE="HEAD"
 MUTATION=0
+BASELINE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --base) BASE="${2:-}"; shift 2 ;;
     --mutation) MUTATION=1; shift ;;
-    -h|--help) sed -n '2,26p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --baseline) BASELINE=1; shift ;;
+    -h|--help) sed -n '2,37p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "quality-gate: unknown argument '$1' (see --help)" >&2; exit 2 ;;
   esac
 done
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "quality-gate: not inside a git repository" >&2; exit 2; }
 cd "$REPO_ROOT" || exit 2
-MERGE_BASE="$(git merge-base "$BASE" HEAD 2>/dev/null)" || { echo "quality-gate: cannot find a merge-base with '$BASE' (a repo with one commit has no HEAD~1)" >&2; exit 2; }
 LOG_DIR="$(git rev-parse --absolute-git-dir)/quality-gate"
+if [[ $BASELINE -eq 1 ]]; then
+  LOG_DIR="$LOG_DIR/baseline"  # its own logs, so a baseline never wipes the last gate run's
+else
+  MERGE_BASE="$(git merge-base "$BASE" HEAD 2>/dev/null)" || { echo "quality-gate: cannot find a merge-base with '$BASE' (a repo with one commit has no HEAD~1)" >&2; exit 2; }
+fi
 mkdir -p "$LOG_DIR"
 for f in "$LOG_DIR"/*.log; do
   [[ -e "$f" ]] || continue
   [[ $MUTATION -eq 0 && "$f" == */mutation.log ]] && continue  # keep the recorded mutation run
   rm -f "$f"
 done
-
-# ── What changed ─────────────────────────────────────────────────────────────
-CHANGED=()   # present now (added, modified, renamed, untracked)
-DELETED=()
-while IFS= read -r f; do CHANGED+=("$f"); done < <( { git diff --name-only --diff-filter=d -M "$MERGE_BASE" 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u)
-while IFS= read -r f; do DELETED+=("$f"); done < <(git diff --name-only --diff-filter=D -M "$MERGE_BASE" 2>/dev/null)
-SOURCES=()
-TESTS=()
-set -f  # keep the configured globs literal while word-splitting them
-for f in "${CHANGED[@]}"; do
-  is_source=1
-  if [[ -n "${SOURCE_GLOBS:-}" ]]; then
-    is_source=0
-    for g in $SOURCE_GLOBS; do [[ "$f" == $g ]] && is_source=1 && break; done
-  fi
-  [[ $is_source -eq 0 ]] && continue
-  is_test=0
-  for g in ${TEST_FILE_PATTERNS:-}; do [[ "$f" == $g ]] && is_test=1 && break; done
-  if [[ $is_test -eq 1 ]]; then TESTS+=("$f"); else SOURCES+=("$f"); fi
-done
-set +f
-
-echo "Quality gate: ${#CHANGED[@]} changed and ${#DELETED[@]} deleted file(s) vs $BASE (${MERGE_BASE:0:10}); ${#SOURCES[@]} source, ${#TESTS[@]} test"
-if [[ ${#CHANGED[@]} -eq 0 && ${#DELETED[@]} -eq 0 ]]; then
-  echo "QUALITY GATE: PASS (nothing changed)"
-  exit 0
-fi
-
-# The change's fingerprint: identical source and tests ⇒ identical value. Ties a mutation result
-# to it. Only SOURCES and TESTS count, so a report a tool writes into the tree does not move it.
-FINGERPRINT="none"
-if [[ ${#SOURCES[@]} -gt 0 || ${#TESTS[@]} -gt 0 ]]; then
-  FINGERPRINT="$( { git diff "$MERGE_BASE" -- "${SOURCES[@]}" "${TESTS[@]}" 2>/dev/null
-                    for f in "${SOURCES[@]}" "${TESTS[@]}"; do printf '%s ' "$f"; git hash-object -- "$f"; done; } | git hash-object --stdin)"
-fi
 
 FAILED=0
 RAN=0
@@ -112,6 +93,94 @@ run_step() {
 }
 skip() { printf '%-12s SKIP  %s\n' "$1" "$2"; }
 not_set() { skip "$1" "$2 not set"; NOT_SET+=("$1"); }  # build and test only: a PASS without them is partial
+
+# find_python: sets PY to a working python 3, or leaves it empty.
+find_python() {
+  PY=""
+  local p
+  for p in python3 python; do
+    if command -v "$p" >/dev/null 2>&1 && "$p" -c 'import sys' >/dev/null 2>&1; then PY="$p"; return; fi
+  done
+}
+
+# ── --baseline: the whole codebase, written to a file, never a verdict ───────
+if [[ $BASELINE -eq 1 ]]; then
+  OUT=".ai/reports/quality-baseline.md"
+  FILES=()
+  set -f
+  while IFS= read -r f; do
+    [[ "$f" == .ai/* || "$f" == .claude/* ]] && continue  # the harness is not the project's code
+    keep=1
+    if [[ -n "${SOURCE_GLOBS:-}" ]]; then keep=0; for g in $SOURCE_GLOBS; do [[ "$f" == $g ]] && keep=1 && break; done; fi
+    for g in ${TEST_FILE_PATTERNS:-}; do [[ "$f" == $g ]] && keep=0 && break; done
+    [[ $keep -eq 1 && -f "$f" ]] && FILES+=("$f")
+  done < <(git ls-files)
+  set +f
+  echo "Quality baseline: ${#FILES[@]} tracked source file(s)"
+  find_python
+  [[ -z "$PY" ]] && { echo "quality-gate: python 3 not found; the baseline needs it" >&2; exit 2; }
+  args=(--baseline-out "$OUT")
+  TEST_START="$LOG_DIR/.test-start"
+  if [[ -z "${GATE_TEST_CMD:-}" ]]; then
+    skip test "GATE_TEST_CMD not set: no coverage in the baseline"
+    args+=(--tests "not run (GATE_TEST_CMD not set)")
+  else
+    : > "$TEST_START"
+    sleep 1  # reports must be measurably newer than this marker on coarse-mtime filesystems
+    if run_step test . "$GATE_TEST_CMD"; then args+=(--tests "PASS"); else args+=(--tests "FAIL (coverage may be incomplete)"); fi
+    args+=(--fresh-after "$TEST_START")
+  fi
+  set -f
+  for g in ${COVERAGE_REPORTS:-}; do args+=(--report-glob "$g"); done
+  for g in ${COVERAGE_EXEMPT_GLOBS:-}; do args+=(--exempt "$g"); done
+  set +f
+  [[ -n "${COMPLEXITY_MAX:-}" ]] && args+=(--complexity-max "$COMPLEXITY_MAX")
+  [[ -n "${CRAP_MAX:-}" ]] && args+=(--crap-max "$CRAP_MAX")
+  # The file list goes through a file: thousands of paths overflow a Windows command line.
+  printf '%s\n' "${FILES[@]}" > "$LOG_DIR/files.txt"
+  "$PY" "$SCRIPT_DIR/quality-metrics.py" "${args[@]}" --files-from "$LOG_DIR/files.txt" 2>&1 | tee "$LOG_DIR/baseline.log"
+  if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    echo "QUALITY BASELINE: NOT WRITTEN (quality-metrics.py failed; see $LOG_DIR/baseline.log)" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+# ── What changed ─────────────────────────────────────────────────────────────
+CHANGED=()   # present now (added, modified, renamed, untracked)
+DELETED=()
+while IFS= read -r f; do CHANGED+=("$f"); done < <( { git diff --name-only --diff-filter=d -M "$MERGE_BASE" 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u)
+while IFS= read -r f; do DELETED+=("$f"); done < <(git diff --name-only --diff-filter=D -M "$MERGE_BASE" 2>/dev/null)
+SOURCES=()
+TESTS=()
+set -f  # keep the configured globs literal while word-splitting them
+for f in "${CHANGED[@]}"; do
+  is_source=1
+  if [[ -n "${SOURCE_GLOBS:-}" ]]; then
+    is_source=0
+    for g in $SOURCE_GLOBS; do [[ "$f" == $g ]] && is_source=1 && break; done
+  fi
+  [[ $is_source -eq 0 ]] && continue
+  is_test=0
+  for g in ${TEST_FILE_PATTERNS:-}; do [[ "$f" == $g ]] && is_test=1 && break; done
+  if [[ $is_test -eq 1 ]]; then TESTS+=("$f"); else SOURCES+=("$f"); fi
+done
+set +f
+
+# The change's fingerprint: identical source and tests ⇒ identical value. Ties a mutation result
+# to it, and is printed as the change id. Only SOURCES and TESTS count, so a report a tool
+# writes into the tree does not move it.
+FINGERPRINT="none"
+if [[ ${#SOURCES[@]} -gt 0 || ${#TESTS[@]} -gt 0 ]]; then
+  FINGERPRINT="$( { git diff "$MERGE_BASE" -- "${SOURCES[@]}" "${TESTS[@]}" 2>/dev/null
+                    for f in "${SOURCES[@]}" "${TESTS[@]}"; do printf '%s ' "$f"; git hash-object -- "$f"; done; } | git hash-object --stdin)"
+fi
+
+echo "Quality gate: ${#CHANGED[@]} changed and ${#DELETED[@]} deleted file(s) vs $BASE (${MERGE_BASE:0:10}); ${#SOURCES[@]} source, ${#TESTS[@]} test; change id ${FINGERPRINT:0:12}"
+if [[ ${#CHANGED[@]} -eq 0 && ${#DELETED[@]} -eq 0 ]]; then
+  echo "QUALITY GATE: PASS (nothing changed)"
+  exit 0
+fi
 
 # ── build ────────────────────────────────────────────────────────────────────
 if [[ -n "${GATE_BUILD_CMD:-}" ]]; then
@@ -174,10 +243,7 @@ fi
 # ── coverage, complexity, CRAP ───────────────────────────────────────────────
 if [[ -n "${COVERAGE_REPORTS:-}${COMPLEXITY_MAX:-}${CRAP_MAX:-}" ]]; then
   RAN=1
-  PY=""
-  for p in python3 python; do
-    if command -v "$p" >/dev/null 2>&1 && "$p" -c 'import sys' >/dev/null 2>&1; then PY="$p"; break; fi
-  done
+  find_python
   if [[ $BUILD_OK -eq 0 ]]; then
     skip metrics "build failed"
   elif [[ -z "$PY" ]]; then
@@ -224,8 +290,8 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
       BEGIN { n = split(scope, s, "\n"); for (i = 1; i <= n; i++) if (s[i] != "") ok[s[i]] = 1
               n = split(oldscope, o, "\n"); for (i = 1; i <= n; i++) if (o[i] != "") was[o[i]] = 1 }
       /^diff --git / { file = ""; old = ""; next }
-      /^\+\+\+ / { file = substr($0, 7); next }
-      /^--- /   { old = substr($0, 7); next }
+      /^\+\+\+ / { file = substr($0, 7); sub(/\t$/, "", file); next }  # a path with a space ends in a TAB
+      /^--- /   { old = substr($0, 7); sub(/\t$/, "", old); next }
       /^\+/     { if (file in ok) print "+\t" file "\t" substr($0, 2); next }
       /^-/      { if (old in was) print "-\t\t" substr($0, 2) }'
     git ls-files --others --exclude-standard | while IFS= read -r f; do

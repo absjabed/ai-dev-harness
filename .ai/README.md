@@ -27,6 +27,7 @@ includes, so all project-specific knowledge lives here and the execution layer s
 | [`templates/`](templates) | Output shapes: user-story, technical-spec, adr, test-plan, design-spec, pr-description, deploy-notes (per-feature deploy impact, unbranded), release-checklist, deployment-guide + release-guides-index (the optional human-facing release guide), security-report, e2e-report (runtime verification results), feature-state (machine-maintained workflow state, unbranded), and the shared `artifact-header.md`. | portable |
 | [`branding/`](branding) | Your logo and branding assets, prepended to every generated document except the unbranded internal ones (`STATE.md`, `deploy-notes.md`). | ✅ yes |
 | [`features/`](features) | Where feature artifacts land (`requirement-spec.md`, `user-stories.md`, `test-specs.md`, `epic-breakdown.md`, `deploy-notes.md`, …). Seeded from `TEMPLATE.md`. | generated |
+| `reports/` | Created on first use: standalone review, security and e2e reports, and `quality-baseline.md` from `.claude/scripts/quality-gate.sh --baseline`. | generated |
 | [`memory/`](memory) | Append-only logs: `decisions.md` (non-obvious, precedent-setting decisions), `learnings.md` (reusable project learnings), `design-taste.md` (approved/rejected design patterns). | grows over time |
 | [`CUSTOMIZATION.md`](CUSTOMIZATION.md) | How to tailor the template, organized by axis. | reference |
 

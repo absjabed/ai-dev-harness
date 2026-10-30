@@ -54,6 +54,10 @@ then run it and write `.ai/features/<slug>/test-specs/e2e-report.md`. A FAIL or 
 did not run blocks the commit unless the user explicitly accepts it.
 
 Before committing, re-read the e2e report for secrets and personal data (screenshots are never
-committed). Show the user the final gate output (verdict, diff coverage, touched functions, any
-suppression with its reason) with the review verdict. Then commit with a "fix:" prefix, including
-the deploy notes and the e2e report.
+committed). Then run the quality gate once more yourself on the final code (after any review or
+runtime fixes; same base, no `--mutation`) and save its output to
+`.ai/features/<slug>/test-specs/test-report.md` under `## Quality gate`, with the reason for any
+suppression it lists (where the gate is not configured, record there what you verified by hand).
+Show the user that run (verdict, diff coverage, touched functions, any suppression with its
+reason) with the review verdict. Then commit with a "fix:" prefix, including the deploy notes, the
+test report and the e2e report.

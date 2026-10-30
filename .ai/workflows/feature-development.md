@@ -79,7 +79,9 @@ phase whose artifact is missing, then continue from the recorded next action.
    `{{TICKET_PREFIX}}-1234: <summary>`) after user confirmation. The confirmation shows the
    quality gate result as the change's shape: verdict, diff coverage, the worst touched functions
    (complexity, coverage, CRAP), the mutation result, and every suppression with its reason. The
-   user reviews structure and names from it; the gate has already checked the measurable parts. If atomic commits were enabled,
+   user reviews structure and names from it; the gate has already checked the measurable parts. That result must
+   be the final code's: if fixes after step 5a changed it, re-run the gate and replace the test
+   report's section (the change id on its first line shows which code a run measured). If atomic commits were enabled,
    present the per-task commit list for confirmation instead of creating a single commit. CRITICAL
    security findings block this step either way.
 9. **Report** — Generate the {{PR_TERM}} description at `.ai/features/<slug>/pr-description.md`;

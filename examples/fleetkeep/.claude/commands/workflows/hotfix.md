@@ -29,7 +29,8 @@ Issue to hotfix: $ARGUMENTS
 Follow the hotfix-process workflow. Minimal change only — no refactors, no unrelated cleanup.
 Guard the fix, then verify against the affected scope's gates — where the quality gate is
 configured, run `.claude/scripts/quality-gate.sh --base main` once (no `--mutation`)
-and put its output in the pull request. A FAIL is fixed, or a human explicitly accepts it in the
+and put its output in the pull request; if review or smoke-check fixes change the code, run it once more so the
+pull request carries the final code's run. A FAIL is fixed, or a human explicitly accepts it in the
 pull request. Do not skip step 4a (deploy notes):
 write `.ai/features/<slug>/deploy-notes.md` and commit it with the fix before the review gate, so it
 is part of the reviewed diff.

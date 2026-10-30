@@ -3,9 +3,12 @@
 
 Called by .claude/scripts/quality-gate.sh; it can also be run on its own:
 
-  python3 .claude/scripts/quality-metrics.py --base <sha> [--report-glob <glob>]...
+  python3 .claude/scripts/quality-metrics.py --base <sha> [--files-from <list>] [--report-glob <glob>]...
       [--fresh-after <file>] [--exempt <glob>]... [--coverage-min 80]
       [--complexity-max 15] [--crap-max 30] -- file...
+
+With --baseline-out <path> in place of --base, it judges nothing: it writes coverage, complexity
+and CRAP for every file given (the whole codebase) to that markdown file.
 
 Judges only what the change touched:
   coverage    share of the changed, coverable lines that the tests ran (diff coverage)
@@ -66,7 +69,7 @@ def changed_lines(base, rel, old):
     # Name both paths so git pairs a rename; keep only the hunks of the new path.
     diff = git("diff", "-M", "-U0", base, "--", *sorted({old, rel}))
     sections = re.split(r"^diff --git ", diff, flags=re.M)
-    diff = next((s for s in sections if re.search(r"^\+\+\+ b/" + re.escape(rel) + r"$", s, re.M)), "")
+    diff = next((s for s in sections if re.search(r"^\+\+\+ b/" + re.escape(rel) + r"\t?$", s, re.M)), "")
     lines = set()
     for hunk in re.finditer(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", diff, re.M):
         start, count = int(hunk.group(1)), int(hunk.group(2) or 1)
@@ -199,30 +202,9 @@ def crap(cc, covered):
     return cc * cc * (1 - covered) ** 3 + cc
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--base", required=True)
-    ap.add_argument("--report-glob", action="append", default=[])
-    ap.add_argument("--fresh-after")
-    ap.add_argument("--exempt", action="append", default=[])
-    ap.add_argument("--coverage-min", type=float)
-    ap.add_argument("--complexity-max", type=int)
-    ap.add_argument("--crap-max", type=float)
-    ap.add_argument("files", nargs="*")
-    args = ap.parse_args()
-
-    repo_root = git("rev-parse", "--show-toplevel").strip()
-    os.chdir(repo_root)
-    files = [norm(f) for f in args.files if os.path.isfile(f)]
-    failed = False
-
-    def say(status, check, text):
-        nonlocal failed
-        failed = failed or status == "FAIL"
-        print(f"{check:<12} {status:<5} {text}")
-
-    # Which reports count: with --fresh-after, only those written by this run's tests;
-    # otherwise the newest match of each glob, which must not predate the code it describes.
+def load_coverage(args, repo_root, say):
+    """The reports that count: with --fresh-after, only those this run's tests wrote; otherwise
+    the newest match of each glob. Returns (Coverage, report paths)."""
     cov = Coverage(repo_root)
     reports = []
     fresh_after = os.path.getmtime(args.fresh_after) if args.fresh_after else None
@@ -247,6 +229,134 @@ def main():
         if not data:
             say("WARN", "coverage", f"report {path} lists no files (unrecognised format, or nothing was measured)")
         cov.add(path, data)
+    return cov, reports
+
+
+def write_baseline(args, files, cov, notes):
+    """Whole-codebase snapshot: never a verdict, only numbers to choose limits and see the trend."""
+    try:
+        import lizard
+    except ImportError:
+        lizard = None
+    measured = bool(cov.entries)  # configured but nothing loaded is "not measured", never 0%
+    rows, unmeasured = [], []
+    hit = total = 0
+    for rel in files:
+        exempt = any(fnmatch.fnmatch(rel, g) for g in args.exempt)
+        data = cov.lookup(rel) if measured else None
+        with open(rel, encoding="utf-8", errors="replace") as fh:
+            code = fh.read()
+        if measured and data is None and not exempt:
+            unmeasured.append(rel)  # the tests never loaded it: its lines count as untested
+            total += sum(1 for line in code.splitlines() if not TRIVIAL.match(line))
+        if data is not None and not exempt:
+            total += len(data)
+            hit += sum(1 for h in data.values() if h > 0)
+        if lizard is None:
+            continue
+        found = functions(lizard, rel, code)
+        for fn in found:
+            covered = None
+            if data is not None:
+                coverable = [n for n in range(fn.start_line, fn.end_line + 1) if n in data]
+                if coverable:
+                    covered = sum(1 for n in coverable if data[n] > 0) / len(coverable)
+            elif measured and not exempt:
+                covered = 0.0  # in no report: untested, as the gate counts it
+            cc = fn.cyclomatic_complexity
+            rows.append((rel, fn, cc, covered, crap(cc, covered) if covered is not None else None))
+
+    if measured:
+        coverage_gap = "no coverable lines"
+    elif args.report_glob:
+        coverage_gap = "not measured: no coverage report loaded (see Notes; fix the report path or the tests)"
+    else:
+        coverage_gap = "not measured (COVERAGE_REPORTS not set)"
+    head = git("log", "-1", "--format=%h %cs").split() or ["-", "-"]
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    pct = lambda n, d: f"{100.0 * n / d:.1f}%" if d else "-"
+    out = ["# Quality baseline", "",
+           f"Measured on `{branch}` at `{head[0]}` (committed {head[1]}) by `.claude/scripts/quality-gate.sh --baseline`.",
+           "",
+           "A snapshot of the whole codebase. No gate reads it and nothing here fails a change: the",
+           "gate judges only the code a change touches, so these numbers show how much old code a",
+           "change may meet, not what it must fix. Re-run it to see the trend.", "",
+           "| Measure | Value |", "|---|---|",
+           f"| Source files | {len(files)} (test files excluded) |",
+           f"| Tests | {args.tests or 'not run'} |",
+           f"| Line coverage | {pct(hit, total) + f' ({hit}/{total} lines)' if total else coverage_gap} |"]
+    if lizard is None:
+        out += ["", "Complexity and CRAP not measured: `pip install lizard`."]
+    else:
+        out.append(f"| Functions | {len(rows)} |")
+        if args.complexity_max is not None:
+            n = sum(1 for r in rows if r[2] > args.complexity_max)
+            out.append(f"| Over COMPLEXITY_MAX ({args.complexity_max}) | {n} ({pct(n, len(rows))}) |")
+        if args.crap_max is not None and measured:
+            n = sum(1 for r in rows if r[4] is not None and r[4] > args.crap_max)
+            out.append(f"| Over CRAP_MAX ({args.crap_max:g}) | {n} ({pct(n, len(rows))}) |")
+        buckets = [("1-5", 1, 5), ("6-10", 6, 10), ("11-15", 11, 15), ("16-20", 16, 20), ("21+", 21, 10 ** 9)]
+        out += ["", "## Complexity spread", "", "| Cyclomatic complexity | Functions |", "|---|---|"]
+        out += [f"| {label} | {sum(1 for r in rows if lo <= r[2] <= hi)} |" for label, lo, hi in buckets]
+        worst = sorted(rows, key=lambda r: (r[4] if r[4] is not None else -1, r[2]), reverse=True)[:20]
+        if worst:
+            out += ["", "## Worst 20 functions", "", "| CRAP | CC | Coverage | Function |", "|---|---|---|---|"]
+            for rel, fn, cc, covered, score in worst:
+                out.append(f"| {f'{score:.1f}' if score is not None else '-'} | {cc} | "
+                           f"{f'{covered:.0%}' if covered is not None else '-'} | `{fn.name}` ({rel}:{fn.start_line}) |")
+    if unmeasured:
+        out += ["", f"## In no coverage report ({len(unmeasured)})", "",
+                "Counted as untested above. Exempt the ones tests cannot reach with `COVERAGE_EXEMPT_GLOBS`.", ""]
+        out += [f"- {rel}" for rel in unmeasured[:50]]
+        if len(unmeasured) > 50:
+            out.append(f"- ... and {len(unmeasured) - 50} more")
+    if notes:
+        out += ["", "## Notes", ""] + [f"- {n}" for n in notes]
+    os.makedirs(os.path.dirname(args.baseline_out) or ".", exist_ok=True)
+    with open(args.baseline_out, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(out) + "\n")
+    print("\n".join(out))
+    print(f"\nBaseline written to {args.baseline_out}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--base")
+    ap.add_argument("--baseline-out", help="write a whole-codebase snapshot here instead of judging a change")
+    ap.add_argument("--tests", help="the baseline run's test result, for the report")
+    ap.add_argument("--files-from", help="read the file list from this file, one path per line")
+    ap.add_argument("--report-glob", action="append", default=[])
+    ap.add_argument("--fresh-after")
+    ap.add_argument("--exempt", action="append", default=[])
+    ap.add_argument("--coverage-min", type=float)
+    ap.add_argument("--complexity-max", type=int)
+    ap.add_argument("--crap-max", type=float)
+    ap.add_argument("files", nargs="*")
+    args = ap.parse_args()
+    if not args.base and not args.baseline_out:
+        ap.error("--base is required (or --baseline-out)")
+
+    repo_root = git("rev-parse", "--show-toplevel").strip()
+    os.chdir(repo_root)
+    if args.files_from:
+        with open(args.files_from, encoding="utf-8", errors="replace") as fh:
+            args.files += [line.rstrip("\r\n") for line in fh if line.strip()]
+    files = [norm(f) for f in args.files if os.path.isfile(f)]
+    failed = False
+
+    if args.baseline_out:
+        notes = []
+        cov, _ = load_coverage(args, repo_root, lambda status, check, text: notes.append(text))
+        write_baseline(args, files, cov, notes)
+        return 0
+
+    def say(status, check, text):
+        nonlocal failed
+        failed = failed or status == "FAIL"
+        print(f"{check:<12} {status:<5} {text}")
+
+    cov, reports = load_coverage(args, repo_root, say)
+    fresh_after = os.path.getmtime(args.fresh_after) if args.fresh_after else None
     if fresh_after is None and reports:
         newest_change = max((os.path.getmtime(f) for f in files), default=0)
         for path in reports:

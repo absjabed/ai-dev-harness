@@ -96,6 +96,8 @@ another agent they do not exist, so treat the following as hard rules that you e
   matching `PACKAGE_DIRS` entry, plus the project's test command. Before you call work done, run
   `.claude/scripts/quality-gate.sh --base <branch you started from>` (plain bash) and fix every
   FAIL at its cause.
+- Once setup has chosen them, never loosen a quality-gate limit or widen `COVERAGE_EXEMPT_GLOBS` in `hooks.env` without the
+  user's explicit words and a line in `.ai/memory/decisions.md` (old → new, and why).
 - If `SUPPRESSION_CHECK` is not `off`, never add a lint suppression, coverage exclusion or
   skipped test to get past a check (`SUPPRESSION_PATTERNS` lists them). Stop and ask instead.
 - If `TENANT_ISOLATION_CHECK` is on, every data-access change must be scoped by `TENANT_KEY`.

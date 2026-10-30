@@ -163,6 +163,18 @@ An un-customised file blocks nothing, even though the hooks look fully installed
 Smoke-test one hook: on a protected branch, ask Claude to run `git push --force` and confirm it is
 refused.
 
+Then check the quality gate and see where the codebase stands:
+
+```bash
+.claude/scripts/quality-gate.sh --base HEAD~1   # the last commit plus uncommitted work: real checks, no NOT CONFIGURED
+.claude/scripts/quality-gate.sh --baseline      # writes .ai/reports/quality-baseline.md
+```
+
+The baseline shows overall coverage, the complexity spread and the worst functions. Choose the
+limits from it, and exempt the files it lists under "In no coverage report" that tests cannot reach.
+The gate judges only touched code, and old code already over a limit only warns, so a messy
+codebase is no reason for loose limits.
+
 ---
 
 ## 5. Your first feature

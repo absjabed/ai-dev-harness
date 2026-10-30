@@ -28,7 +28,12 @@ before they land. Used by `/harness:improve`.
    exit 0 unless they are a deliberate hard block (`exit 2`, whose stderr Claude does see).
 5. **Gate integrity** — never weaken, reorder around, or make skippable an existing STOP
    gate or hard block. New autonomy (auto-commits, spawned agents, external writes) is
-   opt-in and sits *behind* a gate, off by default.
+   opt-in and sits *behind* a gate, off by default. Quality-gate limits in `hooks.env` are
+   tunable values, not gates: tightening one (`COVERAGE_MIN` up, `COMPLEXITY_MAX` or `CRAP_MAX`
+   down, a stricter mutation threshold) is always fine; once `/init-project` has set them, loosening one, or widening
+   `COVERAGE_EXEMPT_GLOBS`, needs the user's explicit words in this run and a line appended to
+   `.ai/memory/decisions.md` with old → new and the reason. Blanking a configured gate command,
+   removing a check, or making a gate FAIL non-blocking is weakening a gate.
 6. **Mirror invariant** *(only while `examples/` exists — it is deleted in real projects)* —
    the `.claude/hooks/*.sh` scripts stay byte-identical between the root and
    `examples/<example-project>/`; only `hooks.env` differs. Portable files copied into the example

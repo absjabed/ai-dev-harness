@@ -105,7 +105,9 @@ behavior, and it is inert-safe: a blank value or `*_CHECK="off"` skips that chec
 un-customized file blocks nothing, so set `PROTECTED_BRANCHES`, `TYPECHECK_CMD` / `LINT_CMD`, the
 quality gate values and the domain checks you want enforced. Then run
 `.claude/scripts/quality-gate.sh --base HEAD~1` once (the last commit plus any uncommitted work; it needs at least two commits): it should print real checks,
-not `NOT CONFIGURED` or `PASS (partial: …)`.
+not `NOT CONFIGURED` or `PASS (partial: …)`. Then run `.claude/scripts/quality-gate.sh --baseline`:
+it writes `.ai/reports/quality-baseline.md`, the whole codebase's coverage, complexity spread and
+worst functions, so you choose the limits knowing where the code stands.
 
 ### 4. Start working
 

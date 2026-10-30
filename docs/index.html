@@ -529,8 +529,13 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   </tbody>
   </table>
   <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.
-  Then run the quality gate once on the last commit plus uncommitted work (needs at least two commits):</p>
-  <pre><code>.claude/scripts/quality-gate.sh --base HEAD~1</code></pre>
+  Then run the quality gate once on the last commit plus uncommitted work (this needs at least two
+  commits), and take a baseline of the whole codebase:</p>
+  <pre><code>.claude/scripts/quality-gate.sh --base HEAD~1
+.claude/scripts/quality-gate.sh --baseline</code></pre>
+  <p>The second command writes <code>.ai/reports/quality-baseline.md</code>: the whole codebase's
+  coverage, complexity spread and worst functions. Choose the limits from it, and exempt the files it
+  lists as in no coverage report that tests can't reach.</p>
 </li>
 </ol>
 
@@ -716,6 +721,14 @@ configured, so you run it by hand. Mutation runs once, on the developer agent's 
 result is kept for that exact code. At the final STOP you see the gate's table of touched functions with
 their complexity, coverage and CRAP. That lets you review structure and names instead of reading
 every line. Bugfix runs the gate without mutation; hotfix runs it once.</p>
+<p>Each run's first line names a change id, so you can tell which code a recorded result measured.
+If review or runtime fixes change the code, the gate runs again, and the final run is what's kept:
+in the test report for features, bugfixes and epics, and in the PR for a hotfix.</p>
+<p><code>--baseline</code> measures the whole codebase instead of a change and writes
+<code>.ai/reports/quality-baseline.md</code>. It never fails anything; <code>/init-project</code>
+runs it to set the limits, and re-running it later shows the trend. The limits are values you
+tune: tightening one is always fine; after setup, loosening one needs your explicit approval and a line in
+<code>.ai/memory/decisions.md</code>. Removing a check is refused as weakening a gate.</p>
 
 <h3 id="runtime">Runtime verification</h3>
 <p>After review and the security scan, the feature, bugfix and hotfix workflows test the change
@@ -816,14 +829,15 @@ with <code>/utils:scope auto</code>.</p>
 ├── STATE.md                     # the workflow — resumable state, never branded
 ├── technical-specs/             # backend.md / frontend.md when fullstack
 ├── design/design-spec.md        # /agents:design
-├── test-specs/test-report.md    # what was and wasn't verified
+├── test-specs/test-report.md    # what was verified, with the final quality gate run
 ├── test-specs/e2e-report.md     # runtime checks against a running system
 ├── test-specs/quality-gate.md   # epics: the gate run on the integrated branch
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
 ├── deploy-notes.md              # deploy impact + fix version; never branded
 └── pr-description.md            # the final report</code></pre>
-<p>Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
+<p>The quality baseline lives at <code>.ai/reports/quality-baseline.md</code>.
+Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
 Every document except <code>STATE.md</code> and <code>deploy-notes.md</code> opens with your branded header.
 With the deployment guide switched on, releases also write <code>docs/release/&lt;version&gt;/</code>.</p>
 
@@ -876,6 +890,7 @@ other agents these become written instructions, which the agent may or may not f
 <tr><td>Release</td><td><code>/agents:security</code> → <code>/workflows:release &lt;version&gt;</code></td></tr>
 <tr><td>Review what I just wrote</td><td><code>/agents:review</code></td></tr>
 <tr><td>Check my change against the quality gate</td><td><code>.claude/scripts/quality-gate.sh --base main</code> (add <code>--mutation</code> for mutation testing)</td></tr>
+<tr><td>Where does the codebase stand?</td><td><code>.claude/scripts/quality-gate.sh --baseline</code></td></tr>
 <tr><td>Daily check-in</td><td><code>/utils:status</code>, <code>/utils:standup</code></td></tr>
 <tr><td>Capture a lesson</td><td><code>/utils:learn "&lt;lesson&gt;"</code></td></tr>
 <tr><td>Question about the harness</td><td><code>/harness:ask "&lt;question&gt;"</code></td></tr>
