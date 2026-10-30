@@ -170,10 +170,13 @@ set +f
 # The change's fingerprint: identical source and tests ⇒ identical value. Ties a mutation result
 # to it, and is printed as the change id. Only SOURCES and TESTS count, so a report a tool
 # writes into the tree does not move it.
+# Content only (the base plus each file's path and blob hash), so committing the work, or a
+# file going from untracked to tracked, does not change it.
 FINGERPRINT="none"
 if [[ ${#SOURCES[@]} -gt 0 || ${#TESTS[@]} -gt 0 ]]; then
-  FINGERPRINT="$( { git diff "$MERGE_BASE" -- "${SOURCES[@]}" "${TESTS[@]}" 2>/dev/null
-                    for f in "${SOURCES[@]}" "${TESTS[@]}"; do printf '%s ' "$f"; git hash-object -- "$f"; done; } | git hash-object --stdin)"
+  FINGERPRINT="$( { echo "$MERGE_BASE"
+                    for f in "${SOURCES[@]}" "${TESTS[@]}"; do printf '%s ' "$f"; git hash-object -- "$f"; done
+                    for f in "${DELETED[@]}"; do printf 'deleted %s\n' "$f"; done; } | git hash-object --stdin)"
 fi
 
 echo "Quality gate: ${#CHANGED[@]} changed and ${#DELETED[@]} deleted file(s) vs $BASE (${MERGE_BASE:0:10}); ${#SOURCES[@]} source, ${#TESTS[@]} test; change id ${FINGERPRINT:0:12}"
