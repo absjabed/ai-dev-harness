@@ -136,7 +136,7 @@ def read_go(text, cov):
 
 def load_report(path):
     cov = {}
-    with open(path, encoding="utf-8", errors="replace") as fh:
+    with open(path, encoding="utf-8-sig", errors="replace") as fh:  # coverlet writes a BOM
         text = fh.read()
     if text.lstrip().startswith("mode:"):
         read_go(text, cov)
@@ -240,9 +240,13 @@ def main():
             reports.append(matches[-1])
     for path in reports:
         try:
-            cov.add(path, load_report(path))
+            data = load_report(path)
         except (OSError, ET.ParseError, ValueError, IndexError) as exc:
             say("FAIL", "coverage", f"cannot read coverage report {path}: {exc}")
+            continue
+        if not data:
+            say("WARN", "coverage", f"report {path} lists no files (unrecognised format, or nothing was measured)")
+        cov.add(path, data)
     if fresh_after is None and reports:
         newest_change = max((os.path.getmtime(f) for f in files), default=0)
         for path in reports:
