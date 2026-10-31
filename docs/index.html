@@ -645,17 +645,20 @@ sub-agent write to its own memory folder.</p>
 <tbody>
 <tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>none</td><td>Complex multi-part tasks</td></tr>
 <tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>none</td><td>Feature and bugfix implementation</td></tr>
-<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
+<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">Write/Edit only in its memory</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
 <tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>none</td><td>Test writing and running, live browser checks (runtime verification runs in the main session instead)</td></tr>
 <tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>none</td><td><code>/workflows:release</code></td></tr>
-<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
+<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">Write/Edit only in its memory</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
 <tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
 </tbody>
 </table>
 <p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
 folder: a <code>MEMORY.md</code> index plus topic files it writes as it learns, such as recurring
-defects, easy-to-miss files and project quirks. The first 200 lines (25&nbsp;KB) of the index load into
+defects, easy-to-miss files and project quirks. Claude Code adds Read, Write and Edit for that folder
+even when the agent's <code>tools</code> leave them out. Each of the four agents reads its index before
+the work, writes only inside its own folder, and ends its reply with a <code>Memory:</code> line naming
+what it recorded. The first 200 lines (25&nbsp;KB) of the index load into
 its prompt on every run. Project memory is meant to be committed, so every developer's runs benefit
 from it; review changes to it like any other diff. For per-developer memory, set
 <code>memory: local</code> (stored in <code>.claude/agent-memory-local/</code> and kept out of git).

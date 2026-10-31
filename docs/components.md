@@ -125,16 +125,19 @@ to its own memory folder.
 |---|---|---|---|---|
 | `orchestrator` | delegates to developer, reviewer, security-scanner | inherit | none | Complex multi-part tasks |
 | `developer` | Read, Write, Edit, Bash | inherit | none | Feature/bugfix implementation |
-| `reviewer` | Read, Bash (no Write/Edit) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
+| `reviewer` | Read, Bash (Write/Edit only in its memory folder) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
 | `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | none | Test writing/running, live browser checks (runtime verification runs in the orchestrating session instead) |
 | `release-manager` | Read, Write, Edit, Bash | sonnet | none | `/workflows:release` |
-| `critic` | Read, Bash (no Write/Edit) | inherit | project | `/harness:improve` |
+| `critic` | Read, Bash (Write/Edit only in its memory folder) | inherit | project | `/harness:improve` |
 | `harness-engineer` | Read, Write, Edit, Bash | inherit | project | `/harness:improve` work packages |
 
 `memory: project` gives that sub-agent a persistent `.claude/agent-memory/<agent>/` folder. It holds
 a `MEMORY.md` index plus topic files the sub-agent writes as it learns, such as recurring defects,
-files that are easy to miss and project quirks. Claude Code loads the first 200 lines (25 KB) of the
+files that are easy to miss and project quirks. Claude Code adds Read, Write and Edit for that folder
+even to a sub-agent whose `tools` leave them out. Each of the four agents reads its `MEMORY.md`
+before the work, writes only inside its own folder, and ends its reply with a `Memory:` line naming
+what it recorded (or `nothing new`). Claude Code loads the first 200 lines (25 KB) of the
 index into the sub-agent's prompt on every run, so it checks what went wrong last time first. The
 folder appears on the sub-agent's first run. Project scope is meant to be committed, so every
 developer's runs benefit from what any run learned: the feature, bugfix, hotfix, release and

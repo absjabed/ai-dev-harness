@@ -80,4 +80,4 @@ Produce the report in the `.ai/templates/security-report.md` format. For each fi
 2. **As a saved file:**
    - Inside a feature/epic workflow → `.ai/features/<feature-slug>/security-report.md`.
    - Standalone (`/agents:security`) → `.ai/reports/security-<DATE>.md` (get `<DATE>` from `date +%F`).
-   You run read-only (Write/Edit are disabled), so persist the file with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REPORT'` … `REPORT`. If no `<feature-slug>` was given, use the `.ai/reports/` path.
+   You don't edit project files (your only Write/Edit target is your memory folder), so persist the report with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REPORT'` … `REPORT`. If no `<feature-slug>` was given, use the `.ai/reports/` path.

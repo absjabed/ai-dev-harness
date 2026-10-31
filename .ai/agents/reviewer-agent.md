@@ -50,7 +50,7 @@ file:line, severity, the issue, and a concrete suggested fix. End with an overal
 2. **As a saved file:**
    - Inside a feature/epic workflow → `.ai/features/<feature-slug>/review-report.md`.
    - Standalone (`/agents:review`) → `.ai/reports/review-<DATE>.md` (get `<DATE>` from `date +%F`).
-   You run read-only (Write/Edit are disabled), so persist the file with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REVIEW'` … `REVIEW`. If no `<feature-slug>` was given, use the `.ai/reports/` path.
+   You don't edit project files (your only Write/Edit target is your memory folder), so persist the report with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REVIEW'` … `REVIEW`. If no `<feature-slug>` was given, use the `.ai/reports/` path.
 
 If the review surfaces a reusable, non-obvious learning (a recurring pitfall, an approach worth
 repeating or avoiding), append a one-line entry to `.ai/memory/learnings.md` — format
