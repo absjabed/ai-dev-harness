@@ -525,7 +525,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   <tr><td><code>SENSITIVE_CONFIG_GLOBS</code></td><td>No warning before editing secrets-bearing config</td></tr>
   <tr><td><code>TENANT_ISOLATION_CHECK</code> + <code>TENANT_KEY</code></td><td>No tenant-scoping check on data access</td></tr>
   <tr><td><code>GATE_BUILD_CMD</code>, <code>GATE_TEST_CMD</code>, <code>COVERAGE_REPORTS</code> + the limits</td><td>The quality gate prints <code>NOT CONFIGURED</code> and the workflows fall back to the agent's own verification</td></tr>
-  <tr><td><code>SUPPRESSION_CHECK</code></td><td>Nothing notices an agent silencing a lint rule or skipping a test to get past the gate</td></tr>
+  <tr><td><code>SUPPRESSION_CHECK</code></td><td>Nothing notices an agent silencing a lint rule, or skipping, deleting or rewriting a test, to get past the gate</td></tr>
   </tbody>
   </table>
   <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.
@@ -680,7 +680,7 @@ Sub-agent memory is off when auto memory is disabled.</p>
 </tbody>
 </table>
 <div class="callout"><p>All hook behaviour comes from <code>.claude/hooks/hooks.env</code>, which has
-37 keys. They cover version control, the deploy guard, repo layout, quality commands, the quality
+38 keys. They cover version control, the deploy guard, repo layout, quality commands, the quality
 gate, sensitive files, tenant isolation, frontend env, design tokens, the TDD nudge, the
 suppression guard and the runtime-verification guard. Warnings don't block anything, and they
 reach Claude itself: a hook that exits 0 sends them as <code>additionalContext</code>, because
@@ -714,6 +714,7 @@ only what the change touched.</p>
 <tr><td>Complexity</td><td><code>COMPLEXITY_MAX</code></td><td>A new function, or one that got more complex, is over the limit</td></tr>
 <tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high</td></tr>
 <tr><td>Suppressions</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change silences a check or skips a test; <code>warn</code> lists each one for the reviewer</td></tr>
+<tr><td>Removed tests</td><td><code>SUPPRESSION_CHECK</code>, <code>TEST_ASSERTION_PATTERNS</code></td><td><code>block</code> mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; <code>warn</code> lists each one for the reviewer</td></tr>
 <tr><td>Mutation</td><td><code>MUTATION_CMD</code> (feature and epic only)</td><td>The mutation tool's threshold is missed: the tests don't notice injected bugs</td></tr>
 </tbody>
 </table>

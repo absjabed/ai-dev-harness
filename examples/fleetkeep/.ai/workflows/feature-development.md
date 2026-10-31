@@ -78,7 +78,7 @@ phase whose artifact is missing, then continue from the recorded next action.
 8. **Commit** — A clear Conventional Commits message referencing the tracker ticket (e.g.
    `FK-1234: <summary>`) after user confirmation. The confirmation shows the
    quality gate result as the change's shape: verdict, diff coverage, the worst touched functions
-   (complexity, coverage, CRAP), the mutation result, and every suppression with its reason. The
+   (complexity, coverage, CRAP), the mutation result, and every suppression and removed test line with its reason. The
    user reviews structure and names from it; the gate has already checked the measurable parts. That result must
    be the final code's: if fixes after step 5a changed it, re-run the gate and replace the test
    report's section (the change id on its first line shows which code a run measured).

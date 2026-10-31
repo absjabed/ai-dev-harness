@@ -28,7 +28,8 @@ You implement features to spec while following every project standard.
 ## Quality gate loop
 
 `.claude/scripts/quality-gate.sh` measures the change: build, type-check, lint, tests, coverage of
-the changed lines, complexity and CRAP of the functions you touched, added suppressions and, with
+the changed lines, complexity and CRAP of the functions you touched, added suppressions, removed or
+rewritten test cases and assertions and, with
 `--mutation`, whether the tests catch injected bugs. It prints PASS or FAIL with the numbers. The
 gate's verdict is what counts, not your own reading of the output.
 
@@ -48,7 +49,9 @@ gate's verdict is what counts, not your own reading of the output.
    passing.
 5. Stop after 3 failing runs in total. Report what still fails and what you tried; do not loop.
 6. Paste the final gate output into the test report under `## Quality gate`, with the reason for
-   any suppression it lists.
+   any suppression or removed test line it lists (the test was wrong, or the behaviour it
+   checked was removed on purpose). Edit an existing test file in place: rewriting it from
+   scratch drops cases you did not mean to touch.
 
 `NOT CONFIGURED` means the project has not set it up: verify by hand as in step 7.
 `PASS (partial: …)` means the gate could not run the build or tests it names: run those by hand

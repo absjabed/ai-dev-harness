@@ -27,6 +27,7 @@
 #   metrics      diff coverage (COVERAGE_MIN), complexity (COMPLEXITY_MAX) and CRAP (CRAP_MAX)
 #                on the functions the change touched, via quality-metrics.py
 #   suppressions lint/coverage suppressions and skipped tests the change adds (SUPPRESSION_CHECK)
+#   test-removal test cases and assertions it removes or changes (SUPPRESSION_CHECK)
 #   mutation     MUTATION_CMD with {files}, {base} and {each:…} filled in (only with --mutation)
 #
 # Prints one line per check, the tail of each failure, and a final verdict. "PASS (partial ...)"
@@ -50,7 +51,7 @@ while [[ $# -gt 0 ]]; do
     --base) BASE="${2:-}"; shift 2 ;;
     --mutation) MUTATION=1; shift ;;
     --baseline) BASELINE=1; shift ;;
-    -h|--help) sed -n '2,37p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,38p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "quality-gate: unknown argument '$1' (see --help)" >&2; exit 2 ;;
   esac
 done
@@ -344,6 +345,69 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   fi
 else
   skip suppressions "SUPPRESSION_CHECK off"
+fi
+
+# ── removed tests (part of the suppression guard) ────────────────────────────
+# Lists the test-case and assertion lines the change removes from test files without re-adding
+# the same line elsewhere: a moved test passes, a deleted or rewritten one (a changed expected
+# value included) is listed. Deleting or loosening a test is a way to get past the gate too.
+if [[ "$MODE" == "off" || -z "${TEST_ASSERTION_PATTERNS:-}" ]]; then
+  skip test-removal "SUPPRESSION_CHECK off or TEST_ASSERTION_PATTERNS not set"
+elif [[ -z "${TEST_FILE_PATTERNS:-}" ]]; then
+  skip test-removal "TEST_FILE_PATTERNS not set"
+else
+  RAN=1
+  # is_test_path <path>: a source file (SOURCE_GLOBS, when set) that is a test (TEST_FILE_PATTERNS)
+  is_test_path() {
+    local g src=0
+    set -f
+    if [[ -z "${SOURCE_GLOBS:-}" ]]; then src=1; else for g in $SOURCE_GLOBS; do [[ "$1" == $g ]] && src=1 && break; done; fi
+    if [[ $src -eq 1 ]]; then for g in $TEST_FILE_PATTERNS; do [[ "$1" == $g ]] && { set +f; return 0; }; done; fi
+    set +f
+    return 1
+  }
+  old_tests="$(git diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do is_test_path "$p" && printf '%s\n' "$p"; done)"
+  # One record per changed line: sign TAB file TAB text (untracked test files count as added).
+  records="$(
+    git diff -M -U0 "$MERGE_BASE" -- 2>/dev/null | awk -v scope="$(printf '%s\n' "${TESTS[@]}")" -v oldscope="$old_tests" '
+      BEGIN { n = split(scope, s, "\n"); for (i = 1; i <= n; i++) if (s[i] != "") ok[s[i]] = 1
+              n = split(oldscope, o, "\n"); for (i = 1; i <= n; i++) if (o[i] != "") was[o[i]] = 1 }
+      /^diff --git / { file = ""; old = ""; next }
+      /^\+\+\+ / { file = substr($0, 7); sub(/\t$/, "", file); next }
+      /^--- /   { old = substr($0, 7); sub(/\t$/, "", old); next }
+      /^\+/     { if (file in ok) print "+\t" file "\t" substr($0, 2); next }
+      /^-/      { if (old in was) print "-\t" old "\t" substr($0, 2) }'
+    git ls-files --others --exclude-standard | while IFS= read -r f; do
+      if printf '%s\n' "${TESTS[@]}" | grep -qxF -- "$f"; then awk -v f="$f" '{ print "+\t" f "\t" $0 }' "$f"; fi
+    done
+  )"
+  removed_recs="$(printf '%s\n' "$records" | grep '^-')"
+  # Match the pattern on the line's text only, never on its path.
+  hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -nE -- "$TEST_ASSERTION_PATTERNS" | cut -d: -f1)"
+  lost="$(
+    { printf '%s\n' "$records" | grep '^+' | cut -f3- | sed 's/^/A\t/'
+      printf '%s\n' "$hit_rows" | sed 's/^/H\t/'
+      printf '%s\n' "$removed_recs" | sed 's/^/R\t/'; } | awk -F'\t' '
+      function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+      $1 == "A" { t = $0; sub(/^A\t/, "", t); added[trim(t)] = 1; next }
+      $1 == "H" { hit[$2] = 1; next }
+      $1 == "R" { r++; if (!(r in hit)) next
+                  t = $0; sub(/^R\t-\t[^\t]*\t/, "", t); t = trim(t)
+                  if (!(t in added)) print $3 ": " t }'
+  )"
+  n_lost=0
+  [[ -n "$lost" ]] && n_lost="$(printf '%s\n' "$lost" | wc -l | tr -d ' ')"
+  if [[ $n_lost -eq 0 ]]; then
+    printf '%-12s PASS  none removed\n' test-removal
+  else
+    if [[ "$MODE" == "block" ]]; then
+      FAILED=1
+      printf '%-12s FAIL  %s test case/assertion line(s) removed or changed (SUPPRESSION_CHECK=block): restore them or have a human approve\n' test-removal "$n_lost"
+    else
+      printf '%-12s WARN  %s test case/assertion line(s) removed or changed: each needs a stated reason in the test report, or restoring\n' test-removal "$n_lost"
+    fi
+    printf '%s\n' "$lost" | head -n 20 | sed 's/^/    /'
+  fi
 fi
 
 # ── mutation testing (opt-in, slowest, last) ─────────────────────────────────

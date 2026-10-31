@@ -99,7 +99,8 @@ another agent they do not exist, so treat the following as hard rules that you e
 - Once setup has chosen them, never loosen a quality-gate limit or widen `COVERAGE_EXEMPT_GLOBS` in `hooks.env` without the
   user's explicit words and a line in `.ai/memory/decisions.md` (old → new, and why).
 - If `SUPPRESSION_CHECK` is not `off`, never add a lint suppression, coverage exclusion or
-  skipped test to get past a check (`SUPPRESSION_PATTERNS` lists them). Stop and ask instead.
+  skipped test, or delete or loosen an existing test, to get past a check (`SUPPRESSION_PATTERNS`
+  and `TEST_ASSERTION_PATTERNS` list them). Stop and ask instead.
 - If `TENANT_ISOLATION_CHECK` is on, every data-access change must be scoped by `TENANT_KEY`.
   Crossing that boundary is a CRITICAL security bug.
 - If `FRONTEND_ENV_CHECK` is on, obey `FRONTEND_ENV_GOOD_HINT` for environment access.

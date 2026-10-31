@@ -155,7 +155,7 @@ An un-customised file blocks nothing, even though the hooks look fully installed
 | `PROTECTED_BRANCHES` | Direct pushes to main/develop are not blocked |
 | `TYPECHECK_CMD` / `LINT_CMD` + `PACKAGE_DIRS` | No type-check or lint runs after edits |
 | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `COVERAGE_REPORTS` + the limits | The quality gate prints `NOT CONFIGURED` and the workflows fall back to the agent's own verification |
-| `SUPPRESSION_CHECK` | Nothing notices an agent silencing a lint rule or skipping a test to get past the gate |
+| `SUPPRESSION_CHECK` | Nothing notices an agent silencing a lint rule, or skipping, deleting or rewriting a test, to get past the gate |
 | `MIGRATIONS_GLOB` | Generated migrations can be hand-edited without warning |
 | `SENSITIVE_CONFIG_GLOBS` | No warning before editing secrets-bearing config |
 | `TENANT_ISOLATION_CHECK` + `TENANT_KEY` | No tenant-scoping check on data-access edits |

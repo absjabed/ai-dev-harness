@@ -234,7 +234,7 @@ AI Dev Harness automatically blocks unsafe operations, including:
 At each verify step, a quality gate measures the change instead of trusting the agent's word:
 build, type-check, lint, tests, coverage of the changed lines, complexity and CRAP of the touched
 functions, and optionally mutation testing. The agent must fix failures at the cause. A suppression
-guard catches it silencing a check instead.
+guard catches it silencing a check, or deleting or rewriting a test, instead.
 
 ---
 

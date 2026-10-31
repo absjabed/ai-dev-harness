@@ -181,7 +181,7 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 | Frontend env | `FRONTEND_ENV_CHECK`, `FRONTEND_ENV_BAD_PATTERN`, `FRONTEND_ENV_GOOD_HINT` |
 | Design tokens | `DESIGN_TOKEN_CHECK`, `DESIGN_TOKEN_DOC`, `DESIGN_TOKEN_EXEMPT_GLOBS` |
 | TDD nudge | `TDD_CHECK`, `TEST_FILE_PATTERNS`, `TDD_EXEMPT_GLOBS` |
-| Suppression guard | `SUPPRESSION_CHECK`, `SUPPRESSION_PATTERNS` |
+| Suppression guard | `SUPPRESSION_CHECK`, `SUPPRESSION_PATTERNS`, `TEST_ASSERTION_PATTERNS` |
 | Runtime verification guard | `E2E_FORBIDDEN_HOSTS` |
 
 Warnings are non-blocking. They go to stderr and also to Claude, as `additionalContext` JSON:
@@ -202,6 +202,7 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
+| Removed tests | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | `block` mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; `warn` lists them |
 | Mutation | `MUTATION_CMD`, with `--mutation` | The mutation tool's own threshold is missed |
 
 The ratchet keeps legacy code workable: a touched function that was already over a limit and did

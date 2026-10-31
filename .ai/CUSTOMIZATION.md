@@ -120,7 +120,8 @@ This section lists everything that changes from project to project and where to 
 - **File:** `.claude/hooks/hooks.env` (the single source for all hook behavior)
 - If a value is empty or `*_CHECK="off"`, that check is skipped. An un-customized template is inert-safe.
 - `SUPPRESSION_CHECK` (`off` | `warn` | `block`) catches an agent silencing a check to pass the
-  gate; `warn` is the recommended setting. Put the lint, coverage and mutation config files in
+  gate, and the gate's `test-removal` line lists the test cases and assertions a change deletes or
+  rewrites (`TEST_ASSERTION_PATTERNS`); `warn` is the recommended setting. Put the lint, coverage and mutation config files in
   `SENSITIVE_CONFIG_GLOBS` so edits to the thresholds themselves are flagged too.
 
 ### 11. Agent model & reasoning effort

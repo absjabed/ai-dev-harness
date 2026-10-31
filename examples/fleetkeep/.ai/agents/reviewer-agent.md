@@ -28,7 +28,9 @@ not style (linters/type-checking handle style).
   the test report has a `## Quality gate` section, read its numbers rather than re-deriving them;
   a test that only executes code without asserting on the result is a WARNING.
 - **Gate gaming** — any lint/type suppression, coverage exclusion, skipped or focused test,
-  removed assertion, or change to a threshold or to lint/coverage/mutation config in the diff.
+  removed or rewritten test case or assertion (read the removed `-` lines of each test file, not
+  just the new file; the gate's `test-removal` line lists them), or change to a threshold or to
+  lint/coverage/mutation config in the diff.
   Each needs a reason stated in the test report; one without a reason is a **BLOCKER**.
 - **Documentation** — public API/behavior changes reflected in `README`/docs.
 - **Naming & conventions** — matches project idioms.
