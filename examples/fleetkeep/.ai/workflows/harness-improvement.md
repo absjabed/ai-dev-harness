@@ -101,7 +101,8 @@ use one. These extend the invariants above — violating one is likewise a CRITI
    broken-reference sweep, and the docs inventories (invariant 7).
 7. **Verify & land** — run the full verification block below, show the user the diff
    summary and any open questions, then STOP — commit only on explicit approval, as a
-   conventional commit on a `feature/…` branch (never directly on the default branch).
+   conventional commit on a `feature/…` branch (never directly on the default branch), including
+   any changes under `.claude/agent-memory/` (what the critic and harness engineer learned; project memory is shared with the team; the template repo ignores it, so never force-add it there).
    **In the template repo**, when the change is released, bump `.claude/HARNESS_VERSION` **and**
    the version in the `docs/index.html` sidebar (`Setup &amp; component guide · v<version>`) — patch
    for fixes and docs, minor for new capability that needs no project action, major when an

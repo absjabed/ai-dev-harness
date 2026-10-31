@@ -60,4 +60,4 @@ runtime fixes; same base, no `--mutation`) and save its output to
 suppression it lists (where the gate is not configured, record there what you verified by hand).
 Show the user that run (verdict, diff coverage, touched functions, any suppression with its
 reason) with the review verdict. Then commit with a "fix:" prefix, including the deploy notes, the
-test report and the e2e report.
+test report, the e2e report and any changes under `.claude/agent-memory/` (what the reviewer learned; project memory is shared with the team).

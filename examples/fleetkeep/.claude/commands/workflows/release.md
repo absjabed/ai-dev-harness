@@ -74,7 +74,7 @@ On user confirmation:
    the Step 1 artifacts from `.ai/releases/$ARGUMENTS/`. Show the user the converter's output,
    including any `warning:` lines.
 5. Commit: `chore(release): bump version to $ARGUMENTS` — include the guide's `.md` and its
-   regenerated `.docx` in this same commit. If the converter could not run (missing Python
+   regenerated `.docx` in this same commit, and any changes under `.claude/agent-memory/` (what the security scanner learned; project memory is shared with the team). If the converter could not run (missing Python
    dependencies), commit the `.md` alone and tell the user the `.docx` is stale until they run
    `pip install python-docx markdown-it-py` and regenerate — never imply the Word file matches.
 6. Tag: `git tag $ARGUMENTS`

@@ -44,7 +44,8 @@ smallest reversible change wins.
    step 6.
 6. **Land it via {{PR_TERM}} and forward-port** — open a {{PR_TERM}} into `{{DEFAULT_BRANCH}}`, then
    forward-port to the active development and `release/*` branches so the fix isn't lost next
-   release. Never push directly to {{PROTECTED_BRANCHES}}.
+   release. Commit any changes under `.claude/agent-memory/` (what the reviewer learned; project memory
+   is shared with the team) before opening it. Never push directly to {{PROTECTED_BRANCHES}}.
 7. **Deploy with monitoring** — production checks here are done by a human or by CI (the agent is
    blocked from production hosts by `e2e-guard.sh`). Follow the deploy notes from step 4a (update that file if reality
    differs) and the DevOps deploy checklist (env vars / app config, any DB

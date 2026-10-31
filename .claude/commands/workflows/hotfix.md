@@ -52,4 +52,4 @@ broken journey or request against a non-production environment. Propose it in on
 for the user's yes** before running it (a UI check may drive their real Chrome). Write the e2e report
 (`.ai/features/<slug>/test-specs/e2e-report.md`). A FAIL — or the planned check not running — blocks
 the next step unless the user explicitly accepts it. Skipping the smoke check needs the user's
-explicit approval too, recorded in the {{PR_TERM}}. Then land it via {{PR_TERM}} and forward-port.
+explicit approval too, recorded in the {{PR_TERM}}. Then commit any changes under `.claude/agent-memory/` (what the reviewer learned; project memory is shared with the team), land it via {{PR_TERM}} and forward-port.

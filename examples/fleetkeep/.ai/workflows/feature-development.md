@@ -84,7 +84,7 @@ phase whose artifact is missing, then continue from the recorded next action.
    report's section (the change id on its first line shows which code a run measured).
    If atomic commits were enabled,
    present the per-task commit list for confirmation instead of creating a single commit. CRITICAL
-   security findings block this step either way.
+   security findings block this step either way. Include any changes under `.claude/agent-memory/` (what the reviewer and security scanner learned; project memory is shared with the team).
 9. **Report** — Generate the pull request description at `.ai/features/<slug>/pr-description.md`;
     summarize what was done, test results, and any follow-up items.
 

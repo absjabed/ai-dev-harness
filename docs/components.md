@@ -137,7 +137,8 @@ a `MEMORY.md` index plus topic files the sub-agent writes as it learns, such as 
 files that are easy to miss and project quirks. Claude Code loads the first 200 lines (25 KB) of the
 index into the sub-agent's prompt on every run, so it checks what went wrong last time first. The
 folder appears on the sub-agent's first run. Project scope is meant to be committed, so every
-developer's runs benefit from what any run learned; review changes to it like any other diff. For
+developer's runs benefit from what any run learned: the feature, bugfix, hotfix, release and
+harness-improvement workflows include it in their commit; review changes to it like any other diff. For
 per-developer memory, set `memory: local` (stored in `.claude/agent-memory-local/<agent>/`, which
 you keep out of git). Sub-agent memory is off when auto memory is disabled in Claude Code.
 

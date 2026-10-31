@@ -54,7 +54,7 @@ Fix causes, not symptoms.
    (`.ai/features/<slug>/test-specs/e2e-report.md`). A FAIL, or a planned check that did not run,
    blocks step 8 unless the user explicitly accepts it.
 8. **Commit** — Follow {{COMMIT_CONVENTION}} and reference the tracker ticket, e.g.
-   `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`.
+   `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`. Include any changes under `.claude/agent-memory/` (what the reviewer learned; project memory is shared with the team).
 
 **Report:** root cause, the fix, how it was verified (the quality gate output, where configured),
 the review verdict, the runtime verification result, the deploy notes (fix version and deploy impact), and any related risk you found.
