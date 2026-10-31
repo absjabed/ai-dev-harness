@@ -27,7 +27,7 @@
 #   metrics      diff coverage (COVERAGE_MIN), complexity (COMPLEXITY_MAX) and CRAP (CRAP_MAX)
 #                on the functions the change touched, via quality-metrics.py
 #   suppressions lint/coverage suppressions and skipped tests the change adds (SUPPRESSION_CHECK)
-#   mutation     MUTATION_CMD with {files} and {base} filled in (only with --mutation)
+#   mutation     MUTATION_CMD with {files}, {base} and {each:…} filled in (only with --mutation)
 #
 # Prints one line per check, the tail of each failure, and a final verdict. "PASS (partial ...)"
 # means the build or the tests are not configured, so the gate did not run them: verify those
@@ -93,6 +93,29 @@ run_step() {
 }
 skip() { printf '%-12s SKIP  %s\n' "$1" "$2"; }
 not_set() { skip "$1" "$2 not set"; NOT_SET+=("$1"); }  # build and test only: a PASS without them is partial
+
+# expand_each <cmd>: replaces one {each:TEMPLATE} with TEMPLATE once per changed source file,
+# each word shell-quoted; {file} = the file's path, {name} = its file name. For tools that take
+# one flag per file, e.g. Stryker.NET's "-m".
+expand_each() {
+  local cmd="$1" rest tpl out="" depth=1 i c f w words
+  if [[ "$cmd" != *"{each:"* ]]; then printf '%s' "$cmd"; return; fi
+  rest="${cmd#*\{each:}"
+  for ((i = 0; i < ${#rest}; i++)); do
+    c="${rest:i:1}"
+    if [[ "$c" == "{" ]]; then depth=$((depth + 1)); fi
+    if [[ "$c" == "}" ]]; then depth=$((depth - 1)); [[ $depth -eq 0 ]] && break; fi
+  done
+  tpl="${rest:0:i}"
+  read -r -a words <<< "$tpl"
+  for f in "${SOURCES[@]}"; do
+    for w in "${words[@]}"; do
+      w="${w//\{file\}/$f}"; w="${w//\{name\}/${f##*/}}"
+      out+="$(printf '%q' "$w") "
+    done
+  done
+  printf '%s%s%s' "${cmd%%\{each:*}" "${out% }" "${rest:i+1}"
+}
 
 # find_python: sets PY to a working python 3, or leaves it empty.
 find_python() {
@@ -344,6 +367,7 @@ else
   files="$(IFS=,; echo "${SOURCES[*]}")"
   cmd="${MUTATION_CMD//\{files\}/$files}"
   cmd="${cmd//\{base\}/$MERGE_BASE}"
+  cmd="$(expand_each "$cmd")"
   if run_step mutation . "$cmd" "${#SOURCES[@]} file(s)"; then
     echo "PASS $FINGERPRINT" > "$RESULT_FILE"
   else
