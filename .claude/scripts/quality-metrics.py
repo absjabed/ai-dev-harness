@@ -134,7 +134,8 @@ def read_cobertura(root, cov):
 def read_jacoco(root, cov):
     for pkg in root.iter("package"):
         for sf in pkg.iter("sourcefile"):
-            path = f"{pkg.get('name', '')}/{sf.get('name', '')}"
+            name = pkg.get("name", "")
+            path = f"{name}/{sf.get('name', '')}" if name else sf.get("name", "")  # default package
             for line in sf.iter("line"):
                 missed, covered = int(line.get("mi", "0")), int(line.get("ci", "0"))
                 if missed + covered:
@@ -164,48 +165,58 @@ def load_report(path):
 
 
 class Coverage:
-    """All reports, with each file entry remembered alongside the report it came from."""
+    """All reports. Each file entry in a report is credited to at most one file in the repo: the
+    one it names, read relative to the report's folder or a folder above it, else the only repo
+    file whose path it can be. An entry no file can be told apart for counts for none."""
 
     def __init__(self, repo_root):
         self.root = norm(repo_root).rstrip("/").lower() + "/"
-        # (key relative to repo where possible, lowercased; the same key as written; report dir; data)
-        self.entries = []
-        self.repo_files = None
+        self.entries = []  # (key relative to repo where possible, lowercased; report dir, lowercased; data)
+        self.by_file = None
 
     def add(self, report_path, cov):
-        report_dir = norm(os.path.dirname(os.path.relpath(report_path)))
+        report_dir = norm(os.path.dirname(os.path.relpath(report_path))).lower()
         if report_dir == ".":
             report_dir = ""
         for key, data in cov.items():
-            k = key
-            if k.lower().startswith(self.root):
+            k = key.lower()
+            if k.startswith(self.root):
                 k = k[len(self.root):]
-            self.entries.append((k.lower(), k, report_dir, data))
+            self.entries.append((k, report_dir, data))
+        self.by_file = None
 
-    def ambiguous(self, key):
-        """True when more than one file in the repo ends with `key`, so a report that names only
-        `key` cannot say which of them it measured."""
-        if self.repo_files is None:
-            self.repo_files = [f.lower() for f in git("ls-files", "--cached", "--others",
-                                                      "--exclude-standard").splitlines()]
-        return sum(1 for f in self.repo_files if f == key or f.endswith("/" + key)) > 1
+    def resolve(self, key, report_dir, files, by_base):
+        parts = report_dir.split("/") if report_dir else []
+        for i in range(len(parts), -1, -1):  # the report's folder first, the repo root last
+            path = "/".join(parts[:i] + [key])
+            if path in files:
+                return path
+        candidates = [f for f in by_base.get(key.rsplit("/", 1)[-1], [])
+                      if f.endswith("/" + key) or key.endswith("/" + f)]
+        if len(candidates) == 1:
+            return candidates[0]
+        # A longer key (an absolute or CI path, a Go import path) names its longest repo suffix.
+        longer = sorted((f for f in candidates if key.endswith("/" + f)), key=len, reverse=True)
+        if longer and (len(longer) == 1 or len(longer[0]) > len(longer[1])):
+            return longer[0]
+        return None
 
     def lookup(self, rel):
-        """Line hits for repo-relative `rel`, merged over every report entry that names it: the
-        exact path, or a believable suffix of it. Several test projects often each report the same
-        shared file, every one with only the lines its own tests ran."""
-        rel_l = rel.lower()
-        found = []
-        for key, _, report_dir, data in self.entries:
-            if key == rel_l or key.endswith("/" + rel_l):  # same path, or a longer one (a Go import path)
-                found.append(data)
-            elif rel_l.endswith("/" + key):        # report path is relative to some sub-project
-                prefix = rel_l[: -len(key) - 1]
-                inside = report_dir.lower() == prefix or report_dir.lower().startswith(prefix + "/")
-                # A report outside that sub-project (JaCoCo's target/, a root lcov) is believed
-                # only when no other file in the repo ends with the same path.
-                if inside or not self.ambiguous(key):
-                    found.append(data)
+        """Line hits for repo-relative `rel`, merged over every report entry credited to it.
+        Several test projects often each report the same shared file, every one with only the
+        lines its own tests ran."""
+        if self.by_file is None:
+            listed = git("ls-files", "--cached", "--others", "--exclude-standard").splitlines()
+            files = {norm(f).lower() for f in listed}
+            by_base = {}
+            for f in files:
+                by_base.setdefault(f.rsplit("/", 1)[-1], []).append(f)
+            self.by_file = {}
+            for key, report_dir, data in self.entries:
+                target = self.resolve(key, report_dir, files, by_base)
+                if target is not None:
+                    self.by_file.setdefault(target, []).append(data)
+        found = self.by_file.get(rel.lower())
         return merged(found) if found else None
 
 
@@ -250,14 +261,13 @@ def function_history(before, current):
                 history[id(n)] = o.cyclomatic_complexity
     by_name, now_name = {}, {}
     for f in before:
-        if f.long_name not in now_long:
-            by_name.setdefault(f.name, []).append(f)
+        by_name.setdefault(f.name, []).append(f)
     for f in current:
-        if f.long_name not in by_long:
-            now_name.setdefault(f.name, []).append(f)
+        now_name.setdefault(f.name, []).append(f)
     for name, now in now_name.items():
         old = by_name.get(name, [])
-        if len(old) == 1 and len(now) == 1 and "anonymous" not in name:
+        if (len(old) == 1 and len(now) == 1 and id(now[0]) not in history
+                and old[0].long_name not in now_long and "anonymous" not in name):
             history[id(now[0])] = old[0].cyclomatic_complexity
     return history
 
@@ -392,6 +402,7 @@ def main():
     ap.add_argument("--baseline-out", help="write a whole-codebase snapshot here instead of judging a change")
     ap.add_argument("--tests", help="the baseline run's test result, for the report")
     ap.add_argument("--files-from", help="read the file list from this file, one path per line")
+    ap.add_argument("--tests-from", help="the change's test files, one per line: a report older than them is stale")
     ap.add_argument("--report-glob", action="append", default=[])
     ap.add_argument("--fresh-after")
     ap.add_argument("--exempt", action="append", default=[])
@@ -425,7 +436,11 @@ def main():
     cov, reports = load_coverage(args, repo_root, say)
     fresh_after = os.path.getmtime(args.fresh_after) if args.fresh_after else None
     if fresh_after is None and reports:
-        newest_change = max((os.path.getmtime(f) for f in files), default=0)
+        tests = []
+        if args.tests_from:
+            with open(args.tests_from, encoding="utf-8", errors="replace") as fh:
+                tests = [norm(line.strip()) for line in fh if line.strip()]
+        newest_change = max((os.path.getmtime(f) for f in files + tests if os.path.isfile(f)), default=0)
         for path in reports:
             if os.path.getmtime(path) < newest_change:
                 say("FAIL", "coverage", f"stale report {path}: older than the latest code change; re-run the tests")

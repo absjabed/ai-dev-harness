@@ -178,6 +178,29 @@ if [[ $BASELINE -eq 1 ]]; then
   exit 0
 fi
 
+# ── The suppression guard's own settings ─────────────────────────────────────
+# A change must not loosen the guard that judges it. The guard runs at the stricter of the base
+# commit's and the working tree's SUPPRESSION_CHECK, and with the base's patterns as well as the
+# working tree's, so turning it off, or blanking or narrowing a pattern, in the same change hides
+# nothing. (The gate-config check lists every other value a change alters.)
+BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null)"
+# base_value <KEY>: KEY as the base commit's hooks.env sets it (empty when it has none).
+base_value() { ( unset "$1"; eval "$BASE_CFG" >/dev/null 2>&1; printf '%s' "${!1:-}" ); }
+mode_rank() { case "$1" in block) echo 2 ;; warn) echo 1 ;; *) echo 0 ;; esac; }
+if [[ -n "$BASE_CFG" ]]; then
+  b="$(base_value SUPPRESSION_CHECK)"
+  [[ $(mode_rank "$b") -gt $(mode_rank "${SUPPRESSION_CHECK:-off}") ]] && SUPPRESSION_CHECK="$b"
+  for k in SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do
+    b="$(base_value "$k")"
+    w="${!k:-}"
+    if [[ -n "$b" && "$b" != "$w" ]]; then
+      if [[ -z "$w" ]]; then printf -v "$k" '%s' "$b"; else printf -v "$k" '%s' "($w)|($b)"; fi
+    fi
+  done
+  b="$(base_value TEST_FILE_PATTERNS)"
+  [[ -n "$b" && "$b" != "${TEST_FILE_PATTERNS:-}" ]] && TEST_FILE_PATTERNS="${TEST_FILE_PATTERNS:+$TEST_FILE_PATTERNS }$b"
+fi
+
 # ── What changed ─────────────────────────────────────────────────────────────
 CHANGED=()   # present now (added, modified, renamed, untracked)
 DELETED=()
@@ -296,7 +319,9 @@ if [[ -n "${COVERAGE_REPORTS:-}${COVERAGE_MIN:-}${COMPLEXITY_MAX:-}${CRAP_MAX:-}
     [[ -n "${COVERAGE_MIN:-}" ]] && args+=(--coverage-min "$COVERAGE_MIN")
     [[ -n "${COMPLEXITY_MAX:-}" ]] && args+=(--complexity-max "$COMPLEXITY_MAX")
     [[ -n "${CRAP_MAX:-}" ]] && args+=(--crap-max "$CRAP_MAX")
-    out="$("$PY" "$SCRIPT_DIR/quality-metrics.py" "${args[@]}" -- "${SOURCES[@]}" 2>&1)"
+    printf '%s\n' "${SOURCES[@]}" > "$LOG_DIR/sources.txt"
+    printf '%s\n' "${TESTS[@]}" > "$LOG_DIR/tests.txt"
+    out="$("$PY" "$SCRIPT_DIR/quality-metrics.py" "${args[@]}" --files-from "$LOG_DIR/sources.txt" --tests-from "$LOG_DIR/tests.txt" 2>&1)"
     rc=$?
     printf '%s\n' "$out" | tee "$LOG_DIR/metrics.log"
     [[ $rc -ne 0 ]] && { FAILED=1; OTHERS_OK=0; }
@@ -307,17 +332,14 @@ fi
 
 # ── suppressions and skipped tests the change adds ───────────────────────────
 # A suppression the change adds passes only when the same line was removed elsewhere in the
-# change (rename detection on), or the same suppression was removed from the same file: moving
-# a file or a line that already carried one, or editing such a line, adds nothing, while
-# swapping an old one for a new one elsewhere is still caught.
-# The guard runs at the stricter of the base's and the working tree's SUPPRESSION_CHECK, so a
-# change that turns it off is still judged by it.
+# change (rename detection on), or the identical suppression (rules and scope included) was
+# removed from the same file: moving a file or a line that already carried one, or editing the
+# code on such a line, adds nothing, while swapping one for another, or for a broader one, is
+# still caught.
 MODE="${SUPPRESSION_CHECK:-off}"
-BASE_MODE="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | sed -n 's/^SUPPRESSION_CHECK=["'"'"']*\([a-z]*\).*/\1/p' | tail -n 1)"
-case "$BASE_MODE" in
-  block) MODE="block" ;;
-  warn) [[ "$MODE" == "block" ]] || MODE="warn" ;;
-esac
+# Renamed files, as "new TAB old" lines: an edited suppression line in a renamed file is the
+# same suppression.
+RENAMES="$(git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | awk -F'\t' '$1 ~ /^R/ { print $3 "\t" $2 }')"
 # diff_records <scope> <oldscope>: one record per changed line of the `git diff` on stdin, as
 # sign TAB file TAB text: "+" lines only for paths in <scope>, "-" lines only for base paths in
 # <oldscope> (both newline-separated, passed through the environment because macOS awk refuses
@@ -350,6 +372,7 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # included), so deleting a doc line that mentions a suppression hides nothing.
   old_scope="$(
     git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do
+      [[ "$p" == .ai/* || "$p" == .claude/* ]] && continue
       set -f; keep=0   # $p: the path at the base (the first column, also for a rename)
       if [[ -z "${SOURCE_GLOBS:-}" ]]; then keep=1; else for g in $SOURCE_GLOBS; do [[ "$p" == $g ]] && keep=1 && break; done; fi
       set +f
@@ -362,17 +385,21 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   )"
   add_recs="$(printf '%s\n' "$hits" | grep '^+')"
   rem_recs="$(printf '%s\n' "$hits" | grep '^-')"
-  # Each suppression the pattern matches, as row:token (the row of its line in the records),
-  # matched on the line's text only, never on its path.
-  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "$SUPPRESSION_PATTERNS")"
-  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "$SUPPRESSION_PATTERNS")"
+  # Each line's suppression, from where the pattern first matches to the end of the line (so
+  # its rule list and scope count: "# noqa" is not "# noqa: F401"), as row:text, the row of its
+  # line in the records. Matched on the line's text only, never on its path.
+  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS).*")"
+  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS).*")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
-  # suppression was removed from the same file (an edit to a line that carries one).
+  # suppression was removed from the same file, or from the file it was renamed from (an edit
+  # to the code on a line that carries one).
   added="$(
     { printf '%s\n' "$rem_tok" | tag r
       printf '%s\n' "$add_tok" | tag a
       printf '%s\n' "$rem_recs" | tag R
-      printf '%s\n' "$add_recs" | tag A; } | awk '
+      printf '%s\n' "$add_recs" | tag A; } | RENAMES="$RENAMES" awk '
+      BEGIN { n = split(ENVIRON["RENAMES"], rl, "\n")
+              for (i = 1; i <= n; i++) if (split(rl[i], pr, "\t") == 2) from[pr[1]] = pr[2] }
       function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
       function rec(kind,   t) { t = $0; sub(/^[RA]\t[-+]\t/, "", t); f = t; sub(/\t.*/, "", f); sub(/^[^\t]*\t/, "", t); return trim(t) }
       /^[ra]\t[0-9]+:/ { k = substr($0, 1, 1); t = substr($0, 3); row = t; sub(/:.*/, "", row); sub(/^[0-9]+:/, "", t)
@@ -390,7 +417,11 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
         for (j = 1; j <= na; j++) {
           if (!(("a", j) in has) || (j in moved)) continue
           n = split(toks["a", j], tk, SUBSEP); fresh = 0
-          for (x = 2; x <= n; x++) if (pool[afile[j], tk[x]] > 0) pool[afile[j], tk[x]]--; else fresh = 1
+          for (x = 2; x <= n; x++) {
+            f = afile[j]
+            if (!(pool[f, tk[x]] > 0) && (f in from)) f = from[f]
+            if (pool[f, tk[x]] > 0) pool[f, tk[x]]--; else fresh = 1
+          }
           if (fresh) print afile[j] ": " atext[j]
         }
       }'
@@ -425,6 +456,7 @@ else
   # is_test_path <path>: a source file (SOURCE_GLOBS, when set) that is a test (TEST_FILE_PATTERNS)
   is_test_path() {
     local g src=0
+    [[ "$1" == .ai/* || "$1" == .claude/* ]] && return 1
     set -f
     if [[ -z "${SOURCE_GLOBS:-}" ]]; then src=1; else for g in $SOURCE_GLOBS; do [[ "$1" == $g ]] && src=1 && break; done; fi
     if [[ $src -eq 1 ]]; then for g in $TEST_FILE_PATTERNS; do [[ "$1" == $g ]] && { set +f; return 0; }; done; fi

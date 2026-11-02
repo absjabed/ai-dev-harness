@@ -51,6 +51,9 @@ process.stdin.on("data", c => raw += c).on("end", () => {
 ' "$TEXT_DIR" 2>/dev/null || echo " ")
 EOF
 FILE="$(printf '%s' "$FILE" | tr '\\' '/')"   # Windows paths arrive with backslashes; the checks below match on "/"
+# The file's path inside its repo, as the gate sees it (empty outside a repo, or when its folder
+# does not exist yet): SOURCE_GLOBS are matched against this.
+REL="$(cd "$(dirname "$FILE")" 2>/dev/null && p="$(git rev-parse --show-prefix 2>/dev/null)" && printf '%s%s' "$p" "${FILE##*/}")"
 
 # note <text>: record a warning for both the user (stderr) and Claude (JSON at exit).
 CONTEXT=""
@@ -66,14 +69,20 @@ process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.
 
 # in_source_globs: is $FILE source code (SOURCE_GLOBS; blank ⇒ every file)? Docs that merely
 # mention a suppression are not suppressions.
-in_source_globs() {
+# in_globs: does $FILE match one of SOURCE_GLOBS (blank: every file)? Matched on its path in
+# the repo; when that is unknown, on any trailing part of the absolute path.
+in_globs() {
   [[ -z "${SOURCE_GLOBS:-}" ]] && return 0
   local g
   set -f
-  for g in $SOURCE_GLOBS; do [[ "$FILE" == $g || "$FILE" == */$g ]] && { set +f; return 0; }; done  # $FILE is absolute
+  for g in $SOURCE_GLOBS; do
+    if [[ -n "$REL" ]]; then [[ "$REL" == $g ]] && { set +f; return 0; }
+    else [[ "$FILE" == $g || "$FILE" == */$g ]] && { set +f; return 0; }; fi
+  done
   set +f
   return 1
 }
+in_source_globs() { in_globs; }
 
 # Warn when editing a real .env file (but allow .env.example). (Always on — universal.)
 if [[ "$FILE" == */.claude/hooks/hooks.env || "$FILE" == .claude/hooks/hooks.env ]]; then

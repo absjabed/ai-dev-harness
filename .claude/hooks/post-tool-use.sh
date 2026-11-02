@@ -58,6 +58,9 @@ process.stdin.on("data", c => raw += c).on("end", () => {
 
 [[ -z "$FILE" ]] && exit 0
 FILE="$(printf '%s' "$FILE" | tr '\\' '/')"   # Windows paths arrive with backslashes; the checks below match on "/"
+# The file's path inside its repo, as the gate sees it (empty outside a repo, or when its folder
+# does not exist yet): SOURCE_GLOBS are matched against this.
+REL="$(cd "$(dirname "$FILE")" 2>/dev/null && p="$(git rev-parse --show-prefix 2>/dev/null)" && printf '%s%s' "$p" "${FILE##*/}")"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo '')"
 
 # note <text>: record a finding for both the user (stderr) and Claude (JSON at exit).
@@ -76,7 +79,7 @@ trap 'emit_context; [[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
 # helper: is $FILE inside sub-project dir $1 ?
 in_dir() {
   if [[ "$1" == "." ]]; then  # the whole repo: any file inside it, never one outside (e.g. ~/.claude)
-    [[ -n "$REPO_ROOT" && "$(cd "$(dirname "$FILE")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)" == "$REPO_ROOT" ]]
+    [[ -n "$REL" ]]
     return
   fi
   [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]
@@ -186,13 +189,21 @@ fi
 # ── Optional: suppression / skipped-test guard (warn mode) ───────────────────
 # Warn when the edit adds a lint/type/coverage suppression or a skipped/focused test — the
 # shortcut an agent under a failing gate reaches for. Block mode lives in pre-tool-use.sh.
-IS_SOURCE=1   # SOURCE_GLOBS (blank ⇒ every file): docs that mention a suppression are not one
-if [[ -n "${SOURCE_GLOBS:-}" ]]; then
-  IS_SOURCE=0
+# in_globs: does $FILE match one of SOURCE_GLOBS (blank: every file)? Matched on its path in
+# the repo; when that is unknown, on any trailing part of the absolute path.
+in_globs() {
+  [[ -z "${SOURCE_GLOBS:-}" ]] && return 0
+  local g
   set -f
-  for g in $SOURCE_GLOBS; do [[ "$FILE" == $g || "$FILE" == */$g ]] && IS_SOURCE=1 && break; done  # $FILE is absolute
+  for g in $SOURCE_GLOBS; do
+    if [[ -n "$REL" ]]; then [[ "$REL" == $g ]] && { set +f; return 0; }
+    else [[ "$FILE" == $g || "$FILE" == */$g ]] && { set +f; return 0; }; fi
+  done
   set +f
-fi
+  return 1
+}
+IS_SOURCE=1   # SOURCE_GLOBS (blank ⇒ every file): docs that mention a suppression are not one
+in_globs || IS_SOURCE=0
 if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$IS_SOURCE" -eq 1 ]]; then
   # A Write replaces the whole file, so the old text is the committed copy, if any.
   TRACKED="$(git ls-files --full-name -- "$FILE" 2>/dev/null || true)"
