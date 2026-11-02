@@ -68,9 +68,10 @@ near_dir() {
   [[ -n "$d" ]] && printf '%s\t%s' "$d" "$rest"
 }
 NEAR="$(near_dir || true)"
-REL=""; FILE_TOP=""
+REL=""; FILE_TOP=""; FILE_COMMON=""
 if [[ -n "$NEAR" ]]; then
   FILE_TOP="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
+  FILE_COMMON="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd || true)"
   if [[ -n "$FILE_TOP" ]]; then
     REL="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-prefix 2>/dev/null || true)${NEAR#*$'\t'}"
   fi
@@ -92,8 +93,8 @@ trap 'emit_context; [[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
 
 # helper: is $FILE inside sub-project dir $1 ?
 in_dir() {
-  if [[ "$1" == "." ]]; then  # the whole repo (or one of its epic worktrees), never a file outside it
-    [[ -n "$FILE_TOP" && ( "$FILE_TOP" == "$REPO_ROOT" || "$FILE_TOP" == "$REPO_ROOT"/.worktrees/* ) ]]
+  if [[ "$1" == "." ]]; then  # the whole repo, its worktrees included, never a file outside it
+    [[ -n "$FILE_COMMON" && "$FILE_COMMON" -ef "$(git rev-parse --git-common-dir 2>/dev/null || true)" ]]  # -ef: the same folder, however spelled
     return
   fi
   [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]
@@ -219,10 +220,14 @@ in_globs() {
 IS_SOURCE=1   # SOURCE_GLOBS (blank ⇒ every file): docs that mention a suppression are not one
 in_globs || IS_SOURCE=0
 if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$IS_SOURCE" -eq 1 ]]; then
-  # A Write replaces the whole file, so the old text is the committed copy, if any.
-  TRACKED="$(git ls-files --full-name -- "$FILE" 2>/dev/null || true)"
+  # A Write replaces the whole file, so the old text is the committed copy, if any, read from
+  # the file's own repo (an epic worktree has its own HEAD).
+  TRACKED=""
+  if [[ -n "$FILE_TOP" && -n "$REL" ]]; then
+    TRACKED="$(cd "$FILE_TOP" && git ls-files --full-name -- "$REL" 2>/dev/null || true)"
+  fi
   if [[ ! -s "$TEXT_DIR/old" && -n "$TRACKED" ]]; then
-    git show "HEAD:$TRACKED" > "$TEXT_DIR/old" 2>/dev/null || : > "$TEXT_DIR/old"
+    (cd "$FILE_TOP" && git show "HEAD:$TRACKED") > "$TEXT_DIR/old" 2>/dev/null || : > "$TEXT_DIR/old"
   fi
   NEW_HITS="$(grep -E -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
   if [[ -n "$NEW_HITS" ]]; then

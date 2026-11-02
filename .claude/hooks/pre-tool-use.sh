@@ -61,9 +61,10 @@ near_dir() {
   [[ -n "$d" ]] && printf '%s\t%s' "$d" "$rest"
 }
 NEAR="$(near_dir || true)"
-REL=""; FILE_TOP=""
+REL=""; FILE_TOP=""; FILE_COMMON=""
 if [[ -n "$NEAR" ]]; then
   FILE_TOP="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
+  FILE_COMMON="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd || true)"
   if [[ -n "$FILE_TOP" ]]; then
     REL="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-prefix 2>/dev/null || true)${NEAR#*$'\t'}"
   fi
@@ -100,7 +101,7 @@ in_source_globs() { in_globs; }
 
 # Warn when editing a real .env file (but allow .env.example). (Always on — universal.)
 if [[ "$FILE" == */.claude/hooks/hooks.env || "$FILE" == .claude/hooks/hooks.env ]]; then
-  note "NOTE: $TOOL is editing the harness config ($FILE), which sets the quality gate's limits. Tightening a value is free; loosening one (a lower COVERAGE_MIN, a blank gate command, SUPPRESSION_CHECK=off) needs the user's own words and a .ai/memory/decisions.md entry. The gate lists every value the change alters, and keeps the base commit's stricter value until the change is merged."
+  note "NOTE: $TOOL is editing the harness config ($FILE), which sets the quality gate's limits. Tightening a value is free; loosening one (a lower COVERAGE_MIN, a blank gate command, SUPPRESSION_CHECK=off) needs the user's own words and a .ai/memory/decisions.md entry. The gate keeps the base commit's stricter limits, suppression settings and file lists, and lists every other change to this file."
 elif [[ "$FILE" == *.env && "$FILE" != *.env.example ]]; then
   note "WARNING: $TOOL is about to modify an .env file ($FILE). Confirm this is intentional and contains no committed secrets."
 fi

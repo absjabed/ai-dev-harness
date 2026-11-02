@@ -179,14 +179,18 @@ if [[ $BASELINE -eq 1 ]]; then
 fi
 
 # ── The base commit's settings ───────────────────────────────────────────────
-# A change can tighten the gate that judges it, never loosen it: the gate reads the base
-# commit's hooks.env too and keeps the stricter of the two for each value. A loosening the
-# change makes takes effect once it is merged, and the gate-config check lists it meanwhile.
+# A change can tighten these values for itself but not loosen them: the gate reads the base
+# commit's hooks.env too and keeps the stricter of the two. A loosening takes effect once the
+# change is merged. Other values (the commands, PACKAGE_DIRS, MUTATION_GLOBS) are the working
+# tree's, and the gate-config check lists every change to them, and to the gate's own files.
 #   SUPPRESSION_CHECK                         the stricter mode
 #   SUPPRESSION_PATTERNS, TEST_ASSERTION_PATTERNS  both patterns
-#   SOURCE_GLOBS, TEST_FILE_PATTERNS, COVERAGE_EXEMPT_GLOBS  the base's (they decide what is judged)
+#   SOURCE_GLOBS, TEST_FILE_PATTERNS           both lists (a blank one at the base adds nothing)
+#                                             (a blank TEST_FILE_PATTERNS in the change keeps the base's)
+#   COVERAGE_EXEMPT_GLOBS                     the base's, when it lists any
 #   COVERAGE_MIN (higher), COMPLEXITY_MAX and CRAP_MAX (lower)
 #   GATE_BUILD_CMD, GATE_TEST_CMD, TYPECHECK_CMD, LINT_CMD, MUTATION_CMD  the base's, if the change blanks one
+#                                             (a changed command is used, and listed)
 # Only keys the base's hooks.env sets count, so a new hooks.env (setup) is read as it is.
 BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | tr -d '\r')"
 # base_has <KEY>: the base's hooks.env assigns KEY. base_value <KEY>: its value there.
@@ -211,9 +215,15 @@ if [[ -n "$BASE_CFG" ]]; then
       if [[ -z "$w" ]]; then printf -v "$k" '%s' "$b"; else printf -v "$k" '%s' "($w)|($b)"; fi
     fi
   done
-  for k in SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_EXEMPT_GLOBS; do
-    if base_has "$k"; then printf -v "$k" '%s' "$(base_value "$k")"; fi
+  for k in SOURCE_GLOBS TEST_FILE_PATTERNS; do
+    b="$(base_value "$k")"
+    w="${!k:-}"
+    if [[ -n "$b" && -n "$w" && "$b" != "$w" ]]; then printf -v "$k" '%s' "$w $b"; fi
   done
+  # A blank TEST_FILE_PATTERNS means no test files, which turns the test-removal check off.
+  [[ -z "${TEST_FILE_PATTERNS:-}" ]] && TEST_FILE_PATTERNS="$(base_value TEST_FILE_PATTERNS)"
+  b="$(base_value COVERAGE_EXEMPT_GLOBS)"
+  [[ -n "$b" ]] && COVERAGE_EXEMPT_GLOBS="$b"
   if base_has COVERAGE_MIN; then COVERAGE_MIN="$(num_pick higher "${COVERAGE_MIN:-}" "$(base_value COVERAGE_MIN)")"; fi
   for k in COMPLEXITY_MAX CRAP_MAX; do
     if base_has "$k"; then printf -v "$k" '%s' "$(num_pick lower "${!k:-}" "$(base_value "$k")")"; fi
@@ -411,7 +421,10 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # is not "# noqa: F401", "eslint-disable" not "eslint-disable-line no-console"), but not the
   # code around it, as row:text, the row of its line in the records. Matched on the line's text
   # only, never on its path.
-  RULES='[[:alnum:]_:,=./@ -]*'  # "/" and "@" for rule names like @typescript-eslint/no-explicit-any
+  # Rule names (@typescript-eslint/no-explicit-any), bracketed codes (type: ignore[attr-defined])
+  # and quoted argument lists (@SuppressWarnings("all"), SuppressMessage("Style", "IDE0001")) count;
+  # a skipped test's name and body do not.
+  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\("[^"]*"( *, *"[^"]*")*\))*'
   add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
@@ -427,6 +440,7 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
       function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
       function rec(kind,   t) { t = $0; sub(/^[RA]\t[-+]\t/, "", t); f = t; sub(/\t.*/, "", f); sub(/^[^\t]*\t/, "", t); return trim(t) }
       /^[ra]\t[0-9]+:/ { k = substr($0, 1, 1); t = substr($0, 3); row = t; sub(/:.*/, "", row); sub(/^[0-9]+:/, "", t)
+                         sub(/[ \t]+(--|\/\/|#).*$/, "", t)  # a free-text reason after it is not part of it
                          toks[k, row] = toks[k, row] SUBSEP trim(t); has[k, row] = 1; next }
       /^R\t/ { nr++; rtext[nr] = rec(); rfile[nr] = f; next }
       /^A\t/ { na++; atext[na] = rec(); afile[na] = f; next }
@@ -523,24 +537,33 @@ else
 fi
 
 # ── gate config ──────────────────────────────────────────────────────────────
-# A change can loosen the gate that judges it, and the gate reads hooks.env from the working
-# tree: list every value the change sets differently from the base, for the person approving
-# it. Always on, and only ever a WARN: tightening a value is free, and a FAIL here could never
-# clear on the branch that makes the change.
+# The gate runs from the working tree, so a change can alter the gate that judges it: its
+# hooks.env, its scripts, its hooks. Some loosenings are undone above (the base's stricter
+# values); the rest only a person can judge. List every such change for the person approving
+# it. Always on, and only ever a WARN: tightening is free, and a FAIL here could never clear on
+# the branch that makes the change.
 CFG=".claude/hooks/hooks.env"
 if [[ -f "$CFG" ]] && ! git cat-file -e "$MERGE_BASE:$CFG" 2>/dev/null \
    && [[ -n "$(git ls-files --cached --others --exclude-standard -- "$CFG")" ]]; then
   printf '%-12s WARN  %s is not in the base commit: every value in it is new (expected only at setup)\n' gate-config "$CFG"
 else
-  cfg_keys="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
-    | grep -E '^[+-][A-Z][A-Z0-9_]*=' | sed -E 's/^[+-]([A-Z0-9_]+)=.*/\1/' | sort -u | tr '\n' ' ')"
+  # Every changed line that is not a comment: assignments, exports, anything bash would run.
+  cfg_lines="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
+    | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
+  cfg_keys="$(printf '%s\n' "$cfg_lines" | sed -nE 's/^[+-][[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=.*/\2/p' | sort -u | tr '\n' ' ')"
   cfg_keys="${cfg_keys% }"
-  if [[ -z "$cfg_keys" ]]; then
+  cfg_other="$(printf '%s\n' "$cfg_lines" | grep -vcE '^[+-][[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' || true)"
+  if [[ -z "$cfg_lines" ]]; then
     printf '%-12s PASS  hooks.env unchanged\n' gate-config
   else
-    printf '%-12s WARN  hooks.env changes %s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' gate-config "$cfg_keys"
+    printf '%-12s WARN  hooks.env changes %s%s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' \
+      gate-config "${cfg_keys:-no values}" "$([[ "${cfg_other:-0}" -gt 0 ]] && printf ' and %s other line(s)' "$cfg_other")"
   fi
 fi
+gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks 2>/dev/null
+                 git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
+gate_files="${gate_files% }"
+[[ -n "$gate_files" ]] && printf '%-12s WARN  the change edits the gate itself: %s (this run used the edited copy)\n' gate-config "$gate_files"
 
 # ── mutation testing (opt-in, slowest, last) ─────────────────────────────────
 # Only the changed source files the mutation tool covers (MUTATION_GLOBS; blank ⇒ all of them).

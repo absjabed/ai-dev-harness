@@ -104,6 +104,16 @@ def changed_lines(base, rel, old):
     return lines
 
 
+def similar(before, path):
+    """True when the file at `path` keeps at least half of `before`, git's own rename threshold."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            now = fh.read().splitlines()
+    except OSError:
+        return False
+    return difflib.SequenceMatcher(None, before.splitlines(), now, autojunk=False).ratio() >= 0.5
+
+
 def base_paths(base):
     """{current path: path at base} for every file that existed at base (renames followed)."""
     mapping, deleted = {}, []
@@ -132,7 +142,8 @@ def base_paths(base):
         for f in left:
             name = f.rsplit("/", 1)[-1]
             old = [d for d in deleted if d.rsplit("/", 1)[-1] == name]
-            if len(old) == 1 and sum(1 for g in left if g.rsplit("/", 1)[-1] == name) == 1:
+            if (len(old) == 1 and sum(1 for g in left if g.rsplit("/", 1)[-1] == name) == 1
+                    and similar(git("show", f"{base}:{old[0]}"), f)):
                 mapping[f] = old[0]
                 UNTRACKED_MOVES.add(f)
                 deleted.remove(old[0])
@@ -165,11 +176,13 @@ def read_cobertura(root, cov):
             continue
         targets = list(dict.fromkeys(os.path.join(src, filename) for src in sources)) or [filename]
         if len(targets) > 1:
-            # Several source roots: the class is the one file among them that exists. Two that
-            # exist (models.py in two apps) cannot be told apart, so the entry counts for neither.
-            targets = [t for t in targets if os.path.isfile(t)]
-            if len(targets) != 1:
+            # Several source roots: when one of them holds the file, the class is that file; when
+            # two do (models.py in two apps), it cannot be told apart and counts for neither. When
+            # none is found here (a container or CI path), each is left to the path resolution.
+            here = [t for t in targets if os.path.isfile(t)]
+            if len(here) > 1:
                 continue
+            targets = here or targets
         for line in lines.iter("line"):
             for target in targets:
                 merge(cov, target, int(line.get("number")), int(float(line.get("hits", "0"))))
@@ -232,11 +245,13 @@ class Coverage:
     def resolve(self, key, report_dir, files, by_base):
         parts = report_dir.split("/") if report_dir else []
         if key.startswith("../") or "/../" in key:  # relative to the report's project (istanbul)
-            for i in range(len(parts), 0, -1):
+            for i in range(len(parts), -1, -1):
                 path = posixpath.normpath("/".join(parts[:i] + [key]))
                 if path in files:
                     return path
-            return None
+            if key.startswith("../"):
+                return None
+            key = posixpath.normpath(key)  # web/../shared/x.ts, or an absolute path with ".."
         for i in range(len(parts), -1, -1):  # the report's folder first, the repo root last
             path = "/".join(parts[:i] + [key])
             if path in files:

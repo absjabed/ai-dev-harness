@@ -203,7 +203,7 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
 | Removed tests | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | `block` mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; `warn` lists them |
-| Gate config | Always on | Never: it warns with every `hooks.env` value the change alters, since loosening one needs the user's words. The gate also reads the base commit's `hooks.env` and keeps the stricter of the two values, so a change can tighten the gate for itself but a loosening takes effect only once it is merged |
+| Gate config | Always on | Never: it warns with every `hooks.env` line the change alters, and every edit to the gate's own scripts and hooks, since loosening the gate needs the user's words. The gate also reads the base commit's `hooks.env` and keeps the stricter limits (`COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX`), suppression mode and patterns, and file lists, so a change cannot loosen those for itself. Other changes (a gate command, `PACKAGE_DIRS`, `MUTATION_GLOBS`, the scripts) take effect at once and are only listed: the reviewer and the person approving judge them |
 | Mutation | `MUTATION_CMD`, `MUTATION_GLOBS`, with `--mutation` | The mutation tool's own threshold is missed, on the changed files `MUTATION_GLOBS` matches |
 
 The ratchet keeps legacy code workable: a touched function that was already over a limit and did
