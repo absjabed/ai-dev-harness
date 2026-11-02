@@ -198,7 +198,7 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | Check | Configured by | Fails when |
 |---|---|---|
 | Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
-| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt), or no report came from this run |
+| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt, or it holds only declarations: no function, and no changed line that assigns or calls), or no report came from this run |
 | Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |

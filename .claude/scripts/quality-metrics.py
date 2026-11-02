@@ -47,6 +47,10 @@ TOP_N = 15
 UNTRACKED_MOVES = set()  # current paths base_paths() paired with a deletion git did not pair
 LIST_N = 10
 TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*|--|[{}()\[\];,]+\s*$)")
+# A line that runs something even outside a function: an assignment or initialiser (not ==, =>,
+# <=), or a statement that is only a call.
+RUNS = re.compile(r"(?<![=!<>])=(?![=>])|^\s*[\w.$]+\(.*\)\s*;?\s*$")
+TYPE_ALIAS = re.compile(r"^\s*(export\s+)?(declare\s+)?type\s+\w")  # type T = ...: a declaration
 
 
 # Plain git output whatever the user's config: prefixes, colour, quoted paths, external diffs.
@@ -206,6 +210,7 @@ def read_jacoco(root, cov):
         for sf in pkg.iter("sourcefile"):
             name = pkg.get("name", "")
             path = f"{name}/{sf.get('name', '')}" if name else sf.get("name", "")  # default package
+            cov.setdefault(norm(path), {})  # listed with no lines: measured, nothing to cover
             for line in sf.iter("line"):
                 missed, covered = int(line.get("mi", "0")), int(line.get("ci", "0"))
                 if missed + covered:
@@ -320,6 +325,32 @@ def functions(lizard, filename, code):
     except Exception:  # an unparsable file must not crash the gate
         return []
     return [f for f in info.function_list if f.name != "*global*"]  # lizard's code-outside-functions bucket
+
+
+def declarations_only(rel, lines):
+    """lizard reads `rel` and finds no function in it, and no changed line in it runs anything
+    (RUNS): types, interfaces, fields, signatures, which a test cannot run. An unknown language
+    or a parse error is not this."""
+    try:
+        with open(rel, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        return False
+    rows = text.splitlines()
+    if any(n <= len(rows) and not TRIVIAL.match(rows[n - 1]) and RUNS.search(rows[n - 1])
+           and not TYPE_ALIAS.match(rows[n - 1]) for n in lines):
+        return False
+    try:
+        import lizard
+    except ImportError:
+        return False
+    if lizard.get_reader_for(rel) is None:
+        return False
+    try:
+        info = lizard.analyze_file.analyze_source_code(rel, text)
+    except Exception:
+        return False
+    return not [f for f in info.function_list if f.name != "*global*"]
 
 
 def function_history(before, current):
@@ -537,11 +568,15 @@ def main():
     if args.report_glob:
         hit = total = 0
         unmeasured = []
+        declarations = []
         for rel, lines in changed.items():
             if rel in exempt or not lines:
                 continue
             data = file_cov[rel]
             if data is None:
+                if strict and declarations_only(rel, lines):  # e.g. a type-only module the tests never load
+                    declarations.append(rel)
+                    continue
                 unmeasured.append(rel)
                 if strict:  # no data means the tests never loaded it: count it as untested
                     try:
@@ -566,7 +601,10 @@ def main():
         if unmeasured:
             say("WARN", "coverage", ("in no coverage report, counted as untested: " if strict else
                                      "in no coverage report: ") + short(unmeasured)
-                + ("" if not strict else " (exempt them with COVERAGE_EXEMPT_GLOBS if tests cannot reach them)"))
+                + ("" if not strict else " (if tests cannot reach them, exempt them with COVERAGE_EXEMPT_GLOBS; a new"
+                   " exemption counts once merged, so land that hooks.env change on its own first)"))
+        if declarations:
+            say("WARN", "coverage", "in no coverage report, declarations only (no function, no changed line that runs), not counted: " + short(declarations))
     elif args.coverage_min is not None:
         say("FAIL", "coverage", "COVERAGE_MIN is set but no coverage report is configured (COVERAGE_REPORTS)")
 

@@ -101,16 +101,17 @@ in_dir() {
 }
 
 # ── Type-check / lint the changed sub-project (config-driven) ────────────────
+PKG_ROOT="${FILE_TOP:-$REPO_ROOT}"  # the edited file's checkout: an epic worktree has its own
 if [[ -n "$PACKAGE_DIRS" && -n "$REPO_ROOT" ]]; then
   for d in $PACKAGE_DIRS; do
     if in_dir "$d"; then
       # Only a failing run is reported, capped at 20 lines, so a clean edit costs no context.
-      if [[ -n "$TYPECHECK_CMD" && -d "${REPO_ROOT}/${d}" ]]; then
-        OUT="$(cd "${REPO_ROOT}/${d}" && eval "$TYPECHECK_CMD" 2>&1)" \
+      if [[ -n "$TYPECHECK_CMD" && -d "${PKG_ROOT}/${d}" ]]; then
+        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$TYPECHECK_CMD" 2>&1)" \
           || note "Type-check failed in ${d}/ after editing $FILE:"$'\n'"$(printf '%s\n' "$OUT" | head -20)"
       fi
-      if [[ -n "$LINT_CMD" && -d "${REPO_ROOT}/${d}" ]]; then
-        OUT="$(cd "${REPO_ROOT}/${d}" && eval "$LINT_CMD \"$FILE\"" 2>&1)" \
+      if [[ -n "$LINT_CMD" && -d "${PKG_ROOT}/${d}" ]]; then
+        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$LINT_CMD \"$FILE\"" 2>&1)" \
           || note "Lint failed on $FILE:"$'\n'"$(printf '%s\n' "$OUT" | head -20)"
       fi
       break

@@ -202,6 +202,8 @@ num_pick() {
   if [[ -z "$2" ]]; then printf '%s' "$3"; elif [[ -z "$3" ]]; then printf '%s' "$2"
   else awk -v w="$1" -v a="$2" -v b="$3" 'BEGIN { if ((w == "higher") == (a + 0 >= b + 0)) print a; else print b }'; fi
 }
+KEPT_KEYS="SUPPRESSION_CHECK SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_EXEMPT_GLOBS COVERAGE_MIN COMPLEXITY_MAX CRAP_MAX GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD MUTATION_CMD"
+for k in $KEPT_KEYS; do printf -v "WORK_$k" '%s' "${!k:-}"; done
 if [[ -n "$BASE_CFG" ]]; then
   if base_has SUPPRESSION_CHECK; then
     b="$(base_value SUPPRESSION_CHECK)"
@@ -222,12 +224,16 @@ if [[ -n "$BASE_CFG" ]]; then
     [[ -n "$(base_value "$k")" ]] && { base_on=1; break; }
   done
   [[ $(mode_rank "$(base_value SUPPRESSION_CHECK)") -gt 0 ]] && base_on=1
+  # SOURCE_GLOBS also scopes typecheck and lint. Only a harness with the gate has the key, so an
+  # upgrade from one without it still reads the change's lists.
+  lint_on=$base_on
+  [[ -n "$(base_value TYPECHECK_CMD)$(base_value LINT_CMD)" ]] && lint_on=1
+  if [[ $lint_on -eq 1 ]] && base_has SOURCE_GLOBS; then  # may only grow: a narrower list judges less
+    b="$(base_value SOURCE_GLOBS)"
+    if [[ -z "$b" ]]; then SOURCE_GLOBS=""
+    elif [[ -n "${SOURCE_GLOBS:-}" && "$SOURCE_GLOBS" != "$b" ]]; then SOURCE_GLOBS="$SOURCE_GLOBS $b"; fi
+  fi
   if [[ $base_on -eq 1 ]]; then
-    if base_has SOURCE_GLOBS; then  # may only grow: a narrower list, or a test pattern, judges less
-      b="$(base_value SOURCE_GLOBS)"
-      if [[ -z "$b" ]]; then SOURCE_GLOBS=""
-      elif [[ -n "${SOURCE_GLOBS:-}" && "$SOURCE_GLOBS" != "$b" ]]; then SOURCE_GLOBS="$SOURCE_GLOBS $b"; fi
-    fi
     base_has TEST_FILE_PATTERNS && TEST_FILE_PATTERNS="$(base_value TEST_FILE_PATTERNS)"
     base_has COVERAGE_EXEMPT_GLOBS && COVERAGE_EXEMPT_GLOBS="$(base_value COVERAGE_EXEMPT_GLOBS)"
   fi
@@ -431,7 +437,7 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # Rule names (@typescript-eslint/no-explicit-any), bracketed codes (type: ignore[attr-defined])
   # and quoted argument lists (@SuppressWarnings("all"), SuppressMessage("Style", "IDE0001")) count;
   # a skipped test's name and body do not.
-  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\([^)]*\))*'
+  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\(([^()"]|"[^"]*")*\))*'
   add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
@@ -575,6 +581,9 @@ else
       gate-config "${cfg_keys:-no values}" "$([[ "${cfg_other:-0}" -gt 0 ]] && printf ' and %s other line(s)' "$cfg_other")"
   fi
 fi
+kept=""
+for k in $KEPT_KEYS; do w="WORK_$k"; [[ "${!w}" != "${!k:-}" ]] && kept="$kept $k"; done
+[[ -n "$kept" ]] && printf '%-12s WARN  the base commit'"'"'s value was kept for%s: the change'"'"'s counts once merged (land such a hooks.env change on its own first)\n' gate-config "$kept"
 gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks .claude/settings.json 2>/dev/null
                  git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks .claude/settings.json; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
 gate_files="${gate_files% }"
