@@ -150,7 +150,7 @@ if [[ $BASELINE -eq 1 ]]; then
   set +f
   echo "Quality baseline: ${#FILES[@]} tracked source file(s)"
   find_python
-  [[ -z "$PY" ]] && { echo "quality-gate: python 3 not found; the baseline needs it" >&2; exit 2; }
+  [[ -z "$PY" ]] && { echo "QUALITY BASELINE: NOT WRITTEN (python 3 not found; the baseline needs it)" >&2; exit 1; }
   args=(--baseline-out "$OUT")
   TEST_START="$LOG_DIR/.test-start"
   if [[ -z "${GATE_TEST_CMD:-}" ]]; then
@@ -185,9 +185,9 @@ fi
 # tree's, and the gate-config check lists every change to them, and to the gate's own files.
 #   SUPPRESSION_CHECK                         the stricter mode
 #   SUPPRESSION_PATTERNS, TEST_ASSERTION_PATTERNS  both patterns
-#   SOURCE_GLOBS, TEST_FILE_PATTERNS           both lists (a blank one at the base adds nothing)
-#                                             (a blank TEST_FILE_PATTERNS in the change keeps the base's)
-#   COVERAGE_EXEMPT_GLOBS                     the base's, when it lists any
+#   SOURCE_GLOBS                              both lists (blank at the base = every file, kept)
+#   TEST_FILE_PATTERNS, COVERAGE_EXEMPT_GLOBS the base's
+#   (the file lists only once the base's gate is configured: setup reads the template as it is)
 #   COVERAGE_MIN (higher), COMPLEXITY_MAX and CRAP_MAX (lower)
 #   GATE_BUILD_CMD, GATE_TEST_CMD, TYPECHECK_CMD, LINT_CMD, MUTATION_CMD  the base's, if the change blanks one
 #                                             (a changed command is used, and listed)
@@ -215,15 +215,22 @@ if [[ -n "$BASE_CFG" ]]; then
       if [[ -z "$w" ]]; then printf -v "$k" '%s' "$b"; else printf -v "$k" '%s' "($w)|($b)"; fi
     fi
   done
-  for k in SOURCE_GLOBS TEST_FILE_PATTERNS; do
-    b="$(base_value "$k")"
-    w="${!k:-}"
-    if [[ -n "$b" && -n "$w" && "$b" != "$w" ]]; then printf -v "$k" '%s' "$w $b"; fi
+  # The file lists count once the base's gate judged anything; before that (setup, or an upgrade
+  # from a harness without the gate) the base holds only the template's defaults.
+  base_on=0
+  for k in GATE_BUILD_CMD GATE_TEST_CMD COVERAGE_REPORTS COVERAGE_MIN COMPLEXITY_MAX CRAP_MAX MUTATION_CMD; do
+    [[ -n "$(base_value "$k")" ]] && { base_on=1; break; }
   done
-  # A blank TEST_FILE_PATTERNS means no test files, which turns the test-removal check off.
-  [[ -z "${TEST_FILE_PATTERNS:-}" ]] && TEST_FILE_PATTERNS="$(base_value TEST_FILE_PATTERNS)"
-  b="$(base_value COVERAGE_EXEMPT_GLOBS)"
-  [[ -n "$b" ]] && COVERAGE_EXEMPT_GLOBS="$b"
+  [[ $(mode_rank "$(base_value SUPPRESSION_CHECK)") -gt 0 ]] && base_on=1
+  if [[ $base_on -eq 1 ]]; then
+    if base_has SOURCE_GLOBS; then  # may only grow: a narrower list, or a test pattern, judges less
+      b="$(base_value SOURCE_GLOBS)"
+      if [[ -z "$b" ]]; then SOURCE_GLOBS=""
+      elif [[ -n "${SOURCE_GLOBS:-}" && "$SOURCE_GLOBS" != "$b" ]]; then SOURCE_GLOBS="$SOURCE_GLOBS $b"; fi
+    fi
+    base_has TEST_FILE_PATTERNS && TEST_FILE_PATTERNS="$(base_value TEST_FILE_PATTERNS)"
+    base_has COVERAGE_EXEMPT_GLOBS && COVERAGE_EXEMPT_GLOBS="$(base_value COVERAGE_EXEMPT_GLOBS)"
+  fi
   if base_has COVERAGE_MIN; then COVERAGE_MIN="$(num_pick higher "${COVERAGE_MIN:-}" "$(base_value COVERAGE_MIN)")"; fi
   for k in COMPLEXITY_MAX CRAP_MAX; do
     if base_has "$k"; then printf -v "$k" '%s' "$(num_pick lower "${!k:-}" "$(base_value "$k")")"; fi
@@ -424,7 +431,7 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # Rule names (@typescript-eslint/no-explicit-any), bracketed codes (type: ignore[attr-defined])
   # and quoted argument lists (@SuppressWarnings("all"), SuppressMessage("Style", "IDE0001")) count;
   # a skipped test's name and body do not.
-  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\("[^"]*"( *, *"[^"]*")*\))*'
+  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\([^)]*\))*'
   add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
@@ -501,11 +508,17 @@ else
     set +f
     return 1
   }
-  old_tests="$(git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do is_test_path "$p" && printf '%s\n' "$p"; done)"
+  # A test file renamed to a name that is no test keeps none of its tests: all its lines are removed.
+  gone_tests="$(printf '%s\n' "$RENAMES" | while IFS=$'\t' read -r new old; do
+    [[ -n "$old" ]] && is_test_path "$old" && ! is_test_path "$new" && printf '%s\n' "$old"; done)"
+  old_tests="$(git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do
+    is_test_path "$p" && ! printf '%s\n' "$gone_tests" | grep -qxF -- "$p" && printf '%s\n' "$p"; done)"
   # One record per changed line: sign TAB file TAB text (untracked test files count as added).
   records="$(
     git diff --no-ext-diff --no-textconv -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$(printf '%s\n' "${TESTS[@]}")" "$old_tests"
     untracked_records "${TESTS[@]}"
+    printf '%s\n' "$gone_tests" | while IFS= read -r f; do
+      [[ -n "$f" ]] && git show "$MERGE_BASE:$f" 2>/dev/null | F="$f" awk '{ print "-\t" ENVIRON["F"] "\t" $0 }'; done
   )"
   removed_recs="$(printf '%s\n' "$records" | grep '^-')"
   # Match the pattern on the line's text only, never on its path.
@@ -550,7 +563,9 @@ else
   # Every changed line that is not a comment: assignments, exports, anything bash would run.
   cfg_lines="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
     | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
-  cfg_keys="$(printf '%s\n' "$cfg_lines" | sed -nE 's/^[+-][[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=.*/\2/p' | sort -u | tr '\n' ' ')"
+  # Every NAME= on the line, not just the first (a second assignment would hide behind it).
+  cfg_keys="$(printf '%s\n' "$cfg_lines" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
+    | sed -E 's/^[-+;&|[:space:]]*(export[[:space:]]+)?//; s/=$//' | sort -u | tr '\n' ' ')"
   cfg_keys="${cfg_keys% }"
   cfg_other="$(printf '%s\n' "$cfg_lines" | grep -vcE '^[+-][[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' || true)"
   if [[ -z "$cfg_lines" ]]; then
@@ -560,8 +575,8 @@ else
       gate-config "${cfg_keys:-no values}" "$([[ "${cfg_other:-0}" -gt 0 ]] && printf ' and %s other line(s)' "$cfg_other")"
   fi
 fi
-gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks 2>/dev/null
-                 git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
+gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks .claude/settings.json 2>/dev/null
+                 git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks .claude/settings.json; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
 gate_files="${gate_files% }"
 [[ -n "$gate_files" ]] && printf '%-12s WARN  the change edits the gate itself: %s (this run used the edited copy)\n' gate-config "$gate_files"
 

@@ -61,10 +61,9 @@ near_dir() {
   [[ -n "$d" ]] && printf '%s\t%s' "$d" "$rest"
 }
 NEAR="$(near_dir || true)"
-REL=""; FILE_TOP=""; FILE_COMMON=""
+REL=""; FILE_TOP=""
 if [[ -n "$NEAR" ]]; then
   FILE_TOP="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
-  FILE_COMMON="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd || true)"
   if [[ -n "$FILE_TOP" ]]; then
     REL="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-prefix 2>/dev/null || true)${NEAR#*$'\t'}"
   fi

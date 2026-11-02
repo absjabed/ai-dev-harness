@@ -203,11 +203,12 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
 | Removed tests | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | `block` mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; `warn` lists them |
-| Gate config | Always on | Never: it warns with every `hooks.env` line the change alters, and every edit to the gate's own scripts and hooks, since loosening the gate needs the user's words. The gate also reads the base commit's `hooks.env` and keeps the stricter limits (`COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX`), suppression mode and patterns, and file lists, so a change cannot loosen those for itself. Other changes (a gate command, `PACKAGE_DIRS`, `MUTATION_GLOBS`, the scripts) take effect at once and are only listed: the reviewer and the person approving judge them |
+| Gate config | Always on | Never: it warns with every `hooks.env` line the change alters, and every edit to the gate's own scripts and hooks, since loosening the gate needs the user's words. The gate also reads the base commit's `hooks.env` and keeps the stricter limits (`COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX`), suppression mode and patterns, and file lists (`SOURCE_GLOBS` may only grow; `TEST_FILE_PATTERNS` and `COVERAGE_EXEMPT_GLOBS` are the base's once its gate is configured), so a change cannot loosen those for itself. Other changes (a gate command, `PACKAGE_DIRS`, `MUTATION_GLOBS`, the scripts, hooks and `.claude/settings.json`) take effect at once and are only listed: the reviewer and the person approving judge them |
 | Mutation | `MUTATION_CMD`, `MUTATION_GLOBS`, with `--mutation` | The mutation tool's own threshold is missed, on the changed files `MUTATION_GLOBS` matches |
 
-The ratchet keeps legacy code workable: a touched function that was already over a limit and did
-not get worse only warns (for CRAP, only while every line the change touched in it is tested).
+The ratchet keeps legacy code workable: a touched function over a limit whose complexity did not
+grow only warns (for CRAP, only while every line the change touched in it is tested; its coverage
+before the change is not measured).
 Several coverage reports of one file, one per test project, are merged. Complexity and CRAP need python 3 and `pip install lizard`; a
 configured check that cannot run is a FAIL, never a silent pass. The output ends with a table of
 the touched functions, which the workflows show at their final STOP as the change's shape. Logs go

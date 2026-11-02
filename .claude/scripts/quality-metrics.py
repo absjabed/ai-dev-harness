@@ -162,28 +162,41 @@ def read_lcov(text, cov):
     for raw in text.splitlines():
         if raw.startswith("SF:"):
             current = raw[3:].strip()
+            cov.setdefault(norm(current), {})  # listed with no lines: measured, nothing to cover
         elif raw.startswith("DA:") and current:
             parts = raw[3:].split(",")
             merge(cov, current, int(parts[0]), int(float(parts[1])))
 
 
-def read_cobertura(root, cov):
+def exists_near(path, report_dir):
+    """`path` names a file, read from the report's folder or a folder above it."""
+    d = report_dir
+    while True:
+        if os.path.isfile(os.path.join(d, path)):
+            return True
+        parent = os.path.dirname(d)
+        if parent == d:
+            return False
+        d = parent
+
+
+def read_cobertura(root, cov, report_dir):
     sources = [s.text.strip() for s in root.iter("source") if s.text and s.text.strip()]
     for cls in root.iter("class"):
         filename = cls.get("filename", "")
         lines = cls.find("lines")
-        if lines is None:
-            continue
         targets = list(dict.fromkeys(os.path.join(src, filename) for src in sources)) or [filename]
         if len(targets) > 1:
             # Several source roots: when one of them holds the file, the class is that file; when
             # two do (models.py in two apps), it cannot be told apart and counts for neither. When
             # none is found here (a container or CI path), each is left to the path resolution.
-            here = [t for t in targets if os.path.isfile(t)]
+            here = [t for t in targets if exists_near(t, report_dir)]
             if len(here) > 1:
                 continue
             targets = here or targets
-        for line in lines.iter("line"):
+        for target in targets:
+            cov.setdefault(norm(target), {})  # listed with no lines: measured, nothing to cover
+        for line in (lines.iter("line") if lines is not None else ()):
             for target in targets:
                 merge(cov, target, int(line.get("number")), int(float(line.get("hits", "0"))))
 
@@ -215,7 +228,10 @@ def load_report(path):
         read_go(text, cov)
     elif text.lstrip().startswith("<"):
         root = ET.fromstring(text)
-        (read_jacoco if root.tag == "report" else read_cobertura)(root, cov)
+        if root.tag == "report":
+            read_jacoco(root, cov)
+        else:
+            read_cobertura(root, cov, os.path.dirname(path))
     else:
         read_lcov(text, cov)
     return cov
