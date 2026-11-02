@@ -8,6 +8,8 @@ AI Dev Harness is an AI-Driven Lifecycle (AI DLC) framework that turns AI-assist
 
 AI Dev Harness replaces ad-hoc prompting with a structured delivery model. Specialized AI agents work together across the Software Development Lifecycle (SDLC) and follow shared engineering standards, project knowledge, reusable workflows and automated quality gates.
 
+**Built on proven engineering practice.** The harness doesn't invent its own rules: it encodes established standards (Clean Code and SOLID, test-driven development, the OWASP Top 10, WCAG 2.1 AA, Conventional Commits, Semantic Versioning and Architecture Decision Records) and enforces them on every change with an automated quality gate covering tests, diff coverage, complexity, CRAP and mutation score. See [Standards & sources](docs/standards.html) for the full list and where each one is applied.
+
 ---
 
 ## Contents
@@ -282,6 +284,7 @@ The documentation is a set of layered guides. Start here and go deeper into whic
 | [**`docs/index.html`**](docs/index.html) | Read everything as one browsable page. It is the fastest way in, and the one to hand someone new |
 | [`docs/getting-started.md`](docs/getting-started.md) | Go from clone to a configured harness and a first feature, with troubleshooting |
 | [`docs/components.md`](docs/components.md) | Look up any single component (command, persona, sub-agent, hook, template) and what it produces |
+| [`docs/standards.html`](docs/standards.html) | See the standards and practices the harness is built on, who they come from, and where each is applied |
 | **README.md** (this file) | Understand the whole system and [set it up](#setup) in a repo |
 | [`.ai/README.md`](.ai/README.md) | Understand the Knowledge Layer: what lives in `.ai/` and what to fill in |
 | [`.claude/README.md`](.claude/README.md) | Understand the Execution Layer: commands, sub-agents, and hooks in `.claude/` |

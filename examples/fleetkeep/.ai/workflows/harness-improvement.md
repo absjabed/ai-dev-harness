@@ -42,10 +42,12 @@ before they land. Used by `/harness:improve`.
 7. **Docs inventories stay true** — `COMMANDS.md`, `README.md`, `AGENTS.md`, `.ai/README.md`,
    `.claude/README.md`, `.ai/CUSTOMIZATION.md`, and everything under `docs/`
    (`getting-started.md`, `components.md`, `portability.md`, and the hand-written
-   `index.html`) enumerate commands, agents, sub-agents, hooks, templates, memory files and
-   hook toggles — several of them by **count** as well as by name. Any addition/rename updates
-   every list that names it, and any count it changes. `docs/index.html` is not generated:
-   edit it in the same change as the markdown it mirrors.
+   `index.html` and `standards.html`) enumerate commands, agents, sub-agents, hooks, templates,
+   memory files, hook toggles and the standards behind them — several of them by **count** as
+   well as by name. Any addition/rename updates every list that names it, and any count it
+   changes. `docs/index.html` is not generated: edit it in the same change as the markdown it
+   mirrors. A standard added to or dropped from `.ai/standards/` or an agent updates its row in
+   `docs/standards.html`.
 8. **Tool least-privilege** — command/sub-agent frontmatter grants only the tools the role
    needs; anything the instructions tell the agent to run must be grantable from its
    `allowed-tools`/`tools` line (e.g. `date +%F` needs Bash).

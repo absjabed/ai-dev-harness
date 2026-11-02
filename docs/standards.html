@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness Standards &amp; Sources</title>
+<meta name="description" content="The public standards and practices the AI Dev Harness builds on, and where each is applied.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F8A72'/%3E%3Cpath d='M16 6.5l7 2.6v5.7c0 4.3-2.9 7.9-7 8.9-4.1-1-7-4.6-7-8.9V9.1l7-2.6z' fill='none' stroke='%23fff' stroke-width='1.9' stroke-linejoin='round'/%3E%3Cpath d='M12.6 15.9l2.5 2.5 4.4-4.8' fill='none' stroke='%23fff' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#ffffff; --surface:#f7f9fb; --surface-2:#eef2f6; --text:#101a24; --muted:#5b6b7f;
+  --border:#dde4ec; --accent:#0b5d51; --accent-soft:#e6f4f1; --warn-bg:#fef3c7; --warn-text:#92400e;
+  --danger:#b91c1c; --ok:#166534; --code-bg:#f1f5f9; --shadow:0 1px 2px rgba(16,26,36,.06),0 8px 24px rgba(16,26,36,.06);
+  --mark-bg:#0F8A72; /* brand mark + favicon: one value for both themes — white glyph 4.3:1, chip 4.0:1 vs the dark sidebar, 4.1:1 vs the light one */
+  --mono:ui-monospace,'Cascadia Mono','SF Mono',Consolas,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1120; --surface:#111c33; --surface-2:#16233d; --text:#e2e8f0; --muted:#94a3b8;
+    --border:#2b3a52; --accent:#45af9b; --accent-soft:#0f2b28; --warn-bg:#3b2f10; --warn-text:#fbbf24;
+    --danger:#f87171; --ok:#4ade80; --code-bg:#0f1a2e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;font-size:16px}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:0;max-width:1400px;margin:0 auto}
+nav{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:28px 20px;border-right:1px solid var(--border);background:var(--surface)}
+nav h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:22px 0 8px}
+nav h2:first-child{margin-top:0}
+nav a{display:block;padding:5px 10px;margin:1px -10px;color:var(--text);text-decoration:none;border-radius:6px;font-size:.88rem}
+nav a:hover{background:var(--surface-2);color:var(--accent)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.brand .mark{width:34px;height:34px;flex:none;display:block}
+.brand .mark svg{display:block}
+.brand strong{font-size:1rem;letter-spacing:-.01em}
+.brand span{display:block;font-size:.72rem;color:var(--muted);font-weight:400}
+main{padding:44px 48px 90px;min-width:0}
+h1{font-size:2.1rem;line-height:1.2;margin:0 0 .4rem;letter-spacing:-.02em}
+.lede{font-size:1.08rem;color:var(--muted);margin:0 0 2rem;max-width:68ch}
+h2{font-size:1.45rem;margin:3rem 0 .9rem;padding-top:.6rem;letter-spacing:-.015em;border-top:1px solid var(--border)}
+h3{font-size:1.08rem;margin:1.9rem 0 .6rem}
+p,li{max-width:80ch}
+code{font-family:var(--mono);font-size:.855em;background:var(--code-bg);padding:.12em .38em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.855rem;line-height:1.55}
+pre code{background:none;border:none;padding:0}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem;display:block;overflow-x:auto}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--surface-2);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+tbody tr:hover{background:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:1.1rem 0;box-shadow:var(--shadow)}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:14px 18px;margin:1.1rem 0}
+.callout.warn{border-left-color:var(--warn-text);background:var(--warn-bg);color:var(--warn-text)}
+.callout p{margin:.3rem 0}
+.callout strong{color:inherit}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:1.1rem 0}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.tile h4{margin:0 0 .3rem;font-size:.95rem}
+.tile p{margin:0;font-size:.87rem;color:var(--muted)}
+.pill{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--border);white-space:nowrap}
+.pill.block{background:var(--warn-bg);color:var(--warn-text)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:1.2rem 0}
+.steps>li{counter-increment:s;position:relative;padding:0 0 1.5rem 3rem;border-left:2px solid var(--border);margin-left:14px}
+.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps>li::before{content:counter(s);position:absolute;left:-15px;top:-2px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.steps h3{margin:0 0 .4rem}
+footer{margin-top:3.5rem;padding-top:1.2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.84rem}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:1rem 0;font-family:var(--mono);font-size:.82rem}
+.flow span{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+.flow em{color:var(--muted);font-style:normal}
+main a{color:var(--accent);text-underline-offset:2px}
+nav a.back{font-weight:600;color:var(--accent);margin-bottom:6px}
+a.tile{display:block;color:inherit;text-decoration:none;transition:border-color .15s,transform .15s}
+a.tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+a.tile h4{color:var(--accent)}
+table{display:table;table-layout:fixed}
+th:nth-child(1){width:42%} th:nth-child(2){width:22%} th:nth-child(3){width:36%}
+table.two th:nth-child(1){width:30%} table.two th:nth-child(2){width:70%}
+th{white-space:normal}
+td.src{color:var(--muted);font-size:.86rem}
+td code{overflow-wrap:anywhere}
+ul.refs{columns:2;column-gap:2rem}
+@media(max-width:600px){ul.refs{columns:1} table{display:block;table-layout:auto} th:nth-child(n){width:auto} td{min-width:9rem}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  main{padding:28px 16px 60px}
+  h1{font-size:1.65rem}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="34" height="34" role="img">
+        <rect width="32" height="32" rx="7" fill="var(--mark-bg)"/>
+        <path d="M16 6.5l7 2.6v5.7c0 4.3-2.9 7.9-7 8.9-4.1-1-7-4.6-7-8.9V9.1l7-2.6z" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/>
+        <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div><strong>AI Dev Harness</strong><span>Standards &amp; sources</span></div>
+  </div>
+  <a class="back" href="index.html">&larr; Back to the guide</a>
+  <h2>Overview</h2>
+  <a href="#summary">What it is built on</a>
+  <h2>Areas</h2>
+  <a href="#quality">Code quality &amp; the gate</a>
+  <a href="#testing">Testing</a>
+  <a href="#security">Security</a>
+  <a href="#vcs">Version control &amp; release</a>
+  <a href="#architecture">Architecture &amp; docs</a>
+  <a href="#accessibility">Accessibility &amp; UI</a>
+  <a href="#agents">AI agent design</a>
+  <a href="#tools">Tools wired in</a>
+  <h2>Reference</h2>
+  <a href="#sources">Sources</a>
+</nav>
+
+<main>
+<h1>Standards &amp; sources</h1>
+<p class="lede">The harness builds on about 35 public standards and practices across eight areas.
+Each one is written into a specific agent, rule or check, so the agents apply it on every change
+instead of leaving it to the prompt.</p>
+
+<h2 id="summary">What the harness is built on</h2>
+<p>AI Dev Harness is a governed delivery framework for AI-assisted software development. It runs on
+Claude Code and turns AI coding from ad-hoc prompting into a repeatable engineering process:
+specialist agents for analysis, architecture, development, testing, review, security and release
+work through defined workflows, and a person approves each gate.</p>
+<p>Its rules are not invented. Code quality follows Robert C. Martin's Clean Code and SOLID
+principles. Testing follows test-driven development, the test pyramid and Given/When/Then acceptance
+criteria. Security follows the OWASP Top 10 and least privilege, and accessibility targets WCAG 2.1
+AA. History and releases follow Conventional Commits, Semantic Versioning and Keep a Changelog, and
+decisions are kept as Architecture Decision Records.</p>
+<p>What makes these standards hold is enforcement. An automated quality gate checks every change for
+build, tests, coverage of the changed lines, complexity, CRAP score, mutation score, suppressed
+warnings and removed tests. Hooks block unsafe actions such as force pushes and requests to
+production hosts. No agent can call work done by weakening a check. Teams get AI-speed delivery with
+the predictability, traceability and quality controls they already expect from good
+engineering.</p>
+
+<div class="callout"><p>Each table names the standard, where the idea comes from, and the harness
+file that applies it. The <strong>Origin</strong> column credits the idea's author or publisher; the
+harness files name the standards but mostly don't link them. Paths are relative to the repository
+root.</p></div>
+
+<div class="grid">
+  <a class="tile" href="#quality"><h4>Code quality &amp; the gate</h4><p>Clean Code, SOLID, complexity, CRAP, diff coverage, mutation testing</p></a>
+  <a class="tile" href="#testing"><h4>Testing</h4><p>TDD, Arrange/Act/Assert, FIRST, the test pyramid, Given/When/Then</p></a>
+  <a class="tile" href="#security"><h4>Security</h4><p>OWASP Top 10, least privilege, secrets, prompt injection</p></a>
+  <a class="tile" href="#vcs"><h4>Version control &amp; release</h4><p>Conventional Commits, Semantic Versioning, Keep a Changelog</p></a>
+  <a class="tile" href="#architecture"><h4>Architecture &amp; docs</h4><p>ADRs, the C4 model, REST API design, output templates</p></a>
+  <a class="tile" href="#accessibility"><h4>Accessibility &amp; UI</h4><p>WCAG 2.1 AA, design tokens, mobile-first layout</p></a>
+  <a class="tile" href="#agents"><h4>AI agent design</h4><p>Claude Code sub-agents, hooks and memory, AGENTS.md, approval gates</p></a>
+  <a class="tile" href="#tools"><h4>Tools wired in</h4><p>lizard, coverlet, Stryker, mutmut, Playwright</p></a>
+</div>
+
+<h2 id="quality">1. Code quality &amp; the quality gate</h2>
+<p>The gate (<code>.claude/scripts/quality-gate.sh</code>) follows Robert C. Martin's view that a
+professional proves code works before calling it done, and never makes a check pass by weakening
+it. See <a href="index.html#gate">Quality gate</a> in the guide for how it runs.</p>
+<table>
+<thead><tr><th>Standard / practice</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>Clarity over cleverness, one thing per function, intent-revealing names, no magic numbers, comments explain why, leave code cleaner than you found it</td><td class="src">Robert C. Martin, <em>Clean Code</em></td><td><code>.ai/standards/universal/coding-principles.md</code></td></tr>
+<tr><td>SOLID, DRY, separation of concerns, no speculative abstraction</td><td class="src">Robert C. Martin; Hunt and Thomas, <em>The Pragmatic Programmer</em></td><td><code>.ai/agents/architect-agent.md</code></td></tr>
+<tr><td>Cyclomatic complexity limit per function</td><td class="src">Thomas McCabe (1976)</td><td>Gate <code>complexity</code> check, measured with lizard</td></tr>
+<tr><td>CRAP score (complexity &times; lack of coverage), with a ratchet for legacy code</td><td class="src">Alberto Savoia and Bob Evans</td><td>Gate <code>crap</code> check</td></tr>
+<tr><td>Coverage of changed lines only, with a minimum</td><td class="src">Diff-coverage practice</td><td>Gate <code>coverage</code> check</td></tr>
+<tr><td>Mutation testing scoped to the changed files</td><td class="src">Mutation testing (Stryker, mutmut)</td><td>Gate <code>mutation</code> check, <code>{each:&hellip;}</code> placeholder</td></tr>
+<tr><td>Never weaken a check: no added suppressions, no removed or rewritten tests without a stated reason</td><td class="src">Clean Code professionalism</td><td><code>SUPPRESSION_CHECK</code>, gate <code>suppressions</code> and <code>test-removal</code> checks</td></tr>
+<tr><td>Tighten the gate freely; loosen it only with the user's words and a <code>decisions.md</code> entry</td><td class="src">Harness rule</td><td><code>.ai/workflows/harness-improvement.md</code>, invariant 5</td></tr>
+</tbody>
+</table>
+
+<h2 id="testing">2. Testing</h2>
+<p>Every fix and feature starts from a failing test, and tests assert behaviour so they survive
+refactoring.</p>
+<table>
+<thead><tr><th>Practice</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>Failing test first (TDD), or a documented manual reproduction where no test runner exists</td><td class="src">Kent Beck</td><td><code>.ai/agents/developer-agent.md</code>, <code>.ai/workflows/bug-fixing.md</code></td></tr>
+<tr><td>Test behaviour, not implementation</td><td class="src">Testing practice</td><td><code>.ai/standards/universal/testing-principles.md</code></td></tr>
+<tr><td>Arrange / Act / Assert structure</td><td class="src">Bill Wake</td><td>Same file</td></tr>
+<tr><td>FIRST properties: fast, isolated, repeatable, self-validating, timely</td><td class="src">Tim Ottinger and Brett Schuchert</td><td>Same file</td></tr>
+<tr><td>Test pyramid</td><td class="src">Mike Cohn</td><td>Same file</td></tr>
+<tr><td>Don't mock your own code; never skip flaky tests</td><td class="src">Testing practice</td><td>Same file</td></tr>
+<tr><td>Acceptance criteria in Given/When/Then form</td><td class="src">Dan North (BDD)</td><td><code>.ai/agents/ba-agent.md</code>, <code>.ai/workflows/story-generation.md</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="security">3. Security</h2>
+<p>Every agent applies one security baseline; the reviewer and the security scanner enforce it, and a
+tenant-isolation break is a blocker.</p>
+<table>
+<thead><tr><th>Standard</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>OWASP Top 10</td><td class="src"><a href="https://owasp.org/www-project-top-ten/">OWASP</a></td><td><code>.ai/standards/universal/security-baseline.md</code>, <code>.ai/agents/security-agent.md</code></td></tr>
+<tr><td>Least privilege, for systems and for the read-only reviewer agents</td><td class="src">Saltzer and Schroeder</td><td><code>security-baseline.md</code>, <code>docs/components.md</code></td></tr>
+<tr><td>No hardcoded secrets, parameterized queries, input validation at the boundary, expiring tokens, log security events but never PII</td><td class="src">Secure-coding practice</td><td><code>security-baseline.md</code></td></tr>
+<tr><td>Prompt-injection review for projects that use an LLM</td><td class="src">AI security practice</td><td><code>security-agent.md</code>, <code>.claude/agents/security-scanner.md</code></td></tr>
+<tr><td>Runtime checks never touch forbidden hosts (<code>E2E_FORBIDDEN_HOSTS</code>)</td><td class="src">Harness rule</td><td><code>.claude/hooks/e2e-guard.sh</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="vcs">4. Version control &amp; release</h2>
+<p>Commits, versions and changelogs follow three public conventions, so any team can read the
+history without learning a house style.</p>
+<table>
+<thead><tr><th>Standard</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>Conventional Commits</td><td class="src"><a href="https://www.conventionalcommits.org/">conventionalcommits.org</a></td><td><code>.ai/standards/universal/git-workflow.md</code>, <code>developer-agent.md</code></td></tr>
+<tr><td>Semantic Versioning: fix = patch, feat = minor, breaking = major</td><td class="src"><a href="https://semver.org/">semver.org</a></td><td><code>.ai/workflows/release-process.md</code>, <code>release-agent.md</code></td></tr>
+<tr><td>Keep a Changelog: Added / Changed / Fixed / Security / Removed</td><td class="src"><a href="https://keepachangelog.com/">keepachangelog.com</a></td><td><code>release-agent.md</code>, <code>/utils:changelog</code></td></tr>
+<tr><td>GitHub, GitLab and Bitbucket conventions for branches and change requests</td><td class="src">Each provider's docs</td><td><code>.ai/standards/universal/vcs/</code></td></tr>
+<tr><td>Deploy notes for every change; no force pushes and no direct pushes to protected branches</td><td class="src">Harness rule</td><td><code>.ai/templates/deploy-notes.md</code>, <code>.claude/hooks/git-guard.sh</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="architecture">5. Architecture &amp; documentation</h2>
+<p>Decisions are recorded, designs are drawn, and every output follows a template.</p>
+<table>
+<thead><tr><th>Standard</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>Architecture Decision Records</td><td class="src">Michael Nygard</td><td><code>.ai/templates/adr.md</code>, <code>.ai/memory/decisions.md</code></td></tr>
+<tr><td>C4-style component diagrams for new modules and multi-service work</td><td class="src"><a href="https://c4model.com/">Simon Brown, C4 model</a></td><td><code>.ai/agents/architect-agent.md</code></td></tr>
+<tr><td>REST API design: nouns in URLs, plural resources, versioning, pagination, one error format</td><td class="src">REST practice</td><td><code>.ai/standards/universal/api-design.md</code></td></tr>
+<tr><td>Templates for technical spec, test plan, deploy notes, release checklist, security report and pull request description</td><td class="src">Harness design</td><td><code>.ai/templates/</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="accessibility">6. Accessibility &amp; UI</h2>
+<p>Accessibility is a requirement at WCAG 2.1 Level AA, and UI work uses the project's design
+tokens.</p>
+<table>
+<thead><tr><th>Standard</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>WCAG 2.1 Level AA, the POUR principles, text contrast of at least 4.5:1</td><td class="src"><a href="https://www.w3.org/TR/WCAG21/">W3C WCAG 2.1</a></td><td><code>.ai/standards/universal/accessibility.md</code></td></tr>
+<tr><td>Design tokens, mobile-first layout, never colour alone to carry meaning</td><td class="src">UI/UX practice</td><td><code>.ai/standards/universal/ui-ux-standards.md</code>, <code>.ai/standards/project/frontend/design/</code></td></tr>
+<tr><td>Raw colour values flagged when tokens exist (<code>DESIGN_TOKEN_CHECK</code>)</td><td class="src">Harness rule</td><td><code>.claude/hooks/hooks.env</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="agents">7. AI agent design</h2>
+<p>The harness keeps knowledge (<code>.ai/</code>) separate from execution (<code>.claude/</code>),
+and puts a person's approval before every commit and pull request.</p>
+<table>
+<thead><tr><th>Practice</th><th>Origin</th><th>Where in the harness</th></tr></thead>
+<tbody>
+<tr><td>Sub-agents with restricted tools, model choice and <code>permissionMode</code></td><td class="src"><a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code docs</a> (sub-agents)</td><td><code>.claude/agents/</code></td></tr>
+<tr><td>Hooks that guard actions and feed results back to the agent</td><td class="src">Claude Code docs (hooks)</td><td><code>.claude/hooks/</code>, <code>hooks.env</code></td></tr>
+<tr><td>Slash commands, project settings, sub-agent project memory, MCP connectors</td><td class="src">Claude Code docs</td><td><code>.claude/commands/</code>, <code>.claude/settings.json</code>, <code>.claude/agent-memory/</code></td></tr>
+<tr><td><code>AGENTS.md</code> as the instruction file any coding agent reads</td><td class="src"><a href="https://agents.md/">agents.md</a> convention</td><td><code>AGENTS.md</code></td></tr>
+<tr><td>One source of truth for each rule; agents load it instead of copying it</td><td class="src">Harness design</td><td><code>.ai/standards/</code>, <code>.ai/workflows/</code></td></tr>
+<tr><td>Read-only reviewer, security scanner and critic, separate from the agent that wrote the code</td><td class="src">Separation of duties</td><td><code>.claude/agents/reviewer.md</code>, <code>security-scanner.md</code>, <code>critic.md</code></td></tr>
+<tr><td>Human approval gates; work resumable from <code>STATE.md</code></td><td class="src">Harness design</td><td><code>.claude/commands/workflows/</code>, <code>.ai/templates/feature-state.md</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="tools">8. Tools wired in</h2>
+<table class="two">
+<thead><tr><th>Purpose</th><th>Tools</th></tr></thead>
+<tbody>
+<tr><td>Complexity</td><td>lizard</td></tr>
+<tr><td>Coverage reports</td><td>coverlet, Cobertura XML, lcov</td></tr>
+<tr><td>Mutation testing</td><td>Stryker.NET, StrykerJS, mutmut</td></tr>
+<tr><td>Runtime checks</td><td>Playwright, Claude in Chrome, a read-only database MCP</td></tr>
+</tbody>
+</table>
+
+<h2 id="sources">Sources</h2>
+<h3>Linked standards</h3>
+<ul class="refs">
+<li><a href="https://owasp.org/www-project-top-ten/">OWASP Top 10</a></li>
+<li><a href="https://www.conventionalcommits.org/">Conventional Commits</a></li>
+<li><a href="https://semver.org/">Semantic Versioning</a></li>
+<li><a href="https://keepachangelog.com/">Keep a Changelog</a></li>
+<li><a href="https://www.w3.org/TR/WCAG21/">WCAG 2.1</a></li>
+<li><a href="https://c4model.com/">The C4 model</a></li>
+<li><a href="https://agents.md/">AGENTS.md</a></li>
+<li><a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code documentation</a></li>
+</ul>
+<h3>Books and papers</h3>
+<ul>
+<li>Robert C. Martin, <em>Clean Code</em> (2008)</li>
+<li>Andrew Hunt and David Thomas, <em>The Pragmatic Programmer</em> (1999)</li>
+<li>Thomas McCabe, &ldquo;A Complexity Measure&rdquo; (1976)</li>
+<li>Kent Beck, <em>Test-Driven Development: By Example</em> (2002)</li>
+<li>Mike Cohn, <em>Succeeding with Agile</em> (2009)</li>
+<li>Michael Nygard, &ldquo;Documenting Architecture Decisions&rdquo; (2011)</li>
+<li>Jerome Saltzer and Michael Schroeder, &ldquo;The Protection of Information in Computer Systems&rdquo; (1975)</li>
+</ul>
+<h3>In this repository</h3>
+<p><code>.ai/standards/</code>, <code>.ai/agents/</code>, <code>.ai/workflows/</code>,
+<code>.ai/templates/</code> and <code>.claude/</code>. When a standard changes there, update its row
+here in the same commit.</p>
+
+<footer>
+<p><a href="index.html">&larr; Back to the AI Dev Harness guide</a></p>
+<p><strong>AI Dev Harness</strong> · <strong>Private repository. All rights reserved.</strong> Not licensed for distribution,
+publication, or use outside the organisations that hold rights to it.</p>
+</footer>
+</main>
+</div>
+</body>
+</html>
