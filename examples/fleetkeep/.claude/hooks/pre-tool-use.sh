@@ -76,7 +76,9 @@ in_source_globs() {
 }
 
 # Warn when editing a real .env file (but allow .env.example). (Always on — universal.)
-if [[ "$FILE" == *.env && "$FILE" != *.env.example && "$FILE" != */.claude/hooks/hooks.env ]]; then
+if [[ "$FILE" == */.claude/hooks/hooks.env || "$FILE" == .claude/hooks/hooks.env ]]; then
+  note "NOTE: $TOOL is editing the harness config ($FILE), which sets the quality gate's limits. Tightening a value is free; loosening one (a lower COVERAGE_MIN, a blank gate command, SUPPRESSION_CHECK=off) needs the user's own words and a .ai/memory/decisions.md entry. The gate lists every value the change alters."
+elif [[ "$FILE" == *.env && "$FILE" != *.env.example ]]; then
   note "WARNING: $TOOL is about to modify an .env file ($FILE). Confirm this is intentional and contains no committed secrets."
 fi
 

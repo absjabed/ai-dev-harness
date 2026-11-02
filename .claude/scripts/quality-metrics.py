@@ -16,8 +16,12 @@ Judges only what the change touched:
   CRAP        CC^2 * (1 - cov)^3 + CC per touched function: complex AND untested scores high
 
 Ratchet: a touched function that was already over a limit before the change, and whose
-complexity did not grow, is reported as WARN, not FAIL. New code must meet the limits; old
-code must not get worse. Renamed files and changed signatures keep their history.
+complexity did not grow, is reported as WARN, not FAIL; for CRAP, only while every line the
+change touched in it is tested. New code must meet the limits; old code must not get worse.
+Renamed files and changed signatures keep their history; a new overload does not.
+
+Several reports of the same file (one per test project) are merged, the highest hit count per
+line winning.
 
 When a limit is set, a changed file that no coverage report mentions counts as untested
 (many tools leave unrun files out of the report). List files tests cannot reach in --exempt.
@@ -42,8 +46,15 @@ LIST_N = 10
 TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*|--|[{}()\[\];,]+\s*$)")
 
 
+# Plain git output whatever the user's config: prefixes, colour, quoted paths, external diffs.
+GIT = ["git", "-c", "core.quotePath=false", "-c", "color.ui=false", "-c", "color.diff=false",
+       "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false"]
+
+
 def git(*args):
-    return subprocess.run(["git", *args], capture_output=True, text=True,
+    if args and args[0] == "diff":
+        args = ("diff", "--no-ext-diff", "--no-textconv", *args[1:])
+    return subprocess.run([*GIT, *args], capture_output=True, text=True,
                           encoding="utf-8", errors="replace").stdout
 
 
@@ -156,36 +167,67 @@ class Coverage:
 
     def __init__(self, repo_root):
         self.root = norm(repo_root).rstrip("/").lower() + "/"
-        self.entries = []  # (key relative to repo where possible, lowercased; report dir; data)
+        # (key relative to repo where possible, lowercased; the same key as written; report dir; data)
+        self.entries = []
 
     def add(self, report_path, cov):
-        report_dir = norm(os.path.dirname(os.path.relpath(report_path))).lower()
+        report_dir = norm(os.path.dirname(os.path.relpath(report_path)))
+        if report_dir == ".":
+            report_dir = ""
         for key, data in cov.items():
-            k = key.lower()
-            if k.startswith(self.root):
+            k = key
+            if k.lower().startswith(self.root):
                 k = k[len(self.root):]
-            self.entries.append((k, report_dir, data))
+            self.entries.append((k.lower(), k, report_dir, data))
+
+    @staticmethod
+    def claimed_elsewhere(report_dir, key, rel_l):
+        """True when `key`, read relative to the report's folder or one above it, is another file
+        that exists: a sibling package's own entry, not this file's."""
+        parts = report_dir.split("/") if report_dir else []
+        for i in range(len(parts), -1, -1):
+            path = "/".join(parts[:i] + [key])
+            if path.lower() != rel_l and os.path.isfile(path):
+                return True
+        return False
 
     def lookup(self, rel):
-        """Best entry for repo-relative `rel`: exact, then the longest believable suffix match."""
+        """Line hits for repo-relative `rel`, merged over every report that has it: exact matches,
+        else the longest believable suffix matches. Several test projects often each report the
+        same shared file, every one with only the lines its own tests ran."""
         rel_l = rel.lower()
-        best, best_len = None, -1
-        for key, report_dir, data in self.entries:
-            if key == rel_l:
-                return data
+        exact = [data for key, _, _, data in self.entries if key == rel_l]
+        if exact:
+            return merged(exact)
+        best_len, found = -1, []
+        for key, raw_key, report_dir, data in self.entries:
             if key.endswith("/" + rel_l):          # report path is longer (e.g. a Go import path)
                 score = len(rel_l)
             elif rel_l.endswith("/" + key):        # report path is relative to some sub-project
                 prefix = rel_l[: -len(key) - 1]
-                # Believe it only if that sub-project is where the report lives.
-                if report_dir and not (report_dir + "/").startswith(prefix.split("/")[0] + "/"):
+                inside = report_dir.lower() == prefix or report_dir.lower().startswith(prefix + "/")
+                # A report outside that sub-project (JaCoCo's target/, a root lcov) is believed
+                # only if its path does not name another existing file.
+                if not inside and self.claimed_elsewhere(report_dir, raw_key, rel_l):
                     continue
                 score = len(key)
             else:
                 continue
             if score > best_len:
-                best, best_len = data, score
-        return best
+                best_len, found = score, [data]
+            elif score == best_len:
+                found.append(data)
+        return merged(found) if found else None
+
+
+def merged(datas):
+    if len(datas) == 1:
+        return datas[0]
+    out = {}
+    for data in datas:
+        for line, hits in data.items():
+            out[line] = max(out.get(line, 0), hits)
+    return out
 
 
 # ── Complexity ───────────────────────────────────────────────────────────────
@@ -220,6 +262,9 @@ def load_coverage(args, repo_root, say):
             reports += fresh
         else:
             reports.append(matches[-1])
+            if len(matches) > 1:
+                say("WARN", "coverage", f"{pattern} matches {len(matches)} reports; with no gate test run only the "
+                    f"newest ({matches[-1]}) is read. Set GATE_TEST_CMD so every report its run writes counts")
     for path in reports:
         try:
             data = load_report(path)
@@ -403,6 +448,8 @@ def main():
             say("WARN", "coverage", ("in no coverage report, counted as untested: " if strict else
                                      "in no coverage report: ") + short(unmeasured)
                 + ("" if not strict else " (exempt them with COVERAGE_EXEMPT_GLOBS if tests cannot reach them)"))
+    elif args.coverage_min is not None:
+        say("FAIL", "coverage", "COVERAGE_MIN is set but no coverage report is configured (COVERAGE_REPORTS)")
 
     # Complexity and CRAP
     want_metrics = args.complexity_max is not None or args.crap_max is not None
@@ -423,52 +470,70 @@ def main():
             current = functions(lizard, rel, fh.read())
         before_long, before_name = {}, {}
         if rel in old_path:
-            src = subprocess.run(["git", "show", f"{args.base}:{old_path[rel]}"], capture_output=True,
+            src = subprocess.run([*GIT, "show", f"{args.base}:{old_path[rel]}"], capture_output=True,
                                  text=True, encoding="utf-8", errors="replace")
             for f in functions(lizard, old_path[rel], src.stdout) if src.returncode == 0 else []:
                 before_long[f.long_name] = f.cyclomatic_complexity
-                before_name[f.name] = max(before_name.get(f.name, 0), f.cyclomatic_complexity)
+                before_name.setdefault(f.name, []).append(f)
+        now_long = {f.long_name for f in current}
         data = file_cov.get(rel)
         for fn in current:
             span = set(range(fn.start_line, fn.end_line + 1))
             if not span & lines:
                 continue
             cc = fn.cyclomatic_complexity
-            was = before_long.get(fn.long_name, before_name.get(fn.name))  # a new signature keeps its history
+            was = before_long.get(fn.long_name)
+            if was is None:
+                # A changed signature keeps its history only when that is the one function of the
+                # name at the base and its old signature is gone, so a new overload or another
+                # anonymous function is new code, not an old one touched.
+                same = before_name.get(fn.name, [])
+                if len(same) == 1 and same[0].long_name not in now_long and "anonymous" not in fn.name:
+                    was = same[0].cyclomatic_complexity
             state = "new" if was is None else "grew" if cc > was else "touched"
             covered = None
+            # Changed lines the tests did not run: a touched function over CRAP_MAX may keep its
+            # old score only while every line the change touched in it is tested.
+            untested_change = False
             if data is not None:
                 coverable = [n for n in span if n in data]
                 if coverable:
                     covered = sum(1 for n in coverable if data[n] > 0) / len(coverable)
+                untested_change = any(n in data and data[n] == 0 for n in span & lines)
             elif args.report_glob and strict and rel not in exempt:
                 covered = 0.0  # in no report: untested
+                untested_change = True
             score = crap(cc, covered) if covered is not None else None
-            rows.append((rel, fn, cc, covered, score, state))
+            rows.append((rel, fn, cc, covered, score, state, untested_change))
 
-    def judge(check, over):
+    def judge(check, over, excused):
         offenders = [r for r in rows if over(r)]
-        hard = [r for r in offenders if r[5] != "touched"]
+        hard = [r for r in offenders if not excused(r)]
         if hard:
             older = len(offenders) - len(hard)
-            say("FAIL", check, f"{len(hard)} new or grown function(s) over the limit"
-                + (f" (+{older} already over before this change)" if older else ""))
+            say("FAIL", check, f"{len(hard)} function(s) over the limit: {reason[check]}"
+                + (f" (+{older} already over before this change, not made worse)" if older else ""))
         elif offenders:
-            say("WARN", check, f"{len(offenders)} touched function(s) already over the limit before this change, not made worse")
+            say("WARN", check, f"{len(offenders)} touched function(s) already over the limit, not made worse"
+                + (" (complexity did not grow and every changed line in them is tested)" if check == "crap" else
+                   " (complexity did not grow)"))
         else:
             say("PASS", check, f"all {len(rows)} touched function(s) within the limit")
         return {id(r) for r in hard}, {id(r) for r in offenders}
 
+    reason = {"complexity": "new, or more complex than before",
+              "crap": "new, more complex than before, or with changed lines the tests do not run"}
     hard, soft = set(), set()
     if args.complexity_max is not None:
-        h, s = judge("complexity", lambda r: r[2] > args.complexity_max)
+        h, s = judge("complexity", lambda r: r[2] > args.complexity_max, lambda r: r[5] == "touched")
         hard |= h
         soft |= s
     if args.crap_max is not None:
         if not args.report_glob:
             say("FAIL", "crap", "CRAP_MAX is set but no coverage report is configured (COVERAGE_REPORTS)")
         else:
-            h, s = judge("crap", lambda r: r[4] is not None and r[4] > args.crap_max)
+            h, s = judge("crap", lambda r: r[4] is not None and r[4] > args.crap_max,
+                         lambda r: r[5] == "touched" and not r[6])
             hard |= h
             soft |= s
 
@@ -477,7 +542,7 @@ def main():
         print(f"\nTouched functions (worst first, {min(TOP_N, len(rows))} of {len(rows)}):")
         print(f"  {'CRAP':>6} {'CC':>3} {'cov':>5}  {'state':<7} {'verdict':<7} function")
         for row in rows[:TOP_N]:
-            rel, fn, cc, covered, score, state = row
+            rel, fn, cc, covered, score, state, _ = row
             verdict = "FAIL" if id(row) in hard else "WARN" if id(row) in soft else "ok"
             print(f"  {f'{score:.1f}' if score is not None else '-':>6} {cc:>3} "
                   f"{f'{covered:.0%}' if covered is not None else '-':>5}  {state:<7} {verdict:<7} "

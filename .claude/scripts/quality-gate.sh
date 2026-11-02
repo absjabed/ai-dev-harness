@@ -28,7 +28,9 @@
 #                on the functions the change touched, via quality-metrics.py
 #   suppressions lint/coverage suppressions and skipped tests the change adds (SUPPRESSION_CHECK)
 #   test-removal test cases and assertions it removes or changes (SUPPRESSION_CHECK)
-#   mutation     MUTATION_CMD with {files}, {base} and {each:…} filled in (only with --mutation)
+#   gate-config  the hooks.env values it changes, since loosening them needs a person (SUPPRESSION_CHECK)
+#   mutation     MUTATION_CMD with {files}, {base} and {each:…} filled in, over the changed files
+#                that match MUTATION_GLOBS (only with --mutation)
 #
 # Prints one line per check, the tail of each failure, and a final verdict. "PASS (partial ...)"
 # means the build or the tests are not configured, so the gate did not run them: verify those
@@ -39,6 +41,11 @@
 
 set -o pipefail   # no -u: macOS ships bash 3.2, where empty arrays trip it
 
+# Every git call gets plain output: a user's diff.noprefix, diff.mnemonicPrefix, colour or
+# quoted non-ASCII paths would otherwise hide changed files and lines from the parsers below.
+# The diff calls also pass --no-ext-diff --no-textconv for the same reason.
+git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false "$@"; }
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 [[ -f "$SCRIPT_DIR/../hooks/hooks.env" ]] && source "$SCRIPT_DIR/../hooks/hooks.env"
@@ -48,10 +55,10 @@ MUTATION=0
 BASELINE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --base) BASE="${2:-}"; shift 2 ;;
+    --base) [[ $# -ge 2 && -n "$2" ]] || { echo "quality-gate: --base needs a ref" >&2; exit 2; }; BASE="$2"; shift 2 ;;
     --mutation) MUTATION=1; shift ;;
     --baseline) BASELINE=1; shift ;;
-    -h|--help) sed -n '2,38p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,40p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "quality-gate: unknown argument '$1' (see --help)" >&2; exit 2 ;;
   esac
 done
@@ -95,7 +102,7 @@ run_step() {
 skip() { printf '%-12s SKIP  %s\n' "$1" "$2"; }
 not_set() { skip "$1" "$2 not set"; NOT_SET+=("$1"); }  # build and test only: a PASS without them is partial
 
-# expand_each <cmd>: replaces one {each:TEMPLATE} with TEMPLATE once per changed source file,
+# expand_each <cmd>: replaces one {each:TEMPLATE} with TEMPLATE once per file in MUT_SOURCES,
 # each word shell-quoted; {file} = the file's path, {name} = its file name. For tools that take
 # one flag per file, e.g. Stryker.NET's "-m".
 expand_each() {
@@ -109,7 +116,7 @@ expand_each() {
   done
   tpl="${rest:0:i}"
   read -r -a words <<< "$tpl"
-  for f in "${SOURCES[@]}"; do
+  for f in "${MUT_SOURCES[@]}"; do
     for w in "${words[@]}"; do
       w="${w//\{file\}/$f}"; w="${w//\{name\}/${f##*/}}"
       out+="$(printf '%q' "$w") "
@@ -173,8 +180,8 @@ fi
 # ── What changed ─────────────────────────────────────────────────────────────
 CHANGED=()   # present now (added, modified, renamed, untracked)
 DELETED=()
-while IFS= read -r f; do CHANGED+=("$f"); done < <( { git diff --name-only --diff-filter=d -M "$MERGE_BASE" 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u)
-while IFS= read -r f; do DELETED+=("$f"); done < <(git diff --name-only --diff-filter=D -M "$MERGE_BASE" 2>/dev/null)
+while IFS= read -r f; do CHANGED+=("$f"); done < <( { git diff --no-ext-diff --name-only --diff-filter=d -M "$MERGE_BASE" 2>/dev/null; git ls-files --others --exclude-standard; } | sort -u)
+while IFS= read -r f; do DELETED+=("$f"); done < <(git diff --no-ext-diff --name-only --diff-filter=D -M "$MERGE_BASE" 2>/dev/null)
 SOURCES=()
 TESTS=()
 set -f  # keep the configured globs literal while word-splitting them
@@ -222,7 +229,7 @@ if [[ -n "${TYPECHECK_CMD:-}" || -n "${LINT_CMD:-}" ]]; then
   if [[ -n "${PACKAGE_DIRS:-}" ]]; then
     for f in "${SOURCES[@]}" "${TESTS[@]}"; do
       inside=0
-      for d in $PACKAGE_DIRS; do [[ "$f" == "$d"/* ]] && inside=1 && break; done
+      for d in $PACKAGE_DIRS; do [[ "$d" == "." || "$f" == "$d"/* ]] && inside=1 && break; done
       [[ $inside -eq 0 ]] && OUTSIDE=$((OUTSIDE + 1))
     done
   fi
@@ -268,7 +275,7 @@ else
 fi
 
 # ── coverage, complexity, CRAP ───────────────────────────────────────────────
-if [[ -n "${COVERAGE_REPORTS:-}${COMPLEXITY_MAX:-}${CRAP_MAX:-}" ]]; then
+if [[ -n "${COVERAGE_REPORTS:-}${COVERAGE_MIN:-}${COMPLEXITY_MAX:-}${CRAP_MAX:-}" ]]; then
   RAN=1
   find_python
   if [[ $BUILD_OK -eq 0 ]]; then
@@ -292,20 +299,46 @@ if [[ -n "${COVERAGE_REPORTS:-}${COMPLEXITY_MAX:-}${CRAP_MAX:-}" ]]; then
     [[ $rc -ne 0 ]] && { FAILED=1; OTHERS_OK=0; }
   fi
 else
-  skip metrics "COVERAGE_REPORTS, COMPLEXITY_MAX and CRAP_MAX not set"
+  skip metrics "COVERAGE_REPORTS, COVERAGE_MIN, COMPLEXITY_MAX and CRAP_MAX not set"
 fi
 
 # ── suppressions and skipped tests the change adds ───────────────────────────
-# Net count across the whole change with rename detection, so moving a file, or a line,
-# that already carried a suppression adds nothing.
+# A suppression the change adds passes only when the same line was removed elsewhere in the
+# change (rename detection on), so moving a file, or a line, that already carried one adds
+# nothing, while swapping an old one for a new one is still caught.
 MODE="${SUPPRESSION_CHECK:-off}"
+# diff_records <scope> <oldscope>: one record per changed line of the `git diff` on stdin, as
+# sign TAB file TAB text: "+" lines only for paths in <scope>, "-" lines only for base paths in
+# <oldscope> (both newline-separated, passed through the environment because macOS awk refuses
+# a newline in -v). File headers are read only before a file's first hunk.
+diff_records() {
+  SCOPE="$1" OLDSCOPE="$2" awk '
+    BEGIN { n = split(ENVIRON["SCOPE"], s, "\n"); for (i = 1; i <= n; i++) if (s[i] != "") ok[s[i]] = 1
+            n = split(ENVIRON["OLDSCOPE"], o, "\n"); for (i = 1; i <= n; i++) if (o[i] != "") was[o[i]] = 1 }
+    /^diff --git / { file = ""; old = ""; head = 1; next }
+    head && /^\+\+\+ / { file = substr($0, 7); sub(/\t$/, "", file); next }  # a path with a space ends in a TAB
+    head && /^--- /   { old = substr($0, 7); sub(/\t$/, "", old); next }
+    /^@@/     { head = 0; next }
+    head      { next }
+    /^\+/     { if (file in ok) print "+\t" file "\t" substr($0, 2); next }
+    /^-/      { if (old in was) print "-\t" old "\t" substr($0, 2) }'
+}
+# untracked_records <file>...: every line of the untracked ones among them, as added records.
+untracked_records() {
+  local f
+  git ls-files --others --exclude-standard | while IFS= read -r f; do
+    if printf '%s\n' "$@" | grep -qxF -- "$f"; then awk -v f="$f" '{ print "+\t" f "\t" $0 }' "$f"; fi
+  done
+}
+# tag <letter>: prefixes each line of stdin with the letter and a TAB (BSD sed has no \t).
+tag() { awk -v t="$1" '{ print t "\t" $0 }'; }
 if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   RAN=1
   in_scope="$(printf '%s\n' "${SOURCES[@]}" "${TESTS[@]}")"
   # Removed lines count only from source files too (their old paths, renames and deletions
   # included), so deleting a doc line that mentions a suppression hides nothing.
   old_scope="$(
-    git diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do
+    git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do
       set -f; keep=0   # $p: the path at the base (the first column, also for a rename)
       if [[ -z "${SOURCE_GLOBS:-}" ]]; then keep=1; else for g in $SOURCE_GLOBS; do [[ "$p" == $g ]] && keep=1 && break; done; fi
       set +f
@@ -313,33 +346,39 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
     done
   )"
   hits="$(
-    git diff -M -U0 "$MERGE_BASE" -- 2>/dev/null | awk -v scope="$in_scope" -v oldscope="$old_scope" '
-      BEGIN { n = split(scope, s, "\n"); for (i = 1; i <= n; i++) if (s[i] != "") ok[s[i]] = 1
-              n = split(oldscope, o, "\n"); for (i = 1; i <= n; i++) if (o[i] != "") was[o[i]] = 1 }
-      /^diff --git / { file = ""; old = ""; next }
-      /^\+\+\+ / { file = substr($0, 7); sub(/\t$/, "", file); next }  # a path with a space ends in a TAB
-      /^--- /   { old = substr($0, 7); sub(/\t$/, "", old); next }
-      /^\+/     { if (file in ok) print "+\t" file "\t" substr($0, 2); next }
-      /^-/      { if (old in was) print "-\t\t" substr($0, 2) }'
-    git ls-files --others --exclude-standard | while IFS= read -r f; do
-      if printf '%s\n' "${SOURCES[@]}" "${TESTS[@]}" | grep -qxF -- "$f"; then
-        awk -v f="$f" '{ print "+\t" f "\t" $0 }' "$f"
-      fi
-    done
+    git diff --no-ext-diff --no-textconv -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$in_scope" "$old_scope"
+    untracked_records "${SOURCES[@]}" "${TESTS[@]}"
   )"
-  added="$(printf '%s\n' "$hits" | grep '^+' | cut -f2- | grep -E -- "$SUPPRESSION_PATTERNS" | awk -F'\t' '{ print $1 ": " $2 }')"
+  add_recs="$(printf '%s\n' "$hits" | grep '^+')"
+  rem_recs="$(printf '%s\n' "$hits" | grep '^-')"
+  # Match the pattern on each line's text only, never on its path.
+  add_rows="$(printf '%s\n' "$add_recs" | cut -f3- | grep -nE -- "$SUPPRESSION_PATTERNS" | cut -d: -f1)"
+  rem_rows="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -nE -- "$SUPPRESSION_PATTERNS" | cut -d: -f1)"
+  added="$(
+    { printf '%s\n' "$add_rows" | tag a
+      printf '%s\n' "$rem_rows" | tag r
+      printf '%s\n' "$rem_recs" | tag R
+      printf '%s\n' "$add_recs" | tag A; } | awk -F'\t' '
+      function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
+      $1 == "a" { ah[$2] = 1; next }
+      $1 == "r" { rh[$2] = 1; next }
+      $1 == "R" { r++; if (!(r in rh)) next
+                  t = $0; sub(/^R\t-\t[^\t]*\t/, "", t); gone[trim(t)]++; next }
+      $1 == "A" { a++; if (!(a in ah)) next
+                  t = $0; sub(/^A\t\+\t[^\t]*\t/, "", t); t = trim(t)
+                  if (gone[t] > 0) { gone[t]--; next }
+                  print $3 ": " t }'
+  )"
   n_added=0
   [[ -n "$added" ]] && n_added="$(printf '%s\n' "$added" | wc -l | tr -d ' ')"
-  n_removed="$(printf '%s\n' "$hits" | grep '^-' | cut -f3- | grep -cE -- "$SUPPRESSION_PATTERNS" || true)"
-  net=$((n_added - ${n_removed:-0}))
-  if [[ $net -le 0 ]]; then
+  if [[ $n_added -eq 0 ]]; then
     printf '%-12s PASS  none added\n' suppressions
   else
     if [[ "$MODE" == "block" ]]; then
       FAILED=1; OTHERS_OK=0
-      printf '%-12s FAIL  %s added (SUPPRESSION_CHECK=block): remove them or have a human add them\n' suppressions "$net"
+      printf '%-12s FAIL  %s added (SUPPRESSION_CHECK=block): remove them or have a human add them\n' suppressions "$n_added"
     else
-      printf '%-12s WARN  %s added: each needs a stated reason in the test report, or removal\n' suppressions "$net"
+      printf '%-12s WARN  %s added: each needs a stated reason in the test report, or removal\n' suppressions "$n_added"
     fi
     printf '%s\n' "$added" | head -n 20 | sed 's/^/    /'
   fi
@@ -366,28 +405,19 @@ else
     set +f
     return 1
   }
-  old_tests="$(git diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do is_test_path "$p" && printf '%s\n' "$p"; done)"
+  old_tests="$(git diff --no-ext-diff -M --name-status "$MERGE_BASE" 2>/dev/null | while IFS=$'\t' read -r st p _; do is_test_path "$p" && printf '%s\n' "$p"; done)"
   # One record per changed line: sign TAB file TAB text (untracked test files count as added).
   records="$(
-    git diff -M -U0 "$MERGE_BASE" -- 2>/dev/null | awk -v scope="$(printf '%s\n' "${TESTS[@]}")" -v oldscope="$old_tests" '
-      BEGIN { n = split(scope, s, "\n"); for (i = 1; i <= n; i++) if (s[i] != "") ok[s[i]] = 1
-              n = split(oldscope, o, "\n"); for (i = 1; i <= n; i++) if (o[i] != "") was[o[i]] = 1 }
-      /^diff --git / { file = ""; old = ""; next }
-      /^\+\+\+ / { file = substr($0, 7); sub(/\t$/, "", file); next }
-      /^--- /   { old = substr($0, 7); sub(/\t$/, "", old); next }
-      /^\+/     { if (file in ok) print "+\t" file "\t" substr($0, 2); next }
-      /^-/      { if (old in was) print "-\t" old "\t" substr($0, 2) }'
-    git ls-files --others --exclude-standard | while IFS= read -r f; do
-      if printf '%s\n' "${TESTS[@]}" | grep -qxF -- "$f"; then awk -v f="$f" '{ print "+\t" f "\t" $0 }' "$f"; fi
-    done
+    git diff --no-ext-diff --no-textconv -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$(printf '%s\n' "${TESTS[@]}")" "$old_tests"
+    untracked_records "${TESTS[@]}"
   )"
   removed_recs="$(printf '%s\n' "$records" | grep '^-')"
   # Match the pattern on the line's text only, never on its path.
   hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -nE -- "$TEST_ASSERTION_PATTERNS" | cut -d: -f1)"
   lost="$(
-    { printf '%s\n' "$records" | grep '^+' | cut -f3- | sed 's/^/A\t/'
-      printf '%s\n' "$hit_rows" | sed 's/^/H\t/'
-      printf '%s\n' "$removed_recs" | sed 's/^/R\t/'; } | awk -F'\t' '
+    { printf '%s\n' "$records" | grep '^+' | cut -f3- | tag A
+      printf '%s\n' "$hit_rows" | tag H
+      printf '%s\n' "$removed_recs" | tag R; } | awk -F'\t' '
       function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
       $1 == "A" { t = $0; sub(/^A\t/, "", t); added[trim(t)] = 1; next }
       $1 == "H" { hit[$2] = 1; next }
@@ -401,7 +431,7 @@ else
     printf '%-12s PASS  none removed\n' test-removal
   else
     if [[ "$MODE" == "block" ]]; then
-      FAILED=1
+      FAILED=1; OTHERS_OK=0
       printf '%-12s FAIL  %s test case/assertion line(s) removed or changed (SUPPRESSION_CHECK=block): restore them or have a human approve\n' test-removal "$n_lost"
     else
       printf '%-12s WARN  %s test case/assertion line(s) removed or changed: each needs a stated reason in the test report, or restoring\n' test-removal "$n_lost"
@@ -410,32 +440,60 @@ else
   fi
 fi
 
+# ── gate config (part of the suppression guard) ──────────────────────────────
+# A change can loosen the gate that judges it, and the gate reads hooks.env from the working
+# tree: list every value the change sets differently from the base.
+if [[ "$MODE" != "off" ]]; then
+  cfg_keys="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- .claude/hooks/hooks.env 2>/dev/null \
+    | grep -E '^[+-][A-Z][A-Z0-9_]*=' | sed -E 's/^[+-]([A-Z0-9_]+)=.*/\1/' | sort -u | tr '\n' ' ')"
+  cfg_keys="${cfg_keys% }"
+  if [[ -z "$cfg_keys" ]]; then
+    printf '%-12s PASS  hooks.env unchanged\n' gate-config
+  elif [[ "$MODE" == "block" ]]; then
+    FAILED=1; OTHERS_OK=0
+    printf '%-12s FAIL  hooks.env changes %s (SUPPRESSION_CHECK=block): have a human approve the change\n' gate-config "$cfg_keys"
+  else
+    printf '%-12s WARN  hooks.env changes %s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' gate-config "$cfg_keys"
+  fi
+fi
+
 # ── mutation testing (opt-in, slowest, last) ─────────────────────────────────
+# Only the changed source files the mutation tool covers (MUTATION_GLOBS; blank ⇒ all of them).
+MUT_SOURCES=()
+set -f
+for f in "${SOURCES[@]}"; do
+  if [[ -z "${MUTATION_GLOBS:-}" ]]; then MUT_SOURCES+=("$f"); continue; fi
+  for g in $MUTATION_GLOBS; do [[ "$f" == $g ]] && { MUT_SOURCES+=("$f"); break; }; done
+done
+set +f
 RESULT_FILE="$LOG_DIR/mutation.result"
+# A recorded result counts only for the same change measured by the same command.
+CMD_ID="$(printf '%s\n%s\n' "${MUTATION_CMD:-}" "${MUTATION_GLOBS:-}" | git hash-object --stdin)"
 if [[ -z "${MUTATION_CMD:-}" ]]; then
   [[ $MUTATION -eq 1 ]] && skip mutation "MUTATION_CMD not set"
 elif [[ $MUTATION -eq 0 ]]; then
-  if [[ -f "$RESULT_FILE" && "$(cut -d' ' -f2 "$RESULT_FILE")" == "$FINGERPRINT" ]]; then
+  r_verdict="" r_fp="" r_cmd=""
+  [[ -f "$RESULT_FILE" ]] && read -r r_verdict r_fp r_cmd < "$RESULT_FILE"
+  if [[ "$r_fp" == "$FINGERPRINT" && "$r_cmd" == "$CMD_ID" ]]; then
     RAN=1
-    verdict="$(cut -d' ' -f1 "$RESULT_FILE")"
-    printf '%-12s %-5s (recorded by an earlier --mutation run on this exact change)  log: %s\n' mutation "$verdict" "$LOG_DIR/mutation.log"
-    [[ "$verdict" == "FAIL" ]] && FAILED=1
+    printf '%-12s %-5s (recorded by an earlier --mutation run on this exact change)  log: %s\n' mutation "$r_verdict" "$LOG_DIR/mutation.log"
+    [[ "$r_verdict" == "FAIL" ]] && FAILED=1
   else
     skip mutation "not run for this exact change (--mutation)"
   fi
 elif [[ $OTHERS_OK -eq 0 ]]; then
   skip mutation "fix the failures above first"
-elif [[ ${#SOURCES[@]} -eq 0 ]]; then
-  skip mutation "no changed source files"
+elif [[ ${#MUT_SOURCES[@]} -eq 0 ]]; then
+  skip mutation "no changed source files${MUTATION_GLOBS:+ match MUTATION_GLOBS}"
 else
-  files="$(IFS=,; echo "${SOURCES[*]}")"
+  files="$(printf '%q' "$(IFS=,; echo "${MUT_SOURCES[*]}")")"  # one shell word, already quoted
   cmd="${MUTATION_CMD//\{files\}/$files}"
   cmd="${cmd//\{base\}/$MERGE_BASE}"
   cmd="$(expand_each "$cmd")"
-  if run_step mutation . "$cmd" "${#SOURCES[@]} file(s)"; then
-    echo "PASS $FINGERPRINT" > "$RESULT_FILE"
+  if run_step mutation . "$cmd" "${#MUT_SOURCES[@]} file(s)"; then
+    echo "PASS $FINGERPRINT $CMD_ID" > "$RESULT_FILE"
   else
-    echo "FAIL $FINGERPRINT" > "$RESULT_FILE"
+    echo "FAIL $FINGERPRINT $CMD_ID" > "$RESULT_FILE"
   fi
 fi
 

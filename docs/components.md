@@ -175,7 +175,7 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 | Deploy guard | `DEPLOY_CMD`, `PROD_STAGE` |
 | Repo layout | `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` |
 | Quality commands | `TYPECHECK_CMD`, `LINT_CMD` |
-| Quality gate | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS`, `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD` |
+| Quality gate | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS`, `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD`, `MUTATION_GLOBS` |
 | Sensitive files | `MIGRATIONS_GLOB`, `MIGRATIONS_REGEN_CMD`, `SENSITIVE_CONFIG_GLOBS` |
 | Tenant isolation | `TENANT_ISOLATION_CHECK`, `TENANT_KEY` |
 | Frontend env | `FRONTEND_ENV_CHECK`, `FRONTEND_ENV_BAD_PATTERN`, `FRONTEND_ENV_GOOD_HINT` |
@@ -200,13 +200,15 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
 | Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt), or no report came from this run |
 | Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
-| CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests |
+| CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
 | Removed tests | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | `block` mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; `warn` lists them |
-| Mutation | `MUTATION_CMD`, with `--mutation` | The mutation tool's own threshold is missed |
+| Gate config | `SUPPRESSION_CHECK` | `block` mode and the change alters a `hooks.env` value; `warn` lists the keys, since loosening one needs the user's words |
+| Mutation | `MUTATION_CMD`, `MUTATION_GLOBS`, with `--mutation` | The mutation tool's own threshold is missed, on the changed files `MUTATION_GLOBS` matches |
 
 The ratchet keeps legacy code workable: a touched function that was already over a limit and did
-not get worse only warns. Complexity and CRAP need python 3 and `pip install lizard`; a
+not get worse only warns (for CRAP, only while every line the change touched in it is tested).
+Several coverage reports of one file, one per test project, are merged. Complexity and CRAP need python 3 and `pip install lizard`; a
 configured check that cannot run is a FAIL, never a silent pass. The output ends with a table of
 the touched functions, which the workflows show at their final STOP as the change's shape. Logs go
 under `.git/quality-gate/`. `PASS (partial: …)` means the build or tests are not configured, so the

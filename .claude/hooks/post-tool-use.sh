@@ -74,7 +74,7 @@ process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.
 trap 'emit_context; [[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
 
 # helper: is $FILE inside sub-project dir $1 ?
-in_dir() { [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]; }
+in_dir() { [[ "$1" == "." || "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]; }
 
 # ── Type-check / lint the changed sub-project (config-driven) ────────────────
 if [[ -n "$PACKAGE_DIRS" && -n "$REPO_ROOT" ]]; then

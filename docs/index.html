@@ -681,7 +681,7 @@ Sub-agent memory is off when auto memory is disabled.</p>
 </tbody>
 </table>
 <div class="callout"><p>All hook behaviour comes from <code>.claude/hooks/hooks.env</code>, which has
-38 keys. They cover version control, the deploy guard, repo layout, quality commands, the quality
+39 keys. They cover version control, the deploy guard, repo layout, quality commands, the quality
 gate, sensitive files, tenant isolation, frontend env, design tokens, the TDD nudge, the
 suppression guard and the runtime-verification guard. Warnings don't block anything, and they
 reach Claude itself: a hook that exits 0 sends them as <code>additionalContext</code>, because
@@ -713,10 +713,11 @@ only what the change touched.</p>
 <tr><td>Build, type-check, lint, tests</td><td><code>GATE_BUILD_CMD</code>, <code>TYPECHECK_CMD</code>, <code>LINT_CMD</code>, <code>GATE_TEST_CMD</code></td><td>A command exits non-zero</td></tr>
 <tr><td>Diff coverage</td><td><code>COVERAGE_REPORTS</code>, <code>COVERAGE_MIN</code>, <code>COVERAGE_EXEMPT_GLOBS</code></td><td>Too few changed lines ran under test, or no report came from this run. A changed file that no report mentions counts as untested unless it is exempt</td></tr>
 <tr><td>Complexity</td><td><code>COMPLEXITY_MAX</code></td><td>A new function, or one that got more complex, is over the limit</td></tr>
-<tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high</td></tr>
+<tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high. A touched function already over it also fails when a line the change touched in it is untested</td></tr>
 <tr><td>Suppressions</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change silences a check or skips a test; <code>warn</code> lists each one for the reviewer</td></tr>
 <tr><td>Removed tests</td><td><code>SUPPRESSION_CHECK</code>, <code>TEST_ASSERTION_PATTERNS</code></td><td><code>block</code> mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; <code>warn</code> lists each one for the reviewer</td></tr>
-<tr><td>Mutation</td><td><code>MUTATION_CMD</code> (feature and epic only)</td><td>The mutation tool's threshold is missed: the tests don't notice injected bugs</td></tr>
+<tr><td>Gate config</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change alters a <code>hooks.env</code> value; <code>warn</code> lists the keys, since loosening one needs your words</td></tr>
+<tr><td>Mutation</td><td><code>MUTATION_CMD</code>, <code>MUTATION_GLOBS</code> (feature and epic only)</td><td>The mutation tool's threshold is missed: the tests don't notice injected bugs</td></tr>
 </tbody>
 </table>
 <p>Legacy code a change touches only has to not get worse, so a bug fix never turns into a rewrite.
