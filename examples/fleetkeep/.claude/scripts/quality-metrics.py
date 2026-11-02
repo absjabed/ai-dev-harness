@@ -48,7 +48,8 @@ TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*|--|[{}()\[\];,]+\s*$)")
 
 # Plain git output whatever the user's config: prefixes, colour, quoted paths, external diffs.
 GIT = ["git", "-c", "core.quotePath=false", "-c", "color.ui=false", "-c", "color.diff=false",
-       "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false"]
+       "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false",
+       "-c", "diff.srcPrefix=a/", "-c", "diff.dstPrefix=b/"]
 
 
 def git(*args):
@@ -169,6 +170,7 @@ class Coverage:
         self.root = norm(repo_root).rstrip("/").lower() + "/"
         # (key relative to repo where possible, lowercased; the same key as written; report dir; data)
         self.entries = []
+        self.repo_files = None
 
     def add(self, report_path, cov):
         report_dir = norm(os.path.dirname(os.path.relpath(report_path)))
@@ -180,43 +182,30 @@ class Coverage:
                 k = k[len(self.root):]
             self.entries.append((k.lower(), k, report_dir, data))
 
-    @staticmethod
-    def claimed_elsewhere(report_dir, key, rel_l):
-        """True when `key`, read relative to the report's folder or one above it, is another file
-        that exists: a sibling package's own entry, not this file's."""
-        parts = report_dir.split("/") if report_dir else []
-        for i in range(len(parts), -1, -1):
-            path = "/".join(parts[:i] + [key])
-            if path.lower() != rel_l and os.path.isfile(path):
-                return True
-        return False
+    def ambiguous(self, key):
+        """True when more than one file in the repo ends with `key`, so a report that names only
+        `key` cannot say which of them it measured."""
+        if self.repo_files is None:
+            self.repo_files = [f.lower() for f in git("ls-files", "--cached", "--others",
+                                                      "--exclude-standard").splitlines()]
+        return sum(1 for f in self.repo_files if f == key or f.endswith("/" + key)) > 1
 
     def lookup(self, rel):
-        """Line hits for repo-relative `rel`, merged over every report that has it: exact matches,
-        else the longest believable suffix matches. Several test projects often each report the
-        same shared file, every one with only the lines its own tests ran."""
+        """Line hits for repo-relative `rel`, merged over every report entry that names it: the
+        exact path, or a believable suffix of it. Several test projects often each report the same
+        shared file, every one with only the lines its own tests ran."""
         rel_l = rel.lower()
-        exact = [data for key, _, _, data in self.entries if key == rel_l]
-        if exact:
-            return merged(exact)
-        best_len, found = -1, []
-        for key, raw_key, report_dir, data in self.entries:
-            if key.endswith("/" + rel_l):          # report path is longer (e.g. a Go import path)
-                score = len(rel_l)
+        found = []
+        for key, _, report_dir, data in self.entries:
+            if key == rel_l or key.endswith("/" + rel_l):  # same path, or a longer one (a Go import path)
+                found.append(data)
             elif rel_l.endswith("/" + key):        # report path is relative to some sub-project
                 prefix = rel_l[: -len(key) - 1]
                 inside = report_dir.lower() == prefix or report_dir.lower().startswith(prefix + "/")
                 # A report outside that sub-project (JaCoCo's target/, a root lcov) is believed
-                # only if its path does not name another existing file.
-                if not inside and self.claimed_elsewhere(report_dir, raw_key, rel_l):
-                    continue
-                score = len(key)
-            else:
-                continue
-            if score > best_len:
-                best_len, found = score, [data]
-            elif score == best_len:
-                found.append(data)
+                # only when no other file in the repo ends with the same path.
+                if inside or not self.ambiguous(key):
+                    found.append(data)
         return merged(found) if found else None
 
 
@@ -238,6 +227,39 @@ def functions(lizard, filename, code):
     except Exception:  # an unparsable file must not crash the gate
         return []
     return [f for f in info.function_list if f.name != "*global*"]  # lizard's code-outside-functions bucket
+
+
+def function_history(before, current):
+    """{id(current function): its complexity at the base}, for the functions that existed there.
+
+    Matched by signature. lizard leaves the class out of a method's signature, and names every
+    anonymous function alike, so a signature that occurs more than once is paired in file order,
+    and only when it occurs as often at the base as now; otherwise those functions count as new.
+    A changed signature keeps its history only when it is the one function of its name on both
+    sides, so a new overload is new code, not an old function touched."""
+    by_long, now_long = {}, {}
+    for f in before:
+        by_long.setdefault(f.long_name, []).append(f)
+    for f in current:
+        now_long.setdefault(f.long_name, []).append(f)
+    history = {}
+    for long_name, now in now_long.items():
+        old = by_long.get(long_name, [])
+        if len(old) == len(now):
+            for o, n in zip(old, now):
+                history[id(n)] = o.cyclomatic_complexity
+    by_name, now_name = {}, {}
+    for f in before:
+        if f.long_name not in now_long:
+            by_name.setdefault(f.name, []).append(f)
+    for f in current:
+        if f.long_name not in by_long:
+            now_name.setdefault(f.name, []).append(f)
+    for name, now in now_name.items():
+        old = by_name.get(name, [])
+        if len(old) == 1 and len(now) == 1 and "anonymous" not in name:
+            history[id(now[0])] = old[0].cyclomatic_complexity
+    return history
 
 
 def crap(cc, covered):
@@ -468,28 +490,19 @@ def main():
             continue
         with open(rel, encoding="utf-8", errors="replace") as fh:
             current = functions(lizard, rel, fh.read())
-        before_long, before_name = {}, {}
+        before = []
         if rel in old_path:
             src = subprocess.run([*GIT, "show", f"{args.base}:{old_path[rel]}"], capture_output=True,
                                  text=True, encoding="utf-8", errors="replace")
-            for f in functions(lizard, old_path[rel], src.stdout) if src.returncode == 0 else []:
-                before_long[f.long_name] = f.cyclomatic_complexity
-                before_name.setdefault(f.name, []).append(f)
-        now_long = {f.long_name for f in current}
+            before = functions(lizard, old_path[rel], src.stdout) if src.returncode == 0 else []
+        history = function_history(before, current)
         data = file_cov.get(rel)
         for fn in current:
             span = set(range(fn.start_line, fn.end_line + 1))
             if not span & lines:
                 continue
             cc = fn.cyclomatic_complexity
-            was = before_long.get(fn.long_name)
-            if was is None:
-                # A changed signature keeps its history only when that is the one function of the
-                # name at the base and its old signature is gone, so a new overload or another
-                # anonymous function is new code, not an old one touched.
-                same = before_name.get(fn.name, [])
-                if len(same) == 1 and same[0].long_name not in now_long and "anonymous" not in fn.name:
-                    was = same[0].cyclomatic_complexity
+            was = history.get(id(fn))
             state = "new" if was is None else "grew" if cc > was else "touched"
             covered = None
             # Changed lines the tests did not run: a touched function over CRAP_MAX may keep its
@@ -512,11 +525,11 @@ def main():
         if hard:
             older = len(offenders) - len(hard)
             say("FAIL", check, f"{len(hard)} function(s) over the limit: {reason[check]}"
-                + (f" (+{older} already over before this change, not made worse)" if older else ""))
+                + (f" (+{older} more excused by the ratchet)" if older else ""))
         elif offenders:
-            say("WARN", check, f"{len(offenders)} touched function(s) already over the limit, not made worse"
-                + (" (complexity did not grow and every changed line in them is tested)" if check == "crap" else
-                   " (complexity did not grow)"))
+            say("WARN", check, f"{len(offenders)} touched function(s) over the limit, excused by the ratchet: "
+                + ("complexity did not grow and every changed line in them is tested (their coverage before "
+                   "this change is not measured)" if check == "crap" else "complexity did not grow"))
         else:
             say("PASS", check, f"all {len(rows)} touched function(s) within the limit")
         return {id(r) for r in hard}, {id(r) for r in offenders}

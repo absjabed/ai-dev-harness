@@ -716,7 +716,7 @@ only what the change touched.</p>
 <tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high. A touched function already over it also fails when a line the change touched in it is untested</td></tr>
 <tr><td>Suppressions</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change silences a check or skips a test; <code>warn</code> lists each one for the reviewer</td></tr>
 <tr><td>Removed tests</td><td><code>SUPPRESSION_CHECK</code>, <code>TEST_ASSERTION_PATTERNS</code></td><td><code>block</code> mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; <code>warn</code> lists each one for the reviewer</td></tr>
-<tr><td>Gate config</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change alters a <code>hooks.env</code> value; <code>warn</code> lists the keys, since loosening one needs your words</td></tr>
+<tr><td>Gate config</td><td>Always on</td><td>Never: it warns with every <code>hooks.env</code> value the change alters, since loosening one needs your words. The suppression checks keep the base commit's <code>SUPPRESSION_CHECK</code>, so a change can't switch them off for itself</td></tr>
 <tr><td>Mutation</td><td><code>MUTATION_CMD</code>, <code>MUTATION_GLOBS</code> (feature and epic only)</td><td>The mutation tool's threshold is missed: the tests don't notice injected bugs</td></tr>
 </tbody>
 </table>

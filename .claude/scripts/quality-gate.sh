@@ -28,7 +28,7 @@
 #                on the functions the change touched, via quality-metrics.py
 #   suppressions lint/coverage suppressions and skipped tests the change adds (SUPPRESSION_CHECK)
 #   test-removal test cases and assertions it removes or changes (SUPPRESSION_CHECK)
-#   gate-config  the hooks.env values it changes, since loosening them needs a person (SUPPRESSION_CHECK)
+#   gate-config  the hooks.env values it changes, since loosening them needs a person (always on, WARN only)
 #   mutation     MUTATION_CMD with {files}, {base} and {each:…} filled in, over the changed files
 #                that match MUTATION_GLOBS (only with --mutation)
 #
@@ -40,11 +40,12 @@
 # written; 2 = usage error.
 
 set -o pipefail   # no -u: macOS ships bash 3.2, where empty arrays trip it
+shopt -u patsub_replacement 2>/dev/null  # bash 5.2+: keep a & in a file name literal in ${var//x/y}
 
 # Every git call gets plain output: a user's diff.noprefix, diff.mnemonicPrefix, colour or
 # quoted non-ASCII paths would otherwise hide changed files and lines from the parsers below.
 # The diff calls also pass --no-ext-diff --no-textconv for the same reason.
-git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false "$@"; }
+git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/ "$@"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
@@ -74,7 +75,7 @@ fi
 mkdir -p "$LOG_DIR"
 for f in "$LOG_DIR"/*.log; do
   [[ -e "$f" ]] || continue
-  [[ $MUTATION -eq 0 && "$f" == */mutation.log ]] && continue  # keep the recorded mutation run
+  [[ "$f" == */mutation.log ]] && continue  # the recorded run's log; replaced only when mutation runs
   rm -f "$f"
 done
 
@@ -186,6 +187,7 @@ SOURCES=()
 TESTS=()
 set -f  # keep the configured globs literal while word-splitting them
 for f in "${CHANGED[@]}"; do
+  [[ "$f" == .ai/* || "$f" == .claude/* ]] && continue  # the harness is not the project's code
   is_source=1
   if [[ -n "${SOURCE_GLOBS:-}" ]]; then
     is_source=0
@@ -242,6 +244,7 @@ if [[ -n "${TYPECHECK_CMD:-}" || -n "${LINT_CMD:-}" ]]; then
     [[ ${#lint_files[@]} -gt 0 ]] && touched=1
     for f in "${DELETED[@]}"; do [[ "$d" == "." || "$f" == "$d"/* ]] && touched=1; done  # a deletion can break the build
     [[ $touched -eq 0 ]] && continue
+    [[ -d "$d" ]] || { skip typecheck "$d no longer exists (the build covers what used it)"; continue; }
     if [[ -n "${TYPECHECK_CMD:-}" ]]; then
       run_step typecheck "$d" "$TYPECHECK_CMD" "$d" || OTHERS_OK=0
     else
@@ -304,9 +307,17 @@ fi
 
 # ── suppressions and skipped tests the change adds ───────────────────────────
 # A suppression the change adds passes only when the same line was removed elsewhere in the
-# change (rename detection on), so moving a file, or a line, that already carried one adds
-# nothing, while swapping an old one for a new one is still caught.
+# change (rename detection on), or the same suppression was removed from the same file: moving
+# a file or a line that already carried one, or editing such a line, adds nothing, while
+# swapping an old one for a new one elsewhere is still caught.
+# The guard runs at the stricter of the base's and the working tree's SUPPRESSION_CHECK, so a
+# change that turns it off is still judged by it.
 MODE="${SUPPRESSION_CHECK:-off}"
+BASE_MODE="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | sed -n 's/^SUPPRESSION_CHECK=["'"'"']*\([a-z]*\).*/\1/p' | tail -n 1)"
+case "$BASE_MODE" in
+  block) MODE="block" ;;
+  warn) [[ "$MODE" == "block" ]] || MODE="warn" ;;
+esac
 # diff_records <scope> <oldscope>: one record per changed line of the `git diff` on stdin, as
 # sign TAB file TAB text: "+" lines only for paths in <scope>, "-" lines only for base paths in
 # <oldscope> (both newline-separated, passed through the environment because macOS awk refuses
@@ -351,23 +362,38 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   )"
   add_recs="$(printf '%s\n' "$hits" | grep '^+')"
   rem_recs="$(printf '%s\n' "$hits" | grep '^-')"
-  # Match the pattern on each line's text only, never on its path.
-  add_rows="$(printf '%s\n' "$add_recs" | cut -f3- | grep -nE -- "$SUPPRESSION_PATTERNS" | cut -d: -f1)"
-  rem_rows="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -nE -- "$SUPPRESSION_PATTERNS" | cut -d: -f1)"
+  # Each suppression the pattern matches, as row:token (the row of its line in the records),
+  # matched on the line's text only, never on its path.
+  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "$SUPPRESSION_PATTERNS")"
+  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "$SUPPRESSION_PATTERNS")"
+  # An added one is not new when the same line was removed anywhere (a move), or the same
+  # suppression was removed from the same file (an edit to a line that carries one).
   added="$(
-    { printf '%s\n' "$add_rows" | tag a
-      printf '%s\n' "$rem_rows" | tag r
+    { printf '%s\n' "$rem_tok" | tag r
+      printf '%s\n' "$add_tok" | tag a
       printf '%s\n' "$rem_recs" | tag R
-      printf '%s\n' "$add_recs" | tag A; } | awk -F'\t' '
+      printf '%s\n' "$add_recs" | tag A; } | awk '
       function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
-      $1 == "a" { ah[$2] = 1; next }
-      $1 == "r" { rh[$2] = 1; next }
-      $1 == "R" { r++; if (!(r in rh)) next
-                  t = $0; sub(/^R\t-\t[^\t]*\t/, "", t); gone[trim(t)]++; next }
-      $1 == "A" { a++; if (!(a in ah)) next
-                  t = $0; sub(/^A\t\+\t[^\t]*\t/, "", t); t = trim(t)
-                  if (gone[t] > 0) { gone[t]--; next }
-                  print $3 ": " t }'
+      function rec(kind,   t) { t = $0; sub(/^[RA]\t[-+]\t/, "", t); f = t; sub(/\t.*/, "", f); sub(/^[^\t]*\t/, "", t); return trim(t) }
+      /^[ra]\t[0-9]+:/ { k = substr($0, 1, 1); t = substr($0, 3); row = t; sub(/:.*/, "", row); sub(/^[0-9]+:/, "", t)
+                         toks[k, row] = toks[k, row] SUBSEP trim(t); has[k, row] = 1; next }
+      /^R\t/ { nr++; rtext[nr] = rec(); rfile[nr] = f; next }
+      /^A\t/ { na++; atext[na] = rec(); afile[na] = f; next }
+      END {
+        for (i = 1; i <= nr; i++) if (("r", i) in has) line[rtext[i]]++
+        for (j = 1; j <= na; j++) if (("a", j) in has && line[atext[j]] > 0) { line[atext[j]]--; moved[j] = 1; used[atext[j]]++ }
+        for (i = 1; i <= nr; i++) {
+          if (!(("r", i) in has)) continue
+          if (used[rtext[i]] > 0) { used[rtext[i]]--; continue }
+          n = split(toks["r", i], tk, SUBSEP); for (x = 2; x <= n; x++) pool[rfile[i], tk[x]]++
+        }
+        for (j = 1; j <= na; j++) {
+          if (!(("a", j) in has) || (j in moved)) continue
+          n = split(toks["a", j], tk, SUBSEP); fresh = 0
+          for (x = 2; x <= n; x++) if (pool[afile[j], tk[x]] > 0) pool[afile[j], tk[x]]--; else fresh = 1
+          if (fresh) print afile[j] ": " atext[j]
+        }
+      }'
   )"
   n_added=0
   [[ -n "$added" ]] && n_added="$(printf '%s\n' "$added" | wc -l | tr -d ' ')"
@@ -419,11 +445,11 @@ else
       printf '%s\n' "$hit_rows" | tag H
       printf '%s\n' "$removed_recs" | tag R; } | awk -F'\t' '
       function trim(s) { gsub(/^[ \t\r]+|[ \t\r]+$/, "", s); return s }
-      $1 == "A" { t = $0; sub(/^A\t/, "", t); added[trim(t)] = 1; next }
+      $1 == "A" { t = $0; sub(/^A\t/, "", t); added[trim(t)]++; next }
       $1 == "H" { hit[$2] = 1; next }
       $1 == "R" { r++; if (!(r in hit)) next
                   t = $0; sub(/^R\t-\t[^\t]*\t/, "", t); t = trim(t)
-                  if (!(t in added)) print $3 ": " t }'
+                  if (added[t] > 0) added[t]--; else print $3 ": " t }'
   )"
   n_lost=0
   [[ -n "$lost" ]] && n_lost="$(printf '%s\n' "$lost" | wc -l | tr -d ' ')"
@@ -440,18 +466,21 @@ else
   fi
 fi
 
-# ── gate config (part of the suppression guard) ──────────────────────────────
+# ── gate config ──────────────────────────────────────────────────────────────
 # A change can loosen the gate that judges it, and the gate reads hooks.env from the working
-# tree: list every value the change sets differently from the base.
-if [[ "$MODE" != "off" ]]; then
-  cfg_keys="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- .claude/hooks/hooks.env 2>/dev/null \
+# tree: list every value the change sets differently from the base, for the person approving
+# it. Always on, and only ever a WARN: tightening a value is free, and a FAIL here could never
+# clear on the branch that makes the change.
+CFG=".claude/hooks/hooks.env"
+if [[ -f "$CFG" ]] && ! git cat-file -e "$MERGE_BASE:$CFG" 2>/dev/null \
+   && [[ -n "$(git ls-files --cached --others --exclude-standard -- "$CFG")" ]]; then
+  printf '%-12s WARN  %s is not in the base commit: every value in it is new (expected only at setup)\n' gate-config "$CFG"
+else
+  cfg_keys="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
     | grep -E '^[+-][A-Z][A-Z0-9_]*=' | sed -E 's/^[+-]([A-Z0-9_]+)=.*/\1/' | sort -u | tr '\n' ' ')"
   cfg_keys="${cfg_keys% }"
   if [[ -z "$cfg_keys" ]]; then
     printf '%-12s PASS  hooks.env unchanged\n' gate-config
-  elif [[ "$MODE" == "block" ]]; then
-    FAILED=1; OTHERS_OK=0
-    printf '%-12s FAIL  hooks.env changes %s (SUPPRESSION_CHECK=block): have a human approve the change\n' gate-config "$cfg_keys"
   else
     printf '%-12s WARN  hooks.env changes %s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' gate-config "$cfg_keys"
   fi
@@ -471,6 +500,8 @@ RESULT_FILE="$LOG_DIR/mutation.result"
 CMD_ID="$(printf '%s\n%s\n' "${MUTATION_CMD:-}" "${MUTATION_GLOBS:-}" | git hash-object --stdin)"
 if [[ -z "${MUTATION_CMD:-}" ]]; then
   [[ $MUTATION -eq 1 ]] && skip mutation "MUTATION_CMD not set"
+elif [[ ${#MUT_SOURCES[@]} -eq 0 ]]; then
+  skip mutation "no changed source files${MUTATION_GLOBS:+ match MUTATION_GLOBS}"
 elif [[ $MUTATION -eq 0 ]]; then
   r_verdict="" r_fp="" r_cmd=""
   [[ -f "$RESULT_FILE" ]] && read -r r_verdict r_fp r_cmd < "$RESULT_FILE"
@@ -483,13 +514,12 @@ elif [[ $MUTATION -eq 0 ]]; then
   fi
 elif [[ $OTHERS_OK -eq 0 ]]; then
   skip mutation "fix the failures above first"
-elif [[ ${#MUT_SOURCES[@]} -eq 0 ]]; then
-  skip mutation "no changed source files${MUTATION_GLOBS:+ match MUTATION_GLOBS}"
 else
   files="$(printf '%q' "$(IFS=,; echo "${MUT_SOURCES[*]}")")"  # one shell word, already quoted
   cmd="${MUTATION_CMD//\{files\}/$files}"
   cmd="${cmd//\{base\}/$MERGE_BASE}"
   cmd="$(expand_each "$cmd")"
+  rm -f "$LOG_DIR/mutation.log"
   if run_step mutation . "$cmd" "${#MUT_SOURCES[@]} file(s)"; then
     echo "PASS $FINGERPRINT $CMD_ID" > "$RESULT_FILE"
   else

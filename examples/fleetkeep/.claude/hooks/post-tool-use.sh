@@ -74,7 +74,13 @@ process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.
 trap 'emit_context; [[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
 
 # helper: is $FILE inside sub-project dir $1 ?
-in_dir() { [[ "$1" == "." || "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]; }
+in_dir() {
+  if [[ "$1" == "." ]]; then  # the whole repo: any file inside it, never one outside (e.g. ~/.claude)
+    [[ -n "$REPO_ROOT" && "$(cd "$(dirname "$FILE")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)" == "$REPO_ROOT" ]]
+    return
+  fi
+  [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]
+}
 
 # ── Type-check / lint the changed sub-project (config-driven) ────────────────
 if [[ -n "$PACKAGE_DIRS" && -n "$REPO_ROOT" ]]; then
@@ -184,7 +190,7 @@ IS_SOURCE=1   # SOURCE_GLOBS (blank ⇒ every file): docs that mention a suppres
 if [[ -n "${SOURCE_GLOBS:-}" ]]; then
   IS_SOURCE=0
   set -f
-  for g in $SOURCE_GLOBS; do [[ "$FILE" == $g ]] && IS_SOURCE=1 && break; done
+  for g in $SOURCE_GLOBS; do [[ "$FILE" == $g || "$FILE" == */$g ]] && IS_SOURCE=1 && break; done  # $FILE is absolute
   set +f
 fi
 if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$IS_SOURCE" -eq 1 ]]; then
