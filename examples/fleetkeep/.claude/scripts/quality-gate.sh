@@ -178,27 +178,49 @@ if [[ $BASELINE -eq 1 ]]; then
   exit 0
 fi
 
-# ── The suppression guard's own settings ─────────────────────────────────────
-# A change must not loosen the guard that judges it. The guard runs at the stricter of the base
-# commit's and the working tree's SUPPRESSION_CHECK, and with the base's patterns as well as the
-# working tree's, so turning it off, or blanking or narrowing a pattern, in the same change hides
-# nothing. (The gate-config check lists every other value a change alters.)
-BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null)"
-# base_value <KEY>: KEY as the base commit's hooks.env sets it (empty when it has none).
+# ── The base commit's settings ───────────────────────────────────────────────
+# A change can tighten the gate that judges it, never loosen it: the gate reads the base
+# commit's hooks.env too and keeps the stricter of the two for each value. A loosening the
+# change makes takes effect once it is merged, and the gate-config check lists it meanwhile.
+#   SUPPRESSION_CHECK                         the stricter mode
+#   SUPPRESSION_PATTERNS, TEST_ASSERTION_PATTERNS  both patterns
+#   SOURCE_GLOBS, TEST_FILE_PATTERNS, COVERAGE_EXEMPT_GLOBS  the base's (they decide what is judged)
+#   COVERAGE_MIN (higher), COMPLEXITY_MAX and CRAP_MAX (lower)
+#   GATE_BUILD_CMD, GATE_TEST_CMD, TYPECHECK_CMD, LINT_CMD, MUTATION_CMD  the base's, if the change blanks one
+# Only keys the base's hooks.env sets count, so a new hooks.env (setup) is read as it is.
+BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | tr -d '\r')"
+# base_has <KEY>: the base's hooks.env assigns KEY. base_value <KEY>: its value there.
+base_has() { printf '%s\n' "$BASE_CFG" | grep -qE "^[[:space:]]*$1="; }
 base_value() { ( unset "$1"; eval "$BASE_CFG" >/dev/null 2>&1; printf '%s' "${!1:-}" ); }
 mode_rank() { case "$1" in block) echo 2 ;; warn) echo 1 ;; *) echo 0 ;; esac; }
+# num_pick <higher|lower> <a> <b>: the stricter number; a blank one loses.
+num_pick() {
+  if [[ -z "$2" ]]; then printf '%s' "$3"; elif [[ -z "$3" ]]; then printf '%s' "$2"
+  else awk -v w="$1" -v a="$2" -v b="$3" 'BEGIN { if ((w == "higher") == (a + 0 >= b + 0)) print a; else print b }'; fi
+}
 if [[ -n "$BASE_CFG" ]]; then
-  b="$(base_value SUPPRESSION_CHECK)"
-  [[ $(mode_rank "$b") -gt $(mode_rank "${SUPPRESSION_CHECK:-off}") ]] && SUPPRESSION_CHECK="$b"
+  if base_has SUPPRESSION_CHECK; then
+    b="$(base_value SUPPRESSION_CHECK)"
+    [[ $(mode_rank "$b") -gt $(mode_rank "${SUPPRESSION_CHECK:-off}") ]] && SUPPRESSION_CHECK="$b"
+  fi
   for k in SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do
+    base_has "$k" || continue
     b="$(base_value "$k")"
     w="${!k:-}"
     if [[ -n "$b" && "$b" != "$w" ]]; then
       if [[ -z "$w" ]]; then printf -v "$k" '%s' "$b"; else printf -v "$k" '%s' "($w)|($b)"; fi
     fi
   done
-  b="$(base_value TEST_FILE_PATTERNS)"
-  [[ -n "$b" && "$b" != "${TEST_FILE_PATTERNS:-}" ]] && TEST_FILE_PATTERNS="${TEST_FILE_PATTERNS:+$TEST_FILE_PATTERNS }$b"
+  for k in SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_EXEMPT_GLOBS; do
+    if base_has "$k"; then printf -v "$k" '%s' "$(base_value "$k")"; fi
+  done
+  if base_has COVERAGE_MIN; then COVERAGE_MIN="$(num_pick higher "${COVERAGE_MIN:-}" "$(base_value COVERAGE_MIN)")"; fi
+  for k in COMPLEXITY_MAX CRAP_MAX; do
+    if base_has "$k"; then printf -v "$k" '%s' "$(num_pick lower "${!k:-}" "$(base_value "$k")")"; fi
+  done
+  for k in GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD MUTATION_CMD; do
+    if [[ -z "${!k:-}" ]] && base_has "$k"; then printf -v "$k" '%s' "$(base_value "$k")"; fi
+  done
 fi
 
 # ── What changed ─────────────────────────────────────────────────────────────
@@ -385,11 +407,13 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   )"
   add_recs="$(printf '%s\n' "$hits" | grep '^+')"
   rem_recs="$(printf '%s\n' "$hits" | grep '^-')"
-  # Each line's suppression, from where the pattern first matches to the end of the line (so
-  # its rule list and scope count: "# noqa" is not "# noqa: F401"), as row:text, the row of its
-  # line in the records. Matched on the line's text only, never on its path.
-  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS).*")"
-  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS).*")"
+  # Each line's suppression: the pattern's match and the rule list or scope right after it ("# noqa"
+  # is not "# noqa: F401", "eslint-disable" not "eslint-disable-line no-console"), but not the
+  # code around it, as row:text, the row of its line in the records. Matched on the line's text
+  # only, never on its path.
+  RULES='[[:alnum:]_:,=./@ -]*'  # "/" and "@" for rule names like @typescript-eslint/no-explicit-any
+  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
+  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
   # suppression was removed from the same file, or from the file it was renamed from (an edit
   # to the code on a line that carries one).

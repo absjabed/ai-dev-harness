@@ -58,9 +58,23 @@ process.stdin.on("data", c => raw += c).on("end", () => {
 
 [[ -z "$FILE" ]] && exit 0
 FILE="$(printf '%s' "$FILE" | tr '\\' '/')"   # Windows paths arrive with backslashes; the checks below match on "/"
-# The file's path inside its repo, as the gate sees it (empty outside a repo, or when its folder
-# does not exist yet): SOURCE_GLOBS are matched against this.
-REL="$(cd "$(dirname "$FILE")" 2>/dev/null && p="$(git rev-parse --show-prefix 2>/dev/null)" && printf '%s%s' "$p" "${FILE##*/}")"
+# The file's repo, and its path inside it as the gate sees it, read from its nearest folder that
+# exists (a Write may create the folder). Both are empty outside a repo; nothing here may fail,
+# since an error exit would let the edit through unchecked. SOURCE_GLOBS are matched on REL.
+near_dir() {
+  local d="${FILE%/*}" rest="${FILE##*/}"
+  [[ "$FILE" == */* ]] || d="."
+  while [[ -n "$d" && ! -d "$d" ]]; do rest="${d##*/}/$rest"; [[ "$d" == */* ]] || { d=""; break; }; d="${d%/*}"; done
+  [[ -n "$d" ]] && printf '%s\t%s' "$d" "$rest"
+}
+NEAR="$(near_dir || true)"
+REL=""; FILE_TOP=""
+if [[ -n "$NEAR" ]]; then
+  FILE_TOP="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$FILE_TOP" ]]; then
+    REL="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-prefix 2>/dev/null || true)${NEAR#*$'\t'}"
+  fi
+fi
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo '')"
 
 # note <text>: record a finding for both the user (stderr) and Claude (JSON at exit).
@@ -78,8 +92,8 @@ trap 'emit_context; [[ -n "$TEXT_DIR" ]] && rm -rf "$TEXT_DIR"' EXIT
 
 # helper: is $FILE inside sub-project dir $1 ?
 in_dir() {
-  if [[ "$1" == "." ]]; then  # the whole repo: any file inside it, never one outside (e.g. ~/.claude)
-    [[ -n "$REL" ]]
+  if [[ "$1" == "." ]]; then  # the whole repo (or one of its epic worktrees), never a file outside it
+    [[ -n "$FILE_TOP" && ( "$FILE_TOP" == "$REPO_ROOT" || "$FILE_TOP" == "$REPO_ROOT"/.worktrees/* ) ]]
     return
   fi
   [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]

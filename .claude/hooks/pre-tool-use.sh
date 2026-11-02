@@ -51,9 +51,23 @@ process.stdin.on("data", c => raw += c).on("end", () => {
 ' "$TEXT_DIR" 2>/dev/null || echo " ")
 EOF
 FILE="$(printf '%s' "$FILE" | tr '\\' '/')"   # Windows paths arrive with backslashes; the checks below match on "/"
-# The file's path inside its repo, as the gate sees it (empty outside a repo, or when its folder
-# does not exist yet): SOURCE_GLOBS are matched against this.
-REL="$(cd "$(dirname "$FILE")" 2>/dev/null && p="$(git rev-parse --show-prefix 2>/dev/null)" && printf '%s%s' "$p" "${FILE##*/}")"
+# The file's repo, and its path inside it as the gate sees it, read from its nearest folder that
+# exists (a Write may create the folder). Both are empty outside a repo; nothing here may fail,
+# since an error exit would let the edit through unchecked. SOURCE_GLOBS are matched on REL.
+near_dir() {
+  local d="${FILE%/*}" rest="${FILE##*/}"
+  [[ "$FILE" == */* ]] || d="."
+  while [[ -n "$d" && ! -d "$d" ]]; do rest="${d##*/}/$rest"; [[ "$d" == */* ]] || { d=""; break; }; d="${d%/*}"; done
+  [[ -n "$d" ]] && printf '%s\t%s' "$d" "$rest"
+}
+NEAR="$(near_dir || true)"
+REL=""; FILE_TOP=""
+if [[ -n "$NEAR" ]]; then
+  FILE_TOP="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$FILE_TOP" ]]; then
+    REL="$(cd "${NEAR%%$'\t'*}" 2>/dev/null && git rev-parse --show-prefix 2>/dev/null || true)${NEAR#*$'\t'}"
+  fi
+fi
 
 # note <text>: record a warning for both the user (stderr) and Claude (JSON at exit).
 CONTEXT=""
@@ -86,7 +100,7 @@ in_source_globs() { in_globs; }
 
 # Warn when editing a real .env file (but allow .env.example). (Always on — universal.)
 if [[ "$FILE" == */.claude/hooks/hooks.env || "$FILE" == .claude/hooks/hooks.env ]]; then
-  note "NOTE: $TOOL is editing the harness config ($FILE), which sets the quality gate's limits. Tightening a value is free; loosening one (a lower COVERAGE_MIN, a blank gate command, SUPPRESSION_CHECK=off) needs the user's own words and a .ai/memory/decisions.md entry. The gate's gate-config line lists every value the change alters, and its suppression checks keep the base commit's mode."
+  note "NOTE: $TOOL is editing the harness config ($FILE), which sets the quality gate's limits. Tightening a value is free; loosening one (a lower COVERAGE_MIN, a blank gate command, SUPPRESSION_CHECK=off) needs the user's own words and a .ai/memory/decisions.md entry. The gate lists every value the change alters, and keeps the base commit's stricter value until the change is merged."
 elif [[ "$FILE" == *.env && "$FILE" != *.env.example ]]; then
   note "WARNING: $TOOL is about to modify an .env file ($FILE). Confirm this is intentional and contains no committed secrets."
 fi

@@ -33,15 +33,18 @@ many others), JaCoCo XML, and Go cover profiles. Standard library only, except `
 Exit status: 0 = no FAIL, 1 = at least one FAIL (including a configured check that could not run).
 """
 import argparse
+import difflib
 import fnmatch
 import glob
 import os
+import posixpath
 import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
 TOP_N = 15
+UNTRACKED_MOVES = set()  # current paths base_paths() paired with a deletion git did not pair
 LIST_N = 10
 TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*|--|[{}()\[\];,]+\s*$)")
 
@@ -78,6 +81,18 @@ def changed_lines(base, rel, old):
                 return set(range(1, sum(1 for _ in fh) + 1))
         except OSError:
             return set()
+    if rel in UNTRACKED_MOVES:  # git cannot diff an untracked file against the base: compare directly
+        before = git("show", f"{base}:{old}").splitlines()
+        try:
+            with open(rel, encoding="utf-8", errors="replace") as fh:
+                now = fh.read().splitlines()
+        except OSError:
+            return set()
+        lines = set()
+        for tag, _, _, j1, j2 in difflib.SequenceMatcher(None, before, now, autojunk=False).get_opcodes():
+            if tag in ("replace", "insert"):
+                lines.update(range(j1 + 1, j2 + 1))
+        return lines
     # Name both paths so git pairs a rename; keep only the hunks of the new path.
     diff = git("diff", "-M", "-U0", base, "--", *sorted({old, rel}))
     sections = re.split(r"^diff --git ", diff, flags=re.M)
@@ -91,13 +106,36 @@ def changed_lines(base, rel, old):
 
 def base_paths(base):
     """{current path: path at base} for every file that existed at base (renames followed)."""
-    mapping = {}
+    mapping, deleted = {}, []
     for raw in git("diff", "-M", "--name-status", base).splitlines():
         parts = raw.split("\t")
         if parts[0].startswith("R") and len(parts) == 3:
             mapping[norm(parts[2])] = norm(parts[1])
         elif parts[0] in ("M", "T") and len(parts) == 2:
             mapping[norm(parts[1])] = norm(parts[1])
+        elif parts[0] == "D" and len(parts) == 2:
+            deleted.append(norm(parts[1]))
+    # A file moved without `git add` (mv, or delete + write) is a deletion plus an untracked file,
+    # which git's rename detection never pairs: pair them here, by identical content, else by a
+    # file name only one deleted and one untracked file share.
+    untracked = [norm(f) for f in git("ls-files", "--others", "--exclude-standard").splitlines()]
+    if deleted and untracked:
+        blob = {git("rev-parse", f"{base}:{d}").strip(): d for d in deleted}
+        left = list(untracked)
+        for f in untracked:
+            d = blob.get(git("hash-object", "--", f).strip())
+            if d and d in deleted:
+                mapping[f] = d
+                UNTRACKED_MOVES.add(f)
+                deleted.remove(d)
+                left.remove(f)
+        for f in left:
+            name = f.rsplit("/", 1)[-1]
+            old = [d for d in deleted if d.rsplit("/", 1)[-1] == name]
+            if len(old) == 1 and sum(1 for g in left if g.rsplit("/", 1)[-1] == name) == 1:
+                mapping[f] = old[0]
+                UNTRACKED_MOVES.add(f)
+                deleted.remove(old[0])
     return mapping
 
 
@@ -125,7 +163,13 @@ def read_cobertura(root, cov):
         lines = cls.find("lines")
         if lines is None:
             continue
-        targets = [os.path.join(src, filename) for src in sources] or [filename]
+        targets = list(dict.fromkeys(os.path.join(src, filename) for src in sources)) or [filename]
+        if len(targets) > 1:
+            # Several source roots: the class is the one file among them that exists. Two that
+            # exist (models.py in two apps) cannot be told apart, so the entry counts for neither.
+            targets = [t for t in targets if os.path.isfile(t)]
+            if len(targets) != 1:
+                continue
         for line in lines.iter("line"):
             for target in targets:
                 merge(cov, target, int(line.get("number")), int(float(line.get("hits", "0"))))
@@ -187,16 +231,23 @@ class Coverage:
 
     def resolve(self, key, report_dir, files, by_base):
         parts = report_dir.split("/") if report_dir else []
+        if key.startswith("../") or "/../" in key:  # relative to the report's project (istanbul)
+            for i in range(len(parts), 0, -1):
+                path = posixpath.normpath("/".join(parts[:i] + [key]))
+                if path in files:
+                    return path
+            return None
         for i in range(len(parts), -1, -1):  # the report's folder first, the repo root last
             path = "/".join(parts[:i] + [key])
             if path in files:
                 return path
-        candidates = [f for f in by_base.get(key.rsplit("/", 1)[-1], [])
-                      if f.endswith("/" + key) or key.endswith("/" + f)]
-        if len(candidates) == 1:
-            return candidates[0]
+        same_base = by_base.get(key.rsplit("/", 1)[-1], [])
+        # A key relative to some sub-project names the one repo file that ends with it.
+        ending = [f for f in same_base if f.endswith("/" + key)]
+        if ending:
+            return ending[0] if len(ending) == 1 else None
         # A longer key (an absolute or CI path, a Go import path) names its longest repo suffix.
-        longer = sorted((f for f in candidates if key.endswith("/" + f)), key=len, reverse=True)
+        longer = sorted((f for f in same_base if key.endswith("/" + f)), key=len, reverse=True)
         if longer and (len(longer) == 1 or len(longer[0]) > len(longer[1])):
             return longer[0]
         return None
@@ -435,7 +486,7 @@ def main():
 
     cov, reports = load_coverage(args, repo_root, say)
     fresh_after = os.path.getmtime(args.fresh_after) if args.fresh_after else None
-    if fresh_after is None and reports:
+    if fresh_after is None and reports and files:
         tests = []
         if args.tests_from:
             with open(args.tests_from, encoding="utf-8", errors="replace") as fh:
@@ -523,12 +574,14 @@ def main():
             # Changed lines the tests did not run: a touched function over CRAP_MAX may keep its
             # old score only while every line the change touched in it is tested.
             untested_change = False
-            if data is not None:
+            if rel in exempt:
+                pass  # exempt from coverage, so from CRAP too, whether or not a report lists it
+            elif data is not None:
                 coverable = [n for n in span if n in data]
                 if coverable:
                     covered = sum(1 for n in coverable if data[n] > 0) / len(coverable)
                 untested_change = any(n in data and data[n] == 0 for n in span & lines)
-            elif args.report_glob and strict and rel not in exempt:
+            elif args.report_glob and strict:
                 covered = 0.0  # in no report: untested
                 untested_change = True
             score = crap(cc, covered) if covered is not None else None
