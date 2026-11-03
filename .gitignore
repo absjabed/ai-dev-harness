@@ -33,3 +33,4 @@ desktop.ini
 # Tooling
 .playwright-mcp/
 node_modules/
+__pycache__/

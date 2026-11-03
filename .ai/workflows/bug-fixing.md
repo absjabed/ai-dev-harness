@@ -19,7 +19,14 @@ Fix causes, not symptoms.
    scope's standards.
 5. **Verify** — Run the affected scope's quality gates (build, plus lint/type-check/test where the
    scope defines them). Where a scope has no test runner, confirm a clean build and re-run your
-   reproduction. State clearly what you verified and what you did not.
+   reproduction. State clearly what you verified and what you did not. Where
+   `.claude/hooks/hooks.env` configures the quality gate, run
+   `.claude/scripts/quality-gate.sh --base <branch the fix started from>` (no `--mutation`) in
+   the quality gate loop of `developer-agent.md`: its PASS is the proof. Its ratchet fits a fix:
+   legacy code you touch only has to not get worse. Still FAIL after 3 runs → stop and show the
+   user before the review gate. Before the commit, run it once more on the final code (after any
+   review or runtime fixes) and save that run to `.ai/features/<slug>/test-specs/test-report.md`
+   under `## Quality gate`, so the result outlives the session.
 6. **Assess blast radius** — What else could this affect? Check callers, related endpoints/
    components, and any shared contract other layers or services depend on (a schema change in
    particular must be mirrored wherever else it is mapped — see the scope standards). Call out any
@@ -47,7 +54,7 @@ Fix causes, not symptoms.
    (`.ai/features/<slug>/test-specs/e2e-report.md`). A FAIL, or a planned check that did not run,
    blocks step 8 unless the user explicitly accepts it.
 8. **Commit** — Follow {{COMMIT_CONVENTION}} and reference the tracker ticket, e.g.
-   `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`.
+   `{{TICKET_PREFIX}}-1234: <what was broken and how it's now fixed>`. Include any changes under `.claude/agent-memory/` (what the reviewer learned; project memory is shared with the team).
 
-**Report:** root cause, the fix, how it was verified, the review verdict, the runtime verification
-result, the deploy notes (fix version and deploy impact), and any related risk you found.
+**Report:** root cause, the fix, how it was verified (the quality gate output, where configured),
+the review verdict, the runtime verification result, the deploy notes (fix version and deploy impact), and any related risk you found.

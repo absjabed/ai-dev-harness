@@ -47,7 +47,7 @@ Apply @.ai/standards/universal/testing-principles.md.
 - If the app is behind auth and a login wall appears, stop and report it — the user logs in, or the check is NOT RUN. Never ask for, type or store a password
 - Never navigate to or call a production host (`E2E_FORBIDDEN_HOSTS` in `.claude/hooks/hooks.env` hard-blocks them); use the URLs in `project-config.md` → Test environments
 
-Target 80% coverage on business logic. Write tests, run them, report results, fix failures.
+Target 80% coverage on business logic. Write tests, run them, report results, fix failures. Where `.claude/scripts/quality-gate.sh` is configured, run it and report its output: its diff-coverage and mutation figures are the ones that count, and a check is never silenced to make it pass.
 
 **Runtime verification is not yours.** The post-review API / UI / DB checks
 (`.ai/workflows/runtime-verification.md`) run in the orchestrating session, because the user confirms

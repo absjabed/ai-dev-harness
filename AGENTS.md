@@ -93,7 +93,14 @@ another agent they do not exist, so treat the following as hard rules that you e
 - **Warn and confirm** before editing anything matching `SENSITIVE_CONFIG_GLOBS`. Those files hold
   secrets or load-bearing config.
 - **After editing code, run the checks yourself**: `TYPECHECK_CMD` and `LINT_CMD` inside the
-  matching `PACKAGE_DIRS` entry, plus the project's test command.
+  matching `PACKAGE_DIRS` entry, plus the project's test command. Before you call work done, run
+  `.claude/scripts/quality-gate.sh --base <branch you started from>` (plain bash) and fix every
+  FAIL at its cause.
+- Once setup has chosen them, never loosen a quality-gate limit or widen `COVERAGE_EXEMPT_GLOBS` in `hooks.env` without the
+  user's explicit words and a line in `.ai/memory/decisions.md` (old → new, and why).
+- If `SUPPRESSION_CHECK` is not `off`, never add a lint suppression, coverage exclusion or
+  skipped test, or delete or loosen an existing test, to get past a check (`SUPPRESSION_PATTERNS`
+  and `TEST_ASSERTION_PATTERNS` list them). Stop and ask instead.
 - If `TENANT_ISOLATION_CHECK` is on, every data-access change must be scoped by `TENANT_KEY`.
   Crossing that boundary is a CRITICAL security bug.
 - If `FRONTEND_ENV_CHECK` is on, obey `FRONTEND_ENV_GOOD_HINT` for environment access.

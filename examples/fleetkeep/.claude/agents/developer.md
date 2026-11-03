@@ -28,4 +28,4 @@ You are a focused developer sub-agent.
 Follow @.ai/agents/developer-agent.md for all instructions.
 Apply @.ai/standards/universal/coding-principles.md to every change.
 
-Always write tests for what you implement, and run the lint and test commands from the loaded project-config before finishing.
+Always write tests for what you implement. Before finishing, run the quality gate loop from the persona (`.claude/scripts/quality-gate.sh`); where it reports `NOT CONFIGURED`, run the lint and test commands from the loaded project-config instead.

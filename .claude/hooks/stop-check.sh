@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Stop hook — reminds Claude of uncommitted changes on feature/epic branches.
-# Non-blocking (exit 0 always). Prints to stderr so the message appears in the transcript.
+# Stop hook — reminds you of uncommitted changes on feature/epic branches.
+# Non-blocking (exit 0 always). The reminder goes to stderr and, as a JSON systemMessage on
+# stdout, to the user: stderr of a hook that exits 0 is shown to nobody, and feeding it to
+# Claude instead (additionalContext) would keep the turn going on every stop.
 
 set -euo pipefail
 
@@ -35,7 +37,12 @@ fi
 UNCOMMITTED="$(git status --porcelain 2>/dev/null | grep -v '^??' || true)"
 
 if [[ -n "$UNCOMMITTED" ]]; then
-  echo "Reminder: uncommitted changes exist on branch '$BRANCH'. Commit before moving to the next phase." >&2
+  MSG="Reminder: uncommitted changes exist on branch '$BRANCH'. Commit before moving to the next phase."
+  echo "$MSG" >&2
+  printf '%s' "$MSG" | node -e '
+let r = "";
+process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.stringify({ systemMessage: r })));
+' 2>/dev/null || true
 fi
 
 exit 0

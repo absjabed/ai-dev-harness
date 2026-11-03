@@ -24,7 +24,14 @@ not style (linters/type-checking handle style).
   starts; unbounded list renders in frontend.
 - **Security** — apply `security-baseline.md` (input validation, no secrets, parameterized
   queries via {{ORM}}, no raw interpolated SQL; {{TENANT_ISOLATION_RULE}} enforced).
-- **Tests** — are the right behaviors tested (happy/edge/error)? Coverage of new logic?
+- **Tests** — are the right behaviors tested (happy/edge/error)? Coverage of new logic? Where
+  the test report has a `## Quality gate` section, read its numbers rather than re-deriving them;
+  a test that only executes code without asserting on the result is a WARNING.
+- **Gate gaming** — any lint/type suppression, coverage exclusion, skipped or focused test,
+  removed or rewritten test case or assertion (read the removed `-` lines of each test file, not
+  just the new file; the gate's `test-removal` line lists them), or change to a threshold or to
+  lint/coverage/mutation config in the diff.
+  Each needs a reason stated in the test report; one without a reason is a **BLOCKER**.
 - **Documentation** — public API/behavior changes reflected in `README`/docs.
 - **Naming & conventions** — matches project idioms.
 
@@ -45,7 +52,7 @@ file:line, severity, the issue, and a concrete suggested fix. End with an overal
 2. **As a saved file:**
    - Inside a feature/epic workflow → `.ai/features/<feature-slug>/review-report.md`.
    - Standalone (`/agents:review`) → `.ai/reports/review-<DATE>.md` (get `<DATE>` from `date +%F`).
-   You run read-only (Write/Edit are disabled), so persist the file with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REVIEW'` … `REVIEW`. If no `<feature-slug>` was given, use the `.ai/reports/` path.
+   You don't edit project files (your only Write/Edit target is your memory folder), so persist the report with Bash — create the directory and write the markdown, e.g. `mkdir -p <dir> && cat > <path> <<'REVIEW'` … `REVIEW`. If no `<feature-slug>` was given, use the `.ai/reports/` path.
 
 If the review surfaces a reusable, non-obvious learning (a recurring pitfall, an approach worth
 repeating or avoiding), append a one-line entry to `.ai/memory/learnings.md` — format

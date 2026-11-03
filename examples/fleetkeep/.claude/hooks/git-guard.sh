@@ -71,7 +71,16 @@ if [[ -n "$WORK_BRANCH_PREFIXES" ]] && echo "$CMD" | grep -qE 'git\s+push'; then
       echo "$CURRENT_BRANCH" | grep -qE "^${p}/" && ALLOWED=1
     done
     for b in ${PROTECTED_BRANCHES:-}; do [[ "$CURRENT_BRANCH" == "$b" ]] && ALLOWED=1; done
-    [[ "$ALLOWED" -eq 0 ]] && echo "WARNING: Pushing from '$CURRENT_BRANCH', which is not one of the ${WORK_BRANCH_PREFIXES// //, } work-branch prefixes. Verify this is intentional." >&2
+    if [[ "$ALLOWED" -eq 0 ]]; then
+      MSG="WARNING: Pushing from '$CURRENT_BRANCH', which is not one of the ${WORK_BRANCH_PREFIXES// //, } work-branch prefixes. Verify this is intentional."
+      echo "$MSG" >&2
+      # Claude never sees the stderr of a hook that exits 0, so hand it the warning as context too.
+      printf '%s' "$MSG" | node -e '
+let r = "";
+process.stdin.on("data", c => r += c).on("end", () => process.stdout.write(JSON.stringify(
+  { hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: r } })));
+' 2>/dev/null || true
+    fi
   fi
 fi
 

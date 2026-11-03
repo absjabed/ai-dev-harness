@@ -44,6 +44,16 @@ phase whose artifact is missing, then continue from the recorded next action.
    flow manually (per-tenant/per-env impact noted). It records exactly what was and wasn't verified at
    `.ai/features/<slug>/test-specs/test-report.md`. Adding automated tests where a scope lacks them
    is welcome — but only counts once wired into CI.
+5a. **Quality gate** — where `.claude/hooks/hooks.env` configures it, the developer agent runs
+   `.claude/scripts/quality-gate.sh --base <base-branch>` in the quality gate loop of
+   `developer-agent.md` (fix the cause, never weaken a check; at most 3 failing runs; its last run
+   adds `--mutation`). When it returns, the orchestrating session runs the gate once more itself,
+   without `--mutation` (the gate reports the mutation result recorded for this exact code, and
+   says so if there is none), and records **that** run in the test report: the gate, not the
+   agent's summary, says whether it passed. Still FAIL → **STOP** before the review gate and show
+   the user the failures; continue
+   only on their direction, or with each failure explicitly accepted (in their words, in
+   `STATE.md` and the pull request description). `NOT CONFIGURED` → the manual gate below applies.
 6. **Review & security gate (parallel)** — Spawn the Reviewer and security scanner concurrently
    on the same diff; reviewer saves to `.ai/features/<slug>/review-report.md`, security saves to
    `.ai/features/<slug>/security-report.md`. CRITICAL findings block the commit step.
@@ -66,9 +76,15 @@ phase whose artifact is missing, then continue from the recorded next action.
    blocks the commit unless the user explicitly accepts it (recorded in `STATE.md` and the
    pull request description).
 8. **Commit** — A clear Conventional Commits message referencing the tracker ticket (e.g.
-   `FK-1234: <summary>`) after user confirmation. If atomic commits were enabled,
+   `FK-1234: <summary>`) after user confirmation. The confirmation shows the
+   quality gate result as the change's shape: verdict, diff coverage, the worst touched functions
+   (complexity, coverage, CRAP), the mutation result, and every suppression and removed test line with its reason. The
+   user reviews structure and names from it; the gate has already checked the measurable parts. That result must
+   be the final code's: if fixes after step 5a changed it, re-run the gate and replace the test
+   report's section (the change id on its first line shows which code a run measured).
+   If atomic commits were enabled,
    present the per-task commit list for confirmation instead of creating a single commit. CRITICAL
-   security findings block this step either way.
+   security findings block this step either way. Include any changes under `.claude/agent-memory/` (what the reviewer and security scanner learned; project memory is shared with the team).
 9. **Report** — Generate the pull request description at `.ai/features/<slug>/pr-description.md`;
     summarize what was done, test results, and any follow-up items.
 
@@ -88,4 +104,7 @@ per group, and per merge.
 
 **Gate:** each touched scope's gates must pass before step 8 — build always, plus lint/type-check/
 test where the scope defines them; where a scope has no test runner, a clean build plus the
-documented manual verification stands in.
+documented manual verification stands in. Where the quality gate is configured (step 5a), its
+PASS is that proof; a `PASS (partial: …)` still needs the named build or tests run by hand. Epics
+run it per sub-feature in its worktree (`--base epic/<slug>`, last run `--mutation`) and once
+more, without `--mutation`, on the integrated epic branch before Phase F.

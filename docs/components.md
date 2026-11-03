@@ -125,19 +125,23 @@ to its own memory folder.
 |---|---|---|---|---|
 | `orchestrator` | delegates to developer, reviewer, security-scanner | inherit | none | Complex multi-part tasks |
 | `developer` | Read, Write, Edit, Bash | inherit | none | Feature/bugfix implementation |
-| `reviewer` | Read, Bash (no Write/Edit) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
+| `reviewer` | Read, Bash (Write/Edit only in its memory folder) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
 | `qa-runner` | Read, Write, Edit, Bash, Playwright MCP | inherit | none | Test writing/running, live browser checks (runtime verification runs in the orchestrating session instead) |
 | `release-manager` | Read, Write, Edit, Bash | sonnet | none | `/workflows:release` |
-| `critic` | Read, Bash (no Write/Edit) | inherit | project | `/harness:improve` |
+| `critic` | Read, Bash (Write/Edit only in its memory folder) | inherit | project | `/harness:improve` |
 | `harness-engineer` | Read, Write, Edit, Bash | inherit | project | `/harness:improve` work packages |
 
 `memory: project` gives that sub-agent a persistent `.claude/agent-memory/<agent>/` folder. It holds
 a `MEMORY.md` index plus topic files the sub-agent writes as it learns, such as recurring defects,
-files that are easy to miss and project quirks. Claude Code loads the first 200 lines (25 KB) of the
+files that are easy to miss and project quirks. Claude Code adds Read, Write and Edit for that folder
+even to a sub-agent whose `tools` leave them out. Each of the four agents reads its `MEMORY.md`
+before the work, writes only inside its own folder, and ends its reply with a `Memory:` line naming
+what it recorded (or `nothing new`). Claude Code loads the first 200 lines (25 KB) of the
 index into the sub-agent's prompt on every run, so it checks what went wrong last time first. The
 folder appears on the sub-agent's first run. Project scope is meant to be committed, so every
-developer's runs benefit from what any run learned; review changes to it like any other diff. For
+developer's runs benefit from what any run learned: the feature, bugfix, hotfix, release and
+harness-improvement workflows include it in their commit; review changes to it like any other diff. For
 per-developer memory, set `memory: local` (stored in `.claude/agent-memory-local/<agent>/`, which
 you keep out of git). Sub-agent memory is off when auto memory is disabled in Claude Code.
 
@@ -150,10 +154,10 @@ the harness works whether or not the model cooperates.
 
 | Hook | Event | What it does |
 |---|---|---|
-| `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited, for generated migrations and sensitive config |
+| `pre-tool-use.sh` | PreToolUse (Edit/Write/MultiEdit) | Safety warnings and blocks before a file is edited, for generated migrations and sensitive config; in `SUPPRESSION_CHECK=block` mode it also blocks an edit that adds a lint suppression, coverage exclusion or skipped test |
 | `e2e-guard.sh` | PreToolUse (Bash, browser MCP tools) | Blocks HTTP requests (curl, wget, Invoke-WebRequest…) and Claude in Chrome / Playwright navigation to any host in `E2E_FORBIDDEN_HOSTS`, so runtime checks never touch production |
 | `git-guard.sh` | PreToolUse (Bash) | Blocks `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage. The first two are **unconditional, with no override flag**. A deliberate history rewrite has to be run from a terminal outside Claude Code |
-| `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check and lint for the edited package, plus the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) |
+| `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check and lint for the edited package, plus the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) and, in `warn` mode, the suppression guard. A failure or warning goes back to Claude |
 | `post-tool-batch.sh` | PostToolBatch | Full-project type-check after a batch of parallel edits |
 | `post-tool-failure.sh` | PostToolUseFailure | Classifies a failed tool call (type error, lint, test) and feeds back a hint |
 | `stop-check.sh` | Stop | Reminds about uncommitted changes on feature/epic branches |
@@ -171,14 +175,66 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 | Deploy guard | `DEPLOY_CMD`, `PROD_STAGE` |
 | Repo layout | `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` |
 | Quality commands | `TYPECHECK_CMD`, `LINT_CMD` |
+| Quality gate | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS`, `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD`, `MUTATION_GLOBS` |
 | Sensitive files | `MIGRATIONS_GLOB`, `MIGRATIONS_REGEN_CMD`, `SENSITIVE_CONFIG_GLOBS` |
 | Tenant isolation | `TENANT_ISOLATION_CHECK`, `TENANT_KEY` |
 | Frontend env | `FRONTEND_ENV_CHECK`, `FRONTEND_ENV_BAD_PATTERN`, `FRONTEND_ENV_GOOD_HINT` |
 | Design tokens | `DESIGN_TOKEN_CHECK`, `DESIGN_TOKEN_DOC`, `DESIGN_TOKEN_EXEMPT_GLOBS` |
 | TDD nudge | `TDD_CHECK`, `TEST_FILE_PATTERNS`, `TDD_EXEMPT_GLOBS` |
+| Suppression guard | `SUPPRESSION_CHECK`, `SUPPRESSION_PATTERNS`, `TEST_ASSERTION_PATTERNS` |
 | Runtime verification guard | `E2E_FORBIDDEN_HOSTS` |
 
-Warnings go to stderr and are non-blocking; only `git-guard.sh`, `e2e-guard.sh` and the sensitive-file rules hard-block.
+Warnings are non-blocking. They go to stderr and also to Claude, as `additionalContext` JSON:
+Claude never sees the stderr of a hook that exits 0. The Stop reminder goes to you instead, as
+a `systemMessage`. Only `git-guard.sh`, `e2e-guard.sh`, the
+migrations guard (`MIGRATIONS_GLOB`) and `SUPPRESSION_CHECK=block` hard-block;
+`SENSITIVE_CONFIG_GLOBS` only warns.
+
+### The quality gate (`.claude/scripts/quality-gate.sh`)
+
+One command that measures the change and prints PASS or FAIL with the numbers, so a workflow's
+"verified" is a measurement, not the agent's own claim. It judges only what the change touched
+(`--base <branch>` sets what it is measured against):
+
+| Check | Configured by | Fails when |
+|---|---|---|
+| Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
+| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt, or every changed line in it is an interface, enum, type or import line and it holds no function), or no report came from this run |
+| Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
+| CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
+| Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |
+| Removed tests | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | `block` mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; `warn` lists them |
+| Gate config | Always on | When a check would run blind: no suppression or assertion pattern compiles, a value is set only on a `hooks.env` line the gate cannot read and no base value applies, a build, lint or test command changed HEAD, the changed files or what git reads beside them, or the change edits a `.gitattributes` together with source or test files on a git older than 2.40 (which cannot read the base commit's attributes instead; a `.gitattributes` change on its own is a WARN). Otherwise it warns with every `hooks.env` line the change alters, every `.gitattributes` it edits, and every edit to the gate's own scripts and hooks, since loosening the gate needs the user's words. The gate also reads the base commit's `hooks.env` and keeps the stricter limits (`COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX`), suppression mode and patterns, and file lists (`SOURCE_GLOBS` may only grow; `TEST_FILE_PATTERNS` and `COVERAGE_EXEMPT_GLOBS` are the base's once its gate is configured), so a change cannot loosen those for itself. Other changes (a gate command, `PACKAGE_DIRS`, `MUTATION_GLOBS`, the scripts, hooks and `.claude/settings.json`) take effect at once and are only listed: the reviewer and the person approving judge them |
+| Mutation | `MUTATION_CMD`, `MUTATION_GLOBS`, with `--mutation` | The mutation tool's own threshold is missed, on the changed files `MUTATION_GLOBS` matches |
+
+The ratchet keeps legacy code workable: a touched function over a limit whose complexity did not
+grow only warns (for CRAP, only while every line the change touched in it is tested; its coverage
+before the change is not measured).
+Several coverage reports of one file, one per test project, are merged. Complexity and CRAP need python 3 and `pip install lizard`; a
+configured check that cannot run is a FAIL, never a silent pass. The output ends with a table of
+the touched functions, which the workflows show at their final STOP as the change's shape. Logs go
+under `.git/quality-gate/`. `PASS (partial: …)` means the build or tests are not configured, so the
+gate did not run them. In the feature workflow, the developer agent's last run adds `--mutation`.
+The orchestrating session then re-runs the gate without it: the mutation result is recorded for
+that exact code and reported again. Bugfix runs the gate without mutation; hotfix runs it once.
+
+The first line of every run names a **change id**, a hash of the changed source and test files, so
+two runs with the same id measured the same code. What the workflows keep is the run on the final
+code: if review or runtime fixes change it, the gate runs again. Feature and epic keep it in the
+test report (`test-specs/test-report.md`, and `test-specs/quality-gate.md` for the integrated epic),
+bugfix in `.ai/features/<slug>/test-specs/test-report.md`, hotfix in the PR description.
+
+`--baseline` measures the whole codebase instead of a change. It runs the tests, then writes
+`.ai/reports/quality-baseline.md`: overall coverage, how many functions are over each limit, the
+complexity spread, the 20 worst functions by CRAP and the source files no report covers. It never
+fails, and no gate reads it. `/init-project` runs it to choose the limits and the exemptions;
+re-run it to see the trend.
+
+The limits are tunable values, not gates. Tightening one is always fine. After `/init-project` has
+set them, loosening one, or widening
+`COVERAGE_EXEMPT_GLOBS`, needs the user's explicit words and a line in `.ai/memory/decisions.md`
+(old → new, and why). Removing a check or making its FAIL non-blocking is weakening a gate, which
+the harness-improvement invariants forbid.
 
 ---
 
