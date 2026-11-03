@@ -44,12 +44,21 @@ shopt -u patsub_replacement 2>/dev/null  # bash 5.2+: keep a & in a file name li
 
 # Every git call gets plain output: a user's diff.noprefix, diff.mnemonicPrefix, colour or
 # quoted non-ASCII paths would otherwise hide changed files and lines from the parsers below.
-# The diff calls also pass --no-ext-diff --no-textconv for the same reason.
-git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/ "$@"; }
+# diff.interHunkContext would merge hunks and count the unchanged lines between them as changed.
+# The diff calls also pass --no-ext-diff --no-textconv for the same reason, and --text so a -diff
+# or binary attribute cannot turn a source file's hunks into "Binary files differ".
+git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/ -c diff.interHunkContext=0 "$@"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/dev/null
-[[ -f "$SCRIPT_DIR/../hooks/hooks.env" ]] && source "$SCRIPT_DIR/../hooks/hooks.env"
+# hooks.env is read as data: sourced in a subshell, and only the values the gate uses come back,
+# so whatever else it does (readonly, a function named like a command, exit) cannot reach here.
+CFG_KEYS="GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD PACKAGE_DIRS SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_REPORTS COVERAGE_MIN COVERAGE_EXEMPT_GLOBS COMPLEXITY_MAX CRAP_MAX MUTATION_CMD MUTATION_GLOBS SUPPRESSION_CHECK SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS"
+if [[ -f "$SCRIPT_DIR/../hooks/hooks.env" ]]; then
+  while IFS= read -r -d '' kv; do printf -v "${kv%%=*}" '%s' "${kv#*=}"; done < <(
+    # shellcheck source=/dev/null
+    . "$SCRIPT_DIR/../hooks/hooks.env" >/dev/null 2>&1
+    for k in $CFG_KEYS; do printf '%s=%s\0' "$k" "${!k:-}"; done)
+fi
 
 BASE="HEAD"
 MUTATION=0
@@ -203,7 +212,7 @@ num_pick() {
   else awk -v w="$1" -v a="$2" -v b="$3" 'BEGIN { if ((w == "higher") == (a + 0 >= b + 0)) print a; else print b }'; fi
 }
 KEPT_KEYS="SUPPRESSION_CHECK SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_EXEMPT_GLOBS COVERAGE_MIN COMPLEXITY_MAX CRAP_MAX GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD MUTATION_CMD"
-for k in $KEPT_KEYS; do printf -v "WORK_$k" '%s' "${!k:-}"; done
+for k in $KEPT_KEYS SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do printf -v "WORK_$k" '%s' "${!k:-}"; done
 if [[ -n "$BASE_CFG" ]]; then
   if base_has SUPPRESSION_CHECK; then
     b="$(base_value SUPPRESSION_CHECK)"
@@ -231,7 +240,9 @@ if [[ -n "$BASE_CFG" ]]; then
   if [[ $lint_on -eq 1 ]] && base_has SOURCE_GLOBS; then  # may only grow: a narrower list judges less
     b="$(base_value SOURCE_GLOBS)"
     if [[ -z "$b" ]]; then SOURCE_GLOBS=""
-    elif [[ -n "${SOURCE_GLOBS:-}" && "$SOURCE_GLOBS" != "$b" ]]; then SOURCE_GLOBS="$SOURCE_GLOBS $b"; fi
+    elif [[ -n "${SOURCE_GLOBS:-}" ]]; then  # add each base glob the change dropped
+      set -f; for g in $b; do [[ " $SOURCE_GLOBS " == *" $g "* ]] || SOURCE_GLOBS="$SOURCE_GLOBS $g"; done; set +f
+    fi
   fi
   if [[ $base_on -eq 1 ]]; then
     base_has TEST_FILE_PATTERNS && TEST_FILE_PATTERNS="$(base_value TEST_FILE_PATTERNS)"
@@ -245,6 +256,19 @@ if [[ -n "$BASE_CFG" ]]; then
     if [[ -z "${!k:-}" ]] && base_has "$k"; then printf -v "$k" '%s' "$(base_value "$k")"; fi
   done
 fi
+
+# A pattern grep cannot compile matches nothing, so every line would pass: use the base's value,
+# else the change's, whichever compiles; with neither, the gate FAILs (listed under gate-config).
+compiles() { printf 'x\n' | grep -E -- "$1" >/dev/null 2>&1; [[ $? -ne 2 ]]; }
+PATTERN_NOTES=""; BAD_PATTERNS=""
+for k in SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do
+  [[ -z "${!k:-}" ]] && continue
+  compiles "${!k}" && continue
+  b="$(base_value "$k")"; w="WORK_$k"; w="${!w}"
+  if [[ -n "$b" ]] && compiles "$b"; then printf -v "$k" '%s' "$b"; PATTERN_NOTES="$PATTERN_NOTES $k(the base's)"
+  elif [[ -n "$w" ]] && compiles "$w"; then printf -v "$k" '%s' "$w"; PATTERN_NOTES="$PATTERN_NOTES $k(the change's)"
+  else BAD_PATTERNS="$BAD_PATTERNS $k"; fi
+done
 
 # ── What changed ─────────────────────────────────────────────────────────────
 CHANGED=()   # present now (added, modified, renamed, untracked)
@@ -425,7 +449,7 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
     done
   )"
   hits="$(
-    git diff --no-ext-diff --no-textconv -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$in_scope" "$old_scope"
+    git diff --no-ext-diff --no-textconv --text -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$in_scope" "$old_scope"
     untracked_records "${SOURCES[@]}" "${TESTS[@]}"
   )"
   add_recs="$(printf '%s\n' "$hits" | grep '^+')"
@@ -436,10 +460,11 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # only, never on its path.
   # Rule names (@typescript-eslint/no-explicit-any), bracketed codes (type: ignore[attr-defined])
   # and quoted argument lists (@SuppressWarnings("all"), SuppressMessage("Style", "IDE0001")) count;
-  # a skipped test's name and body do not.
-  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\(([^()"]|"[^"]*")*\))*'
-  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
-  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -noE -- "($SUPPRESSION_PATTERNS)$RULES")"
+  # a skipped test's name and body do not. A paren group may hold quoted text and one level of
+  # nested parens (skipif(sys.version_info < (3, 8))).
+  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\(([^()"'\'']|"[^"]*"|'\''[^'\'']*'\''|\([^()]*\))*\)|\([^)]*\))*'
+  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -anoE -- "($SUPPRESSION_PATTERNS)$RULES")"
+  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -anoE -- "($SUPPRESSION_PATTERNS)$RULES")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
   # suppression was removed from the same file, or from the file it was renamed from (an edit
   # to the code on a line that carries one).
@@ -521,14 +546,14 @@ else
     is_test_path "$p" && ! printf '%s\n' "$gone_tests" | grep -qxF -- "$p" && printf '%s\n' "$p"; done)"
   # One record per changed line: sign TAB file TAB text (untracked test files count as added).
   records="$(
-    git diff --no-ext-diff --no-textconv -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$(printf '%s\n' "${TESTS[@]}")" "$old_tests"
+    git diff --no-ext-diff --no-textconv --text -M -U0 "$MERGE_BASE" -- 2>/dev/null | diff_records "$(printf '%s\n' "${TESTS[@]}")" "$old_tests"
     untracked_records "${TESTS[@]}"
     printf '%s\n' "$gone_tests" | while IFS= read -r f; do
       [[ -n "$f" ]] && git show "$MERGE_BASE:$f" 2>/dev/null | F="$f" awk '{ print "-\t" ENVIRON["F"] "\t" $0 }'; done
   )"
   removed_recs="$(printf '%s\n' "$records" | grep '^-')"
   # Match the pattern on the line's text only, never on its path.
-  hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -nE -- "$TEST_ASSERTION_PATTERNS" | cut -d: -f1)"
+  hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -anE -- "$TEST_ASSERTION_PATTERNS" | cut -d: -f1)"
   lost="$(
     { printf '%s\n' "$records" | grep '^+' | cut -f3- | tag A
       printf '%s\n' "$hit_rows" | tag H
@@ -567,7 +592,7 @@ if [[ -f "$CFG" ]] && ! git cat-file -e "$MERGE_BASE:$CFG" 2>/dev/null \
   printf '%-12s WARN  %s is not in the base commit: every value in it is new (expected only at setup)\n' gate-config "$CFG"
 else
   # Every changed line that is not a comment: assignments, exports, anything bash would run.
-  cfg_lines="$(git diff --no-ext-diff --no-textconv -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
+  cfg_lines="$(git diff --no-ext-diff --no-textconv --text -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
     | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
   # Every NAME= on the line, not just the first (a second assignment would hide behind it).
   cfg_keys="$(printf '%s\n' "$cfg_lines" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
@@ -584,6 +609,8 @@ fi
 kept=""
 for k in $KEPT_KEYS; do w="WORK_$k"; [[ "${!w}" != "${!k:-}" ]] && kept="$kept $k"; done
 [[ -n "$kept" ]] && printf '%-12s WARN  the base commit'"'"'s value was kept for%s: the change'"'"'s counts once merged (land such a hooks.env change on its own first)\n' gate-config "$kept"
+[[ -n "$PATTERN_NOTES" ]] && printf '%-12s WARN  a pattern does not compile as an extended regex; used instead:%s\n' gate-config "$PATTERN_NOTES"
+[[ -n "$BAD_PATTERNS" ]] && { FAILED=1; printf '%-12s FAIL  no value of%s compiles as an extended regex, so its check could not run\n' gate-config "$BAD_PATTERNS"; }
 gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks .claude/settings.json 2>/dev/null
                  git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks .claude/settings.json; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
 gate_files="${gate_files% }"

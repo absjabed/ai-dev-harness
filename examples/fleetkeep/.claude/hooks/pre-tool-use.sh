@@ -129,13 +129,13 @@ fi
 
 # Block an edit that adds a lint/type/coverage suppression or a skipped/focused test
 # (SUPPRESSION_CHECK="block"; warn mode lives in post-tool-use.sh). A human can still add one.
-if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" ]] && in_source_globs; then
+if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$REL" != .ai/* && "$REL" != .claude/* ]] && in_source_globs; then
   # A Write replaces the whole file, so the old text is what is on disk now.
   if [[ ! -s "$TEXT_DIR/old" && -f "$FILE" ]]; then cat -- "$FILE" > "$TEXT_DIR/old" 2>/dev/null || true; fi
-  NEW_HITS="$(grep -E -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
+  NEW_HITS="$(grep -aE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
   NEW_COUNT=0
   [[ -n "$NEW_HITS" ]] && NEW_COUNT="$(printf '%s\n' "$NEW_HITS" | wc -l | tr -d ' ')"
-  OLD_COUNT="$(grep -cE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/old" 2>/dev/null || true)"
+  OLD_COUNT="$(grep -acE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/old" 2>/dev/null || true)"
   if [[ "$NEW_COUNT" -gt "${OLD_COUNT:-0}" ]]; then
     echo "BLOCKED: this edit adds a suppression or skipped test to $FILE:" >&2
     printf '%s\n' "$NEW_HITS" | head -5 >&2

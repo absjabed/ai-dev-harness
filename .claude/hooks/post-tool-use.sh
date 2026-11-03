@@ -105,6 +105,7 @@ PKG_ROOT="${FILE_TOP:-$REPO_ROOT}"  # the edited file's checkout: an epic worktr
 if [[ -n "$PACKAGE_DIRS" && -n "$REPO_ROOT" ]]; then
   for d in $PACKAGE_DIRS; do
     if in_dir "$d"; then
+      [[ -d "$PKG_ROOT/$d" ]] || PKG_ROOT="$REPO_ROOT"  # a nested repo: its root holds no $d
       # Only a failing run is reported, capped at 20 lines, so a clean edit costs no context.
       if [[ -n "$TYPECHECK_CMD" && -d "${PKG_ROOT}/${d}" ]]; then
         OUT="$(cd "${PKG_ROOT}/${d}" && eval "$TYPECHECK_CMD" 2>&1)" \
@@ -220,6 +221,7 @@ in_globs() {
 }
 IS_SOURCE=1   # SOURCE_GLOBS (blank ⇒ every file): docs that mention a suppression are not one
 in_globs || IS_SOURCE=0
+[[ "$REL" == .ai/* || "$REL" == .claude/* ]] && IS_SOURCE=0  # the harness is not the project's code
 if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$IS_SOURCE" -eq 1 ]]; then
   # A Write replaces the whole file, so the old text is the committed copy, if any, read from
   # the file's own repo (an epic worktree has its own HEAD).
@@ -230,10 +232,10 @@ if [[ -n "$TEXT_DIR" && -f "$TEXT_DIR/new" && "$IS_SOURCE" -eq 1 ]]; then
   if [[ ! -s "$TEXT_DIR/old" && -n "$TRACKED" ]]; then
     (cd "$FILE_TOP" && git show "HEAD:$TRACKED") > "$TEXT_DIR/old" 2>/dev/null || : > "$TEXT_DIR/old"
   fi
-  NEW_HITS="$(grep -E -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
+  NEW_HITS="$(grep -aE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/new" 2>/dev/null || true)"
   if [[ -n "$NEW_HITS" ]]; then
     NEW_COUNT="$(printf '%s\n' "$NEW_HITS" | wc -l | tr -d ' ')"
-    OLD_COUNT="$(grep -cE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/old" 2>/dev/null || true)"
+    OLD_COUNT="$(grep -acE -- "$SUPPRESSION_PATTERNS" "$TEXT_DIR/old" 2>/dev/null || true)"
     if [[ "$NEW_COUNT" -gt "${OLD_COUNT:-0}" ]]; then
       note "WARNING: $FILE gains a suppression or skipped test:"$'\n'"$(printf '%s\n' "$NEW_HITS" | head -5)"$'\n'"Fix the cause instead. If it must stay, state why in the test report; the reviewer treats an unexplained one as a BLOCKER."
     fi

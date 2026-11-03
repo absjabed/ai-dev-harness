@@ -187,7 +187,8 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 Warnings are non-blocking. They go to stderr and also to Claude, as `additionalContext` JSON:
 Claude never sees the stderr of a hook that exits 0. The Stop reminder goes to you instead, as
 a `systemMessage`. Only `git-guard.sh`, `e2e-guard.sh`, the
-sensitive-file rules and `SUPPRESSION_CHECK=block` hard-block.
+migrations guard (`MIGRATIONS_GLOB`) and `SUPPRESSION_CHECK=block` hard-block;
+`SENSITIVE_CONFIG_GLOBS` only warns.
 
 ### The quality gate (`.claude/scripts/quality-gate.sh`)
 
@@ -198,7 +199,7 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 | Check | Configured by | Fails when |
 |---|---|---|
 | Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
-| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt, or it holds only declarations: no function, and no changed line that assigns or calls), or no report came from this run |
+| Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt, or every changed line in it is an interface, enum, type or import line and it holds no function), or no report came from this run |
 | Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |
 | Suppressions | `SUPPRESSION_CHECK` | `block` mode and the change adds one; `warn` lists them |

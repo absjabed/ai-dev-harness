@@ -46,22 +46,29 @@ import xml.etree.ElementTree as ET
 TOP_N = 15
 UNTRACKED_MOVES = set()  # current paths base_paths() paired with a deletion git did not pair
 LIST_N = 10
-TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*|--|[{}()\[\];,]+\s*$)")
-# A line that runs something even outside a function: an assignment or initialiser (not ==, =>,
-# <=), or a statement that is only a call.
-RUNS = re.compile(r"(?<![=!<>])=(?![=>])|^\s*[\w.$]+\(.*\)\s*;?\s*$")
-TYPE_ALIAS = re.compile(r"^\s*(export\s+)?(declare\s+)?type\s+\w")  # type T = ...: a declaration
+TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*+(\s|/|$)|--(\s|$)|[{}()\[\];,]+\s*$)")
+# Declaration-only rows (see declaration_rows): what may precede a type keyword, a header that
+# opens a block no code can run in, lines that only name other code, and an enum member.
+MODS = r"((export|declare|default|public|internal|private|protected|abstract|sealed|partial|static|pub(\([^)]*\))?|fun)\s+)*"
+TYPE_HEAD = re.compile(r"^\s*" + MODS + r"(?P<kind>(interface|enum(\s+class)?|protocol|trait)\b"
+                       r"|type\s+\w+(<[^>]*>)?\s*(=|(interface|struct)\b)|declare\s+(module|namespace|global)\b)")
+NEUTRAL = re.compile(r"^\s*(import\b|from\s+[\w.]+\s+import\b|package\s+[\w.]+\s*;?\s*$"
+                     r"|(global\s+)?using\s+(static\s+)?[\w.]+(\s*=\s*[\w.<>, ]+)?\s*;\s*$"
+                     r"|" + MODS + r"namespace\s+[\w.]+\s*[;{]?\s*$|export\s+(type\s+)?(\*|\{[^}]*\})(\s+from\s+\S+)?\s*;?\s*$|end\s*$)")
+ENUM_MEMBER = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w.'\" |<>+~]+)?\s*,?\s*$")
+ACCESSORS = re.compile(r"\{\s*((get|set|init)\s*;?\s*)+\}")  # C# { get; set; }: no body
 
 
-# Plain git output whatever the user's config: prefixes, colour, quoted paths, external diffs.
+# Plain git output whatever the user's config or attributes: prefixes, colour, quoted paths,
+# external diffs, merged hunks, a -diff or binary attribute.
 GIT = ["git", "-c", "core.quotePath=false", "-c", "color.ui=false", "-c", "color.diff=false",
        "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false",
-       "-c", "diff.srcPrefix=a/", "-c", "diff.dstPrefix=b/"]
+       "-c", "diff.srcPrefix=a/", "-c", "diff.dstPrefix=b/", "-c", "diff.interHunkContext=0"]
 
 
 def git(*args):
     if args and args[0] == "diff":
-        args = ("diff", "--no-ext-diff", "--no-textconv", *args[1:])
+        args = ("diff", "--no-ext-diff", "--no-textconv", "--text", *args[1:])
     return subprocess.run([*GIT, *args], capture_output=True, text=True,
                           encoding="utf-8", errors="replace").stdout
 
@@ -327,18 +334,76 @@ def functions(lizard, filename, code):
     return [f for f in info.function_list if f.name != "*global*"]  # lizard's code-outside-functions bucket
 
 
+def scrub(row):
+    """The row without string literals, comments, and balanced (...) / <...> groups."""
+    row = re.sub(r'"(\\.|[^"\\])*"|' + r"'(\\.|[^'\\])*'|`[^`]*`", '""', row)
+    row = re.sub(r"//.*|/\*.*?\*/|#.*", "", row)
+    prev = None
+    while prev != row:
+        prev, row = row, re.sub(r"\([^()]*\)|<[^<>=]*>", "", row)
+    return row
+
+
+def declaration_rows(rows, nested_ok=False):
+    """The 1-based rows that cannot run: import/using/package lines and the inside of interface,
+    enum, Go struct, protocol, trait, type-alias and ambient `declare` blocks. A brace block
+    inside one (a getter or a default body) is code, unless nested_ok (TS and Go types). Anything
+    else, a class body included, is code: this lists what is safe, not what runs."""
+    ok, depth, kind, code_at = set(), 0, None, None
+    for i, raw in enumerate(rows, 1):
+        row = scrub(raw)
+        if depth == 0:
+            if TRIVIAL.match(raw) or NEUTRAL.match(raw):
+                ok.add(i)
+                continue
+            m = TYPE_HEAD.match(raw)
+            if not m:
+                continue
+            kind = "enum" if m.group("kind").startswith("enum") else "type"
+            depth = row.count("{") - row.count("}")
+            rest = row.split("{", 1)[1] if "{" in row else ""
+            if depth < 0 or (depth == 0 and "{" in row and rest.rsplit("}", 1)[-1].strip(" ;,")):
+                depth = 0  # something follows the block on its line
+                continue
+            if depth == 0 and re.search(r"=(?!>)", re.sub(r"^[^=]*=", "", row, count=1)):
+                continue  # type T = ... with a second "=": not a plain alias
+            ok.add(i)
+            code_at = None
+            continue
+        member = ACCESSORS.sub("", row)
+        d = member.count("{") - member.count("}")
+        if depth + d <= 0:
+            depth = 0
+            if row.strip().strip("};,") == "" and code_at is None:
+                ok.add(i)
+            continue
+        if code_at is None and d > 0 and not nested_ok:
+            code_at = depth  # a body opens: this row and everything until it closes may run
+        depth += d
+        if code_at is not None:
+            if depth <= code_at:
+                code_at = None
+            continue
+        if kind == "enum":
+            if "(" not in raw and (ENUM_MEMBER.match(row) or TRIVIAL.match(raw)):
+                ok.add(i)
+        elif "=" not in row:  # no initialiser or => member outside a parameter list
+            ok.add(i)
+    return ok
+
+
 def declarations_only(rel, lines):
-    """lizard reads `rel` and finds no function in it, and no changed line in it runs anything
-    (RUNS): types, interfaces, fields, signatures, which a test cannot run. An unknown language
-    or a parse error is not this."""
+    """Every changed line of `rel` is a declaration_rows row, and lizard reads the file and finds
+    no function in it: an interface, enum or type a test cannot run. An unknown language or a
+    parse error is not this."""
     try:
         with open(rel, encoding="utf-8", errors="replace") as fh:
             text = fh.read()
     except OSError:
         return False
     rows = text.splitlines()
-    if any(n <= len(rows) and not TRIVIAL.match(rows[n - 1]) and RUNS.search(rows[n - 1])
-           and not TYPE_ALIAS.match(rows[n - 1]) for n in lines):
+    safe = declaration_rows(rows, rel.endswith((".ts", ".tsx", ".mts", ".cts", ".go")))
+    if any(n not in safe for n in lines if n <= len(rows)):
         return False
     try:
         import lizard
@@ -604,7 +669,7 @@ def main():
                 + ("" if not strict else " (if tests cannot reach them, exempt them with COVERAGE_EXEMPT_GLOBS; a new"
                    " exemption counts once merged, so land that hooks.env change on its own first)"))
         if declarations:
-            say("WARN", "coverage", "in no coverage report, declarations only (no function, no changed line that runs), not counted: " + short(declarations))
+            say("WARN", "coverage", "in no coverage report, declarations only (interface, enum, type or import lines, no function), not counted: " + short(declarations))
     elif args.coverage_min is not None:
         say("FAIL", "coverage", "COVERAGE_MIN is set but no coverage report is configured (COVERAGE_REPORTS)")
 
