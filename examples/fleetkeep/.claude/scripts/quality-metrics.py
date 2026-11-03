@@ -50,14 +50,16 @@ TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*+(\s|/|$)|--(\s|$)|[{}()\[\];,]+\s*$)")
 # Declaration-only rows (see declaration_rows): what may precede a type keyword, a header that
 # opens a block no code can run in, lines that only name other code, and an enum member.
 MODS = r"((export|declare|default|public|internal|private|protected|abstract|sealed|partial|static|pub(\([^)]*\))?|fun)\s+)*"
-TYPE_HEAD = re.compile(r"^\s*" + MODS + r"(?P<kind>(interface|enum(\s+class)?|protocol|trait)\s+[A-Za-z_]\w*(?!\s*[=.(])"
+TYPE_HEAD = re.compile(r"^\s*" + MODS + r"(?P<kind>(interface|enum(\s+class)?|protocol|trait)\s+(?!class\b)[A-Za-z_]\w*\b(?!\s*[=.(])"  # whole name; "class" is none
                        r"|type\s+\w+(<[^>]*>)?\s*(=|(interface|struct)\b)|declare\s+(module|namespace|global)\b)")
 NEUTRAL = re.compile(r"^\s*(import(\s+[\w{*]|\s*[{*\"'])|from\s+[\w.]+\s+import\s|package\s+[\w.]+\s*;?\s*$"
                      r"|(global\s+)?using\s+(static\s+)?[\w.]+(\s*=\s*[\w.<>, ]+)?\s*;\s*$"
                      r"|" + MODS + r"namespace\s+[\w.]+\s*[;{]?\s*$|export\s+(type\s+)?(\*|\{[^}]*\})(\s+from\s+\S+)?\s*;?\s*$|end\s*$)")
 ENUM_MEMBER = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w'\" |&<>+~]+)?\s*,?\s*$")
 ENUM_MEMBER_CS = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w.'\" |&<>+~]+)?\s*,?\s*$")  # C# constants may name others
-BLOCK = re.compile(r'"(\\.|[^"\\\n])*"|' + r"'(\\.|[^'\\\n])*'|`[^`]*`|/\*.*?(\*/|\Z)", re.S)
+# a line comment first (a /* inside one opens nothing), and only a /* that begins its
+# line opens a block comment (not one in a regex literal, a glob or a mis-read string).
+BLOCK = re.compile(r'//[^\n]*|#[^\n]*|"(\\.|[^"\\\n])*"|' + r"'(\\.|[^'\\\n])*'|`[^`]*`|(?<![^\n])[ \t]*/\*.*?(\*/|\Z)", re.S)
 ACCESSORS = re.compile(r"\{\s*((get|set|init)\s*;?\s*)+\}")  # C# { get; set; }: no body
 
 
@@ -358,7 +360,7 @@ def scrub(row):
     return row
 
 
-def declaration_rows(rows, nested_ok=False, cs=False):
+def declaration_rows(rows, nested_ok=False, cs=False, blocks=True):
     """The 1-based rows that cannot run: import/using/package lines and the inside of interface,
     enum, Go struct, protocol, trait, type-alias and ambient `declare` blocks. A brace block
     inside one (a getter or a default body) is code, unless nested_ok (TS and Go types). Anything
@@ -366,8 +368,16 @@ def declaration_rows(rows, nested_ok=False, cs=False):
     ok, depth, kind, code_at, pending = set(), 0, None, None, None
     nl = chr(10)
     # A /* ... */ comment, across lines too, is blanked (its newlines kept); strings are skipped over.
-    text = BLOCK.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)) if m.group(0).startswith("/*") else m.group(0), nl.join(rows))
-    rows = text.split(nl)
+    text, cut = nl.join(rows), []
+
+    def blank(m):
+        s = m.group(0)
+        if not blocks or not s.lstrip(" \t").startswith("/*"):
+            return s
+        if not s.endswith("*/"):  # never closed: no row from it on is safe
+            cut.append(text.count(nl, 0, m.start()) + 1)
+        return re.sub(r"[^\n]", " ", s)
+    rows = BLOCK.sub(blank, text).split(nl)
     for i, raw in enumerate(rows, 1):
         row = scrub(raw)
         if depth == 0:
@@ -417,7 +427,7 @@ def declaration_rows(rows, nested_ok=False, cs=False):
                 ok.add(i)
         elif not re.search(r"=(?!>)" if nested_ok else "=", row):  # TS/Go: a function type's => is no code
             ok.add(i)
-    return ok
+    return {i for i in ok if i < cut[0]} if cut else ok
 
 
 def declarations_only(rel, lines):
@@ -430,7 +440,8 @@ def declarations_only(rel, lines):
     except OSError:
         return False
     rows = text.splitlines()
-    safe = declaration_rows(rows, rel.endswith((".ts", ".tsx", ".mts", ".cts", ".go")), rel.endswith(".cs"))
+    safe = declaration_rows(rows, rel.endswith((".ts", ".tsx", ".mts", ".cts", ".go")), rel.endswith(".cs"),
+                            not rel.endswith((".py", ".pyi", ".rb")))  # no /* comments there
     if any(n not in safe for n in lines if n <= len(rows)):
         return False
     try:
