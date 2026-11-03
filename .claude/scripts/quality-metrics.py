@@ -50,12 +50,14 @@ TRIVIAL = re.compile(r"^\s*($|//|#|/\*|\*+(\s|/|$)|--(\s|$)|[{}()\[\];,]+\s*$)")
 # Declaration-only rows (see declaration_rows): what may precede a type keyword, a header that
 # opens a block no code can run in, lines that only name other code, and an enum member.
 MODS = r"((export|declare|default|public|internal|private|protected|abstract|sealed|partial|static|pub(\([^)]*\))?|fun)\s+)*"
-TYPE_HEAD = re.compile(r"^\s*" + MODS + r"(?P<kind>(interface|enum(\s+class)?|protocol|trait)\b"
+TYPE_HEAD = re.compile(r"^\s*" + MODS + r"(?P<kind>(interface|enum(\s+class)?|protocol|trait)\s+[A-Za-z_]\w*(?!\s*[=.(])"
                        r"|type\s+\w+(<[^>]*>)?\s*(=|(interface|struct)\b)|declare\s+(module|namespace|global)\b)")
-NEUTRAL = re.compile(r"^\s*(import\b|from\s+[\w.]+\s+import\b|package\s+[\w.]+\s*;?\s*$"
+NEUTRAL = re.compile(r"^\s*(import(\s+[\w{*]|\s*[{*\"'])|from\s+[\w.]+\s+import\s|package\s+[\w.]+\s*;?\s*$"
                      r"|(global\s+)?using\s+(static\s+)?[\w.]+(\s*=\s*[\w.<>, ]+)?\s*;\s*$"
                      r"|" + MODS + r"namespace\s+[\w.]+\s*[;{]?\s*$|export\s+(type\s+)?(\*|\{[^}]*\})(\s+from\s+\S+)?\s*;?\s*$|end\s*$)")
-ENUM_MEMBER = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w.'\" |<>+~]+)?\s*,?\s*$")
+ENUM_MEMBER = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w'\" |&<>+~]+)?\s*,?\s*$")
+ENUM_MEMBER_CS = re.compile(r"^\s*(\[[^\]]*\]\s*)*\w+\s*(=\s*[-\w.'\" |&<>+~]+)?\s*,?\s*$")  # C# constants may name others
+BLOCK = re.compile(r'"(\\.|[^"\\\n])*"|' + r"'(\\.|[^'\\\n])*'|`[^`]*`|/\*.*?(\*/|\Z)", re.S)
 ACCESSORS = re.compile(r"\{\s*((get|set|init)\s*;?\s*)+\}")  # C# { get; set; }: no body
 
 
@@ -64,6 +66,8 @@ ACCESSORS = re.compile(r"\{\s*((get|set|init)\s*;?\s*)+\}")  # C# { get; set; }:
 GIT = ["git", "-c", "core.quotePath=false", "-c", "color.ui=false", "-c", "color.diff=false",
        "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false",
        "-c", "diff.srcPrefix=a/", "-c", "diff.dstPrefix=b/", "-c", "diff.interHunkContext=0"]
+if os.environ.get("GATE_ATTR_SOURCE"):  # the base commit's .gitattributes, set by the gate
+    GIT = [GIT[0], "--attr-source=" + os.environ["GATE_ATTR_SOURCE"], *GIT[1:]]
 
 
 def git(*args):
@@ -108,10 +112,20 @@ def changed_lines(base, rel, old):
     diff = git("diff", "-M", "-U0", base, "--", *sorted({old, rel}))
     sections = re.split(r"^diff --git ", diff, flags=re.M)
     diff = next((s for s in sections if re.search(r"^\+\+\+ b/" + re.escape(rel) + r"\t?$", s, re.M)), "")
-    lines = set()
-    for hunk in re.finditer(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@", diff, re.M):
-        start, count = int(hunk.group(1)), int(hunk.group(2) or 1)
-        lines.update(range(start, start + count))
+    # only the "+" lines count, so no context setting (GIT_DIFF_OPTS, diff.context) can
+    # add unchanged lines; the hunk header gives each hunk's first new line number.
+    lines, n, body = set(), None, False
+    for row in diff.split("\n"):
+        m = re.match(r"@@ -\S+ \+(\d+)(?:,\d+)? @@", row)
+        if m:
+            n, body = int(m.group(1)), True
+        elif not body or row.startswith("\\"):
+            continue  # file headers; "\ No newline at end of file"
+        elif row.startswith("+"):
+            lines.add(n)
+            n += 1
+        elif row.startswith(" "):
+            n += 1
     return lines
 
 
@@ -344,17 +358,27 @@ def scrub(row):
     return row
 
 
-def declaration_rows(rows, nested_ok=False):
+def declaration_rows(rows, nested_ok=False, cs=False):
     """The 1-based rows that cannot run: import/using/package lines and the inside of interface,
     enum, Go struct, protocol, trait, type-alias and ambient `declare` blocks. A brace block
     inside one (a getter or a default body) is code, unless nested_ok (TS and Go types). Anything
     else, a class body included, is code: this lists what is safe, not what runs."""
-    ok, depth, kind, code_at = set(), 0, None, None
+    ok, depth, kind, code_at, pending = set(), 0, None, None, None
+    nl = chr(10)
+    # A /* ... */ comment, across lines too, is blanked (its newlines kept); strings are skipped over.
+    text = BLOCK.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)) if m.group(0).startswith("/*") else m.group(0), nl.join(rows))
+    rows = text.split(nl)
     for i, raw in enumerate(rows, 1):
         row = scrub(raw)
         if depth == 0:
-            if TRIVIAL.match(raw) or NEUTRAL.match(raw):
+            if pending and row.strip() == "{":  # Allman: the header's brace on its own line
+                kind, pending, depth, code_at = pending, None, 1, None
                 ok.add(i)
+                continue
+            if row.strip():
+                pending = None
+            if TRIVIAL.match(raw) or (NEUTRAL.match(raw) and not re.search(r";\s*\S", row)):
+                ok.add(i)  # an import line, but not "import os; run()"
                 continue
             m = TYPE_HEAD.match(raw)
             if not m:
@@ -369,9 +393,13 @@ def declaration_rows(rows, nested_ok=False):
                 continue  # type T = ... with a second "=": not a plain alias
             ok.add(i)
             code_at = None
+            if "{" not in row and "=" not in row and not row.rstrip().endswith(";"):
+                pending = kind  # the block may open on the next line
             continue
         member = ACCESSORS.sub("", row)
         d = member.count("{") - member.count("}")
+        if "{" in member and d == 0 and not nested_ok:
+            continue  # a one-line body (static { }, init { }, get() { }): may run
         if depth + d <= 0:
             depth = 0
             if row.strip().strip("};,") == "" and code_at is None:
@@ -385,9 +413,9 @@ def declaration_rows(rows, nested_ok=False):
                 code_at = None
             continue
         if kind == "enum":
-            if "(" not in raw and (ENUM_MEMBER.match(row) or TRIVIAL.match(raw)):
+            if "(" not in raw and ((ENUM_MEMBER_CS if cs else ENUM_MEMBER).match(row) or TRIVIAL.match(raw)):
                 ok.add(i)
-        elif "=" not in row:  # no initialiser or => member outside a parameter list
+        elif not re.search(r"=(?!>)" if nested_ok else "=", row):  # TS/Go: a function type's => is no code
             ok.add(i)
     return ok
 
@@ -402,7 +430,7 @@ def declarations_only(rel, lines):
     except OSError:
         return False
     rows = text.splitlines()
-    safe = declaration_rows(rows, rel.endswith((".ts", ".tsx", ".mts", ".cts", ".go")))
+    safe = declaration_rows(rows, rel.endswith((".ts", ".tsx", ".mts", ".cts", ".go")), rel.endswith(".cs"))
     if any(n not in safe for n in lines if n <= len(rows)):
         return False
     try:

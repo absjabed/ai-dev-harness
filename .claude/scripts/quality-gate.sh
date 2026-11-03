@@ -47,18 +47,53 @@ shopt -u patsub_replacement 2>/dev/null  # bash 5.2+: keep a & in a file name li
 # diff.interHunkContext would merge hunks and count the unchanged lines between them as changed.
 # The diff calls also pass --no-ext-diff --no-textconv for the same reason, and --text so a -diff
 # or binary attribute cannot turn a source file's hunks into "Binary files differ".
-git() { command git -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/ -c diff.interHunkContext=0 "$@"; }
+ATTR_OPT=()  # --attr-source=<base> once the base is known
+git() { command git "${ATTR_OPT[@]}" -c core.quotePath=false -c color.ui=false -c color.diff=false -c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/ -c diff.interHunkContext=0 "$@"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# hooks.env is read as data: sourced in a subshell, and only the values the gate uses come back,
-# so whatever else it does (readonly, a function named like a command, exit) cannot reach here.
+# The values the gate reads from hooks.env. The file is parsed, never run, so nothing in it (a
+# function named like a command, a PATH change, a checkout) can reach the gate. A plain KEY=value
+# line per key counts: '...' and "..." without $ or a backtick, joined segments, \x escapes, a
+# bare word, a trailing # comment. A key on any other kind of line is left unset (the base's
+# value applies where one is kept) and listed under gate-config.
 CFG_KEYS="GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD PACKAGE_DIRS SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_REPORTS COVERAGE_MIN COVERAGE_EXEMPT_GLOBS COMPLEXITY_MAX CRAP_MAX MUTATION_CMD MUTATION_GLOBS SUPPRESSION_CHECK SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS"
-if [[ -f "$SCRIPT_DIR/../hooks/hooks.env" ]]; then
-  while IFS= read -r -d '' kv; do printf -v "${kv%%=*}" '%s' "${kv#*=}"; done < <(
-    # shellcheck source=/dev/null
-    . "$SCRIPT_DIR/../hooks/hooks.env" >/dev/null 2>&1
-    for k in $CFG_KEYS; do printf '%s=%s\0' "$k" "${!k:-}"; done)
-fi
+CFG_BAD=""
+cfg_value() {  # cfg_value <text after KEY=>: prints the value, or fails if bash would expand it
+  local s="$1" out="" seg
+  local re_sq="^'([^']*)'(.*)\$" re_dq='^"(([^"\\$`]|\\.)*)"(.*)$' re_esc='^\\(.)(.*)$'
+  local re_end='^[[:space:]]+(#.*)?$' re_bare='^([-A-Za-z0-9_./:,=@%+*?!^]+)(.*)$' re_bs='^([^\\]*)\\(.)(.*)$'
+  while [[ -n "$s" ]]; do
+    if [[ "$s" =~ $re_sq ]]; then out+="${BASH_REMATCH[1]}"; s="${BASH_REMATCH[2]}"
+    elif [[ "$s" =~ $re_dq ]]; then
+      seg="${BASH_REMATCH[1]}"; s="${BASH_REMATCH[3]}"
+      while [[ "$seg" =~ $re_bs ]]; do  # \" \\ \$ \` lose the backslash, as in bash
+        case "${BASH_REMATCH[2]}" in '"'|'\'|'$'|'`') out+="${BASH_REMATCH[1]}${BASH_REMATCH[2]}" ;;
+          *) out+="${BASH_REMATCH[1]}\\${BASH_REMATCH[2]}" ;; esac
+        seg="${BASH_REMATCH[3]}"
+      done
+      out+="$seg"
+    elif [[ "$s" =~ $re_esc ]]; then out+="${BASH_REMATCH[1]}"; s="${BASH_REMATCH[2]}"
+    elif [[ "$s" =~ $re_end ]]; then break
+    elif [[ "$s" =~ $re_bare ]]; then out+="${BASH_REMATCH[1]}"; s="${BASH_REMATCH[2]}"
+    else return 1; fi
+  done
+  printf '%s' "$out"
+}
+read_cfg() {  # read_cfg <file>: sets each CFG_KEYS key it assigns on a plain line
+  local line k v re_head='^[[:space:]]*((export|readonly|declare|typeset)([[:space:]]+-[A-Za-z]+)*[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ "$line" =~ $re_head ]] || continue
+    k="${BASH_REMATCH[4]}"; v="${BASH_REMATCH[5]}"
+    case " $CFG_KEYS " in *" $k "*) ;; *) continue ;; esac
+    if v="$(cfg_value "$v")"; then printf -v "$k" '%s' "$v"; else unset "$k"; CFG_BAD="$CFG_BAD $k"; fi
+  done < "$1"
+}
+for k in $CFG_KEYS; do unset "$k"; done
+[[ -f "$SCRIPT_DIR/../hooks/hooks.env" ]] && read_cfg "$SCRIPT_DIR/../hooks/hooks.env"
+# git reads these from the environment; each changes what the diffs below show.
+unset GREP_OPTIONS GIT_INDEX_FILE GIT_DIFF_OPTS GIT_EXTERNAL_DIFF GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT GIT_ATTR_SOURCE \
+      GIT_GLOB_PATHSPECS GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS GIT_LITERAL_PATHSPECS
 
 BASE="HEAD"
 MUTATION=0
@@ -80,6 +115,11 @@ if [[ $BASELINE -eq 1 ]]; then
   LOG_DIR="$LOG_DIR/baseline"  # its own logs, so a baseline never wipes the last gate run's
 else
   MERGE_BASE="$(git merge-base "$BASE" HEAD 2>/dev/null)" || { echo "quality-gate: cannot find a merge-base with '$BASE' (a repo with one commit has no HEAD~1)" >&2; exit 2; }
+  # the change's .gitattributes could filter or re-encode a file before git diffs it
+  # (filter=lfs, working-tree-encoding): read attributes from the base commit (git 2.40+).
+  if command git --attr-source="$MERGE_BASE" rev-parse HEAD >/dev/null 2>&1; then
+    ATTR_OPT=(--attr-source="$MERGE_BASE"); export GATE_ATTR_SOURCE="$MERGE_BASE"
+  fi
 fi
 mkdir -p "$LOG_DIR"
 for f in "$LOG_DIR"/*.log; do
@@ -203,8 +243,9 @@ fi
 # Only keys the base's hooks.env sets count, so a new hooks.env (setup) is read as it is.
 BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | tr -d '\r')"
 # base_has <KEY>: the base's hooks.env assigns KEY. base_value <KEY>: its value there.
-base_has() { printf '%s\n' "$BASE_CFG" | grep -qE "^[[:space:]]*$1="; }
-base_value() { ( unset "$1"; eval "$BASE_CFG" >/dev/null 2>&1; printf '%s' "${!1:-}" ); }
+# "set" after running the base's file, whatever the form (export, readonly, declare).
+base_has() { ( for k in $CFG_KEYS; do unset "$k"; done; eval "$BASE_CFG" >/dev/null 2>&1; [[ -n "${!1+x}" ]] ); }
+base_value() { ( for k in $CFG_KEYS; do unset "$k"; done; eval "$BASE_CFG" >/dev/null 2>&1; printf '%s' "${!1:-}" ); }
 mode_rank() { case "$1" in block) echo 2 ;; warn) echo 1 ;; *) echo 0 ;; esac; }
 # num_pick <higher|lower> <a> <b>: the stricter number; a blank one loses.
 num_pick() {
@@ -222,9 +263,8 @@ if [[ -n "$BASE_CFG" ]]; then
     base_has "$k" || continue
     b="$(base_value "$k")"
     w="${!k:-}"
-    if [[ -n "$b" && "$b" != "$w" ]]; then
-      if [[ -z "$w" ]]; then printf -v "$k" '%s' "$b"; else printf -v "$k" '%s' "($w)|($b)"; fi
-    fi
+    # kept as a second pattern, never spliced into one regex with the change's
+    [[ -n "$b" && "$b" != "$w" ]] && printf -v "BASEPAT_$k" '%s' "$b"
   done
   # The file lists count once the base's gate judged anything; before that (setup, or an upgrade
   # from a harness without the gate) the base holds only the template's defaults.
@@ -257,18 +297,30 @@ if [[ -n "$BASE_CFG" ]]; then
   done
 fi
 
-# A pattern grep cannot compile matches nothing, so every line would pass: use the base's value,
-# else the change's, whichever compiles; with neither, the gate FAILs (listed under gate-config).
-compiles() { printf 'x\n' | grep -E -- "$1" >/dev/null 2>&1; [[ $? -ne 2 ]]; }
-PATTERN_NOTES=""; BAD_PATTERNS=""
-for k in SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do
-  [[ -z "${!k:-}" ]] && continue
-  compiles "${!k}" && continue
-  b="$(base_value "$k")"; w="WORK_$k"; w="${!w}"
-  if [[ -n "$b" ]] && compiles "$b"; then printf -v "$k" '%s' "$b"; PATTERN_NOTES="$PATTERN_NOTES $k(the base's)"
-  elif [[ -n "$w" ]] && compiles "$w"; then printf -v "$k" '%s' "$w"; PATTERN_NOTES="$PATTERN_NOTES $k(the change's)"
-  else BAD_PATTERNS="$BAD_PATTERNS $k"; fi
-done
+# A pattern grep cannot compile matches nothing, so every line would pass. Each value (the
+# change's, and the base's when it differs) is checked on its own, in the exact form the check runs it, and
+# passed to grep as its own -e, so one value's parentheses or back-references cannot change what
+# the other matches. A back-reference is refused (POSIX leaves it undefined in an ERE). Checked
+# only when the check will run.
+RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\(([^()"'\'']|"[^"]*"|'\''[^'\'']*'\''|\([^()]*\))*\)|\([^)]*\))*'
+RE_BACKREF='(^|[^\\])(\\\\)*\\[1-9]'  # in a variable: bash 3.2 and 5 read an inline regex differently
+compiles() { [[ "$1" =~ $RE_BACKREF ]] && return 1; printf 'x\n' | grep -E -- "$1" >/dev/null 2>&1; [[ $? -ne 2 ]]; }
+PATTERN_NOTES=""; BAD_PATTERNS=""; SUPP_E=(); ASSERT_E=()
+if [[ "${SUPPRESSION_CHECK:-off}" != "off" ]]; then
+  for k in SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS; do
+    bp="BASEPAT_$k"; n=0; any=0
+    for v in "${!k:-}" "${!bp:-}"; do
+      n=$((n + 1)); [[ -z "$v" ]] && continue; any=1
+      if [[ $k == SUPPRESSION_PATTERNS ]]; then form="($v)$RULES"; else form="$v"; fi
+      if compiles "$v" && compiles "$form"; then
+        if [[ $k == SUPPRESSION_PATTERNS ]]; then SUPP_E+=(-e "$form"); else ASSERT_E+=(-e "$form"); fi
+      else PATTERN_NOTES="$PATTERN_NOTES $k($([[ $n -eq 1 ]] && echo "the change's" || echo "the base's") value left out)"; fi
+    done
+    if [[ $any -eq 1 && $k == SUPPRESSION_PATTERNS && ${#SUPP_E[@]} -eq 0 ]] || [[ $any -eq 1 && $k == TEST_ASSERTION_PATTERNS && ${#ASSERT_E[@]} -eq 0 ]]; then
+      BAD_PATTERNS="$BAD_PATTERNS $k"
+    fi
+  done
+fi
 
 # ── What changed ─────────────────────────────────────────────────────────────
 CHANGED=()   # present now (added, modified, renamed, untracked)
@@ -309,6 +361,67 @@ if [[ ${#CHANGED[@]} -eq 0 && ${#DELETED[@]} -eq 0 ]]; then
   echo "QUALITY GATE: PASS (nothing changed)"
   exit 0
 fi
+
+# ── gate config ──────────────────────────────────────────────────────────────
+# The gate runs from the working tree, so a change can alter the gate that judges it: its
+# hooks.env, its scripts, its hooks. Some loosenings are undone above (the base's stricter
+# values); the rest only a person can judge. List every such change for the person approving
+# it. Always on, and printed before any command runs. A changed value is only a WARN: tightening
+# is free, and a FAIL could never clear on the branch that makes the change. What would leave a
+# check blind (no pattern that compiles, .gitattributes on a git that cannot read the base's)
+# FAILs.
+CFG=".claude/hooks/hooks.env"
+if [[ -f "$CFG" ]] && ! git cat-file -e "$MERGE_BASE:$CFG" 2>/dev/null \
+   && [[ -n "$(git ls-files --cached --others --exclude-standard -- "$CFG")" ]]; then
+  printf '%-12s WARN  %s is not in the base commit: every value in it is new (expected only at setup)\n' gate-config "$CFG"
+else
+  # Every changed line that is not a comment: assignments, exports, anything bash would run.
+  cfg_lines="$(git diff --no-ext-diff --no-textconv --text -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
+    | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
+  # Every NAME= on the line, not just the first (a second assignment would hide behind it).
+  cfg_keys="$(printf '%s\n' "$cfg_lines" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
+    | sed -E 's/^[-+;&|[:space:]]*(export[[:space:]]+)?//; s/=$//' | sort -u | tr '\n' ' ')"
+  cfg_keys="${cfg_keys% }"
+  cfg_other="$(printf '%s\n' "$cfg_lines" | grep -vcE '^[+-][[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' || true)"
+  if [[ -z "$cfg_lines" ]]; then
+    printf '%-12s PASS  hooks.env unchanged\n' gate-config
+  else
+    printf '%-12s WARN  hooks.env changes %s%s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' \
+      gate-config "${cfg_keys:-no values}" "$([[ "${cfg_other:-0}" -gt 0 ]] && printf ' and %s other line(s)' "$cfg_other")"
+  fi
+fi
+kept=""
+for k in $KEPT_KEYS; do w="WORK_$k"; [[ "${!w}" != "${!k:-}" ]] && kept="$kept $k"; done
+[[ -n "$kept" ]] && printf '%-12s WARN  the base commit'"'"'s value was kept for%s: the change'"'"'s counts once merged (land such a hooks.env change on its own first)\n' gate-config "$kept"
+[[ -n "$PATTERN_NOTES" ]] && printf '%-12s WARN  a pattern does not compile as an extended regex; used instead:%s\n' gate-config "$PATTERN_NOTES"
+[[ -n "$BAD_PATTERNS" ]] && { FAILED=1; printf '%-12s FAIL  no value of%s compiles as an extended regex, so its check could not run\n' gate-config "$BAD_PATTERNS"; }
+gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks .claude/settings.json 2>/dev/null
+                 git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks .claude/settings.json; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
+gate_files="${gate_files% }"
+[[ -n "$gate_files" ]] && printf '%-12s WARN  the change edits the gate itself: %s (this run used the edited copy)\n' gate-config "$gate_files"
+# hooks.env lines the gate could not read as plain values
+[[ -n "$CFG_BAD" ]] && printf '%-12s WARN  hooks.env sets%s on a line that is not a plain value (a $, a backtick, a ;); not read: the base'"'"'s value applies where one is kept\n' gate-config "$CFG_BAD"
+# the change's own .gitattributes (any folder) can filter or re-encode what git diffs
+attr_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" 2>/dev/null; git ls-files --others --exclude-standard; } | grep -E '(^|/)\.gitattributes$' | sort -u | tr '\n' ' ')"
+attr_files="${attr_files% }"
+if [[ -n "$attr_files" ]]; then
+  if [[ ${#ATTR_OPT[@]} -gt 0 ]]; then
+    printf '%-12s WARN  the change edits %s; this run read the base commit'"'"'s attributes\n' gate-config "$attr_files"
+  else
+    FAILED=1
+    printf '%-12s FAIL  the change edits %s and this git (older than 2.40) cannot read the base'"'"'s attributes instead: land that change on its own first\n' gate-config "$attr_files"
+  fi
+fi
+
+# what the commands below must not change: HEAD, and the content of the changed
+# source, test and gate files. A command that checks out the base or stashes the work would
+# otherwise leave every later check (and the listing above) looking at another tree.
+state_id() {
+  { git rev-parse HEAD
+    for f in "${SOURCES[@]}" "${TESTS[@]}" $gate_files .claude/hooks/hooks.env; do printf '%s ' "$f"; git hash-object -- "$f" 2>/dev/null || echo gone; done
+  } | git hash-object --stdin
+}
+STATE0="$(state_id)"
 
 # ── build ────────────────────────────────────────────────────────────────────
 if [[ -n "${GATE_BUILD_CMD:-}" ]]; then
@@ -367,6 +480,12 @@ else
   sleep 1  # reports must be measurably newer than this marker on coarse-mtime filesystems
   TESTS_RAN=1
   run_step test . "$GATE_TEST_CMD" || OTHERS_OK=0
+fi
+
+# the build, lint and test commands left the change as it was
+if [[ "$(state_id)" != "$STATE0" ]]; then
+  FAILED=1; OTHERS_OK=0
+  printf '%-12s FAIL  a build, lint or test command changed HEAD or the changed files; the checks below would judge another tree\n' gate-config
 fi
 
 # ── coverage, complexity, CRAP ───────────────────────────────────────────────
@@ -434,7 +553,10 @@ untracked_records() {
 }
 # tag <letter>: prefixes each line of stdin with the letter and a TAB (BSD sed has no \t).
 tag() { awk -v t="$1" '{ print t "\t" $0 }'; }
-if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
+if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}${BASEPAT_SUPPRESSION_PATTERNS:-}" && ${#SUPP_E[@]} -eq 0 ]]; then
+  RAN=1; FAILED=1; OTHERS_OK=0
+  printf '%-12s FAIL  no SUPPRESSION_PATTERNS value compiles as an extended regex; the check could not run\n' suppressions
+elif [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}${BASEPAT_SUPPRESSION_PATTERNS:-}" ]]; then
   RAN=1
   in_scope="$(printf '%s\n' "${SOURCES[@]}" "${TESTS[@]}")"
   # Removed lines count only from source files too (their old paths, renames and deletions
@@ -462,9 +584,8 @@ if [[ "$MODE" != "off" && -n "${SUPPRESSION_PATTERNS:-}" ]]; then
   # and quoted argument lists (@SuppressWarnings("all"), SuppressMessage("Style", "IDE0001")) count;
   # a skipped test's name and body do not. A paren group may hold quoted text and one level of
   # nested parens (skipif(sys.version_info < (3, 8))).
-  RULES='([[:alnum:]_:,=./@ -]|\[[^]]*\]|\(([^()"'\'']|"[^"]*"|'\''[^'\'']*'\''|\([^()]*\))*\)|\([^)]*\))*'
-  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -anoE -- "($SUPPRESSION_PATTERNS)$RULES")"
-  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -anoE -- "($SUPPRESSION_PATTERNS)$RULES")"
+  add_tok="$(printf '%s\n' "$add_recs" | cut -f3- | grep -anoE "${SUPP_E[@]}")"
+  rem_tok="$(printf '%s\n' "$rem_recs" | cut -f3- | grep -anoE "${SUPP_E[@]}")"
   # An added one is not new when the same line was removed anywhere (a move), or the same
   # suppression was removed from the same file, or from the file it was renamed from (an edit
   # to the code on a line that carries one).
@@ -523,10 +644,13 @@ fi
 # Lists the test-case and assertion lines the change removes from test files without re-adding
 # the same line elsewhere: a moved test passes, a deleted or rewritten one (a changed expected
 # value included) is listed. Deleting or loosening a test is a way to get past the gate too.
-if [[ "$MODE" == "off" || -z "${TEST_ASSERTION_PATTERNS:-}" ]]; then
+if [[ "$MODE" == "off" || -z "${TEST_ASSERTION_PATTERNS:-}${BASEPAT_TEST_ASSERTION_PATTERNS:-}" ]]; then
   skip test-removal "SUPPRESSION_CHECK off or TEST_ASSERTION_PATTERNS not set"
 elif [[ -z "${TEST_FILE_PATTERNS:-}" ]]; then
   skip test-removal "TEST_FILE_PATTERNS not set"
+elif [[ ${#ASSERT_E[@]} -eq 0 ]]; then
+  RAN=1; FAILED=1; OTHERS_OK=0
+  printf '%-12s FAIL  no TEST_ASSERTION_PATTERNS value compiles as an extended regex; the check could not run\n' test-removal
 else
   RAN=1
   # is_test_path <path>: a source file (SOURCE_GLOBS, when set) that is a test (TEST_FILE_PATTERNS)
@@ -553,7 +677,7 @@ else
   )"
   removed_recs="$(printf '%s\n' "$records" | grep '^-')"
   # Match the pattern on the line's text only, never on its path.
-  hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -anE -- "$TEST_ASSERTION_PATTERNS" | cut -d: -f1)"
+  hit_rows="$(printf '%s\n' "$removed_recs" | cut -f3- | grep -anE "${ASSERT_E[@]}" | cut -d: -f1)"
   lost="$(
     { printf '%s\n' "$records" | grep '^+' | cut -f3- | tag A
       printf '%s\n' "$hit_rows" | tag H
@@ -579,42 +703,6 @@ else
     printf '%s\n' "$lost" | head -n 20 | sed 's/^/    /'
   fi
 fi
-
-# ── gate config ──────────────────────────────────────────────────────────────
-# The gate runs from the working tree, so a change can alter the gate that judges it: its
-# hooks.env, its scripts, its hooks. Some loosenings are undone above (the base's stricter
-# values); the rest only a person can judge. List every such change for the person approving
-# it. Always on, and only ever a WARN: tightening is free, and a FAIL here could never clear on
-# the branch that makes the change.
-CFG=".claude/hooks/hooks.env"
-if [[ -f "$CFG" ]] && ! git cat-file -e "$MERGE_BASE:$CFG" 2>/dev/null \
-   && [[ -n "$(git ls-files --cached --others --exclude-standard -- "$CFG")" ]]; then
-  printf '%-12s WARN  %s is not in the base commit: every value in it is new (expected only at setup)\n' gate-config "$CFG"
-else
-  # Every changed line that is not a comment: assignments, exports, anything bash would run.
-  cfg_lines="$(git diff --no-ext-diff --no-textconv --text -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
-    | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
-  # Every NAME= on the line, not just the first (a second assignment would hide behind it).
-  cfg_keys="$(printf '%s\n' "$cfg_lines" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
-    | sed -E 's/^[-+;&|[:space:]]*(export[[:space:]]+)?//; s/=$//' | sort -u | tr '\n' ' ')"
-  cfg_keys="${cfg_keys% }"
-  cfg_other="$(printf '%s\n' "$cfg_lines" | grep -vcE '^[+-][[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' || true)"
-  if [[ -z "$cfg_lines" ]]; then
-    printf '%-12s PASS  hooks.env unchanged\n' gate-config
-  else
-    printf '%-12s WARN  hooks.env changes %s%s: loosening a value needs the user'"'"'s own words and a decisions.md entry\n' \
-      gate-config "${cfg_keys:-no values}" "$([[ "${cfg_other:-0}" -gt 0 ]] && printf ' and %s other line(s)' "$cfg_other")"
-  fi
-fi
-kept=""
-for k in $KEPT_KEYS; do w="WORK_$k"; [[ "${!w}" != "${!k:-}" ]] && kept="$kept $k"; done
-[[ -n "$kept" ]] && printf '%-12s WARN  the base commit'"'"'s value was kept for%s: the change'"'"'s counts once merged (land such a hooks.env change on its own first)\n' gate-config "$kept"
-[[ -n "$PATTERN_NOTES" ]] && printf '%-12s WARN  a pattern does not compile as an extended regex; used instead:%s\n' gate-config "$PATTERN_NOTES"
-[[ -n "$BAD_PATTERNS" ]] && { FAILED=1; printf '%-12s FAIL  no value of%s compiles as an extended regex, so its check could not run\n' gate-config "$BAD_PATTERNS"; }
-gate_files="$( { git diff --no-ext-diff --name-only "$MERGE_BASE" -- .claude/scripts .claude/hooks .claude/settings.json 2>/dev/null
-                 git ls-files --others --exclude-standard -- .claude/scripts .claude/hooks .claude/settings.json; } | grep -vxF "$CFG" | sort -u | tr '\n' ' ')"
-gate_files="${gate_files% }"
-[[ -n "$gate_files" ]] && printf '%-12s WARN  the change edits the gate itself: %s (this run used the edited copy)\n' gate-config "$gate_files"
 
 # ── mutation testing (opt-in, slowest, last) ─────────────────────────────────
 # Only the changed source files the mutation tool covers (MUTATION_GLOBS; blank ⇒ all of them).
