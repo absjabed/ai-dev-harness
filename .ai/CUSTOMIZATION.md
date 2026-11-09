@@ -43,11 +43,15 @@ This section lists everything that changes from project to project and where to 
 - Describe what the product does, its users, core journeys, and key modules.
 
 ### 2. Repo topology & scope model
-- **Files:** `.ai/config/*` (+ `backend/`, `frontend/` variants), `.ai/config/current-scope.md`, `.claude/hooks/hooks.env` (`PACKAGE_DIRS`)
+- **Files:** `.ai/config/*` (+ `backend/`, `frontend/` variants), `.ai/config/current-scope.md`, `.claude/hooks/hooks.env` (`PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR`)
 - **Tokens:** `{{REPO_TOPOLOGY}}` `{{SCOPES}}` `{{BACKEND_DIR}}` `{{FRONTEND_DIR}}` `{{SOURCE_DIR}}` `{{IAC_DIR}}`
 - For a monorepo with a backend and a frontend, keep both scope trees. For a single project, delete the
   `backend/` and `frontend/` subfolders under `config/`, `context/` and `standards/project/`, and use
   only the top-level files. Scope auto-detection then collapses to one scope.
+- A monorepo can have several backends or frontends (two web apps, an API and a worker). List them
+  all: `BACKEND_DIR` and `FRONTEND_DIR` in `hooks.env` take space-separated lists, and the tokens
+  hold every dir (in prose, each in its own backticks, comma-separated). The `backend/` and
+  `frontend/` scope trees still cover them; note per dir where their stacks differ.
 
 ### 3. Tech stack & languages
 - **Files:** `.ai/config/project-config.md`, `.ai/standards/project/**/tech-specific.md`
@@ -60,6 +64,9 @@ This section lists everything that changes from project to project and where to 
 - **Files:** `.ai/config/project-config.md`, `CLAUDE.md`, `.claude/hooks/hooks.env`
 - **Tokens:** `{{INSTALL_CMD}}` `{{DEV_CMD}}` `{{BUILD_CMD}}` `{{TEST_CMD}}` `{{LINT_CMD}}` `{{TYPECHECK_CMD}}` `{{MIGRATE_CMD}}`
 - The hooks run `TYPECHECK_CMD`/`LINT_CMD` after edits. Set them in `hooks.env` to enable this.
+  When sub-projects need different tools (e.g. a .NET API beside Node apps), add a `PACKAGE_CMDS` entry
+  per dir: `dir|lint|typecheck`, entries separated by `;`, a blank field keeping the shared command
+  and `-` running none. The hooks and the quality gate both use it.
 - The quality gate (`.claude/scripts/quality-gate.sh`) runs at the workflows' verify steps. Set
   `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `COVERAGE_REPORTS` and the limits (`COVERAGE_MIN`,
   `COMPLEXITY_MAX`, `CRAP_MAX`) in `hooks.env`, plus `COVERAGE_EXEMPT_GLOBS` for code no test

@@ -114,7 +114,8 @@ for glob in ${SENSITIVE_CONFIG_GLOBS:-}; do
   done <<< "$staged"
 done
 
-# Type-check and lint, scoped to the package that changed
+# Type-check and lint, scoped to the package that changed. (Per-dir PACKAGE_CMDS entries are not
+# read here: copy pkg_dirs/pkg_cmd from post-tool-use.sh if you set them.)
 for dir in ${PACKAGE_DIRS:-}; do
   if echo "$staged" | grep -q "^$dir/" && [[ -d "$root/$dir" ]]; then
     ( cd "$root/$dir"

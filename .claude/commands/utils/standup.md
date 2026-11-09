@@ -6,7 +6,7 @@ allowed-tools: Read, Bash, mcp__atlassian
 
 **Scope determination (do this first):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, focus git log on that scope's directory.
-2. Otherwise: standup covers all recent activity — default to fullstack (search `{{BACKEND_DIR}}/` and `{{FRONTEND_DIR}}/` both).
+2. Otherwise: standup covers all recent activity — default to fullstack (search every `{{BACKEND_DIR}}` and `{{FRONTEND_DIR}}` directory).
 
 Generate a standup report for: $ARGUMENTS (default: today)
 

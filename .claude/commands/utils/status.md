@@ -7,8 +7,8 @@ disallowed-tools: Write, Edit, MultiEdit, NotebookEdit
 **Scope determination (do this first):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, scope the health check to that sub-project.
 2. Otherwise, analyze "$ARGUMENTS":
-   - "backend" → check only `{{BACKEND_DIR}}/`
-   - "frontend" → check only `{{FRONTEND_DIR}}/`
+   - "backend" → check only `{{BACKEND_DIR}}` (every one of them, if several)
+   - "frontend" → check only `{{FRONTEND_DIR}}` (every one of them, if several)
    - No argument or "all" → check both (fullstack)
 3. Load the project-config for the determined scope to get the exact test and lint commands:
    - **backend**: `.ai/config/backend/project-config.md`

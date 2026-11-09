@@ -93,7 +93,7 @@ another agent they do not exist, so treat the following as hard rules that you e
 - **Warn and confirm** before editing anything matching `SENSITIVE_CONFIG_GLOBS`. Those files hold
   secrets or load-bearing config.
 - **After editing code, run the checks yourself**: `TYPECHECK_CMD` and `LINT_CMD` inside the
-  matching `PACKAGE_DIRS` entry, plus the project's test command. Before you call work done, run
+  matching `PACKAGE_DIRS` entry (that dir's `PACKAGE_CMDS` entry replaces them there), plus the project's test command. Before you call work done, run
   `.claude/scripts/quality-gate.sh --base <branch you started from>` (plain bash) and fix every
   FAIL at its cause.
 - Once setup has chosen them, never loosen a quality-gate limit or widen `COVERAGE_EXEMPT_GLOBS` in `hooks.env` without the

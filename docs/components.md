@@ -173,8 +173,8 @@ An un-customised file is inert and safe: nothing blocks and nothing warns.
 |---|---|
 | Version control | `PROTECTED_BRANCHES`, `WORK_BRANCH_PREFIXES`, `VCS_CLI`, `PR_TERM` |
 | Deploy guard | `DEPLOY_CMD`, `PROD_STAGE` |
-| Repo layout | `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` |
-| Quality commands | `TYPECHECK_CMD`, `LINT_CMD` |
+| Repo layout | `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` (each a space-separated list) |
+| Quality commands | `TYPECHECK_CMD`, `LINT_CMD`, `PACKAGE_CMDS` (per-dir overrides for mixed stacks) |
 | Quality gate | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS`, `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD`, `MUTATION_GLOBS` |
 | Sensitive files | `MIGRATIONS_GLOB`, `MIGRATIONS_REGEN_CMD`, `SENSITIVE_CONFIG_GLOBS` |
 | Tenant isolation | `TENANT_ISOLATION_CHECK`, `TENANT_KEY` |
@@ -198,7 +198,7 @@ One command that measures the change and prints PASS or FAIL with the numbers, s
 
 | Check | Configured by | Fails when |
 |---|---|---|
-| Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD`, `GATE_TEST_CMD` | The command exits non-zero |
+| Build, type-check, lint, tests | `GATE_BUILD_CMD`, `TYPECHECK_CMD`, `LINT_CMD` (or `PACKAGE_CMDS`), `GATE_TEST_CMD` | The command exits non-zero |
 | Diff coverage | `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` | Too few of the changed lines ran under test (a changed file no report mentions counts as untested unless exempt, or every changed line in it is an interface, enum, type or import line and it holds no function), or no report came from this run |
 | Complexity | `COMPLEXITY_MAX` | A new function, or one whose complexity grew, is over the limit |
 | CRAP | `CRAP_MAX` | The same, for complexity² × (1 − coverage)³ + complexity: complex code without tests. A touched function already over it also fails when a line the change touched in it is untested |

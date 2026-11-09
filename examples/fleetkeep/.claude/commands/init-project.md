@@ -21,9 +21,9 @@ Gather values for the whole **variability matrix**. Do not assume — ask. Where
 propose a sensible default and mark it.
 
 - **Identity & domain** → `{{PROJECT_NAME}}`, `{{PROJECT_TAGLINE}}`, `{{PROJECT_TYPE}}`, `{{PROJECT_PURPOSE}}`, `{{TARGET_USERS}}`; the problem it solves, core user journeys, key modules.
-- **Repo topology** → `{{REPO_TOPOLOGY}}` (monorepo vs single), which sub-projects exist and their dirs (`{{BACKEND_DIR}}`, `{{FRONTEND_DIR}}`, `{{SOURCE_DIR}}`, `{{IAC_DIR}}`), and the `{{SCOPES}}` model. If single-project, tell the user the `backend/` + `frontend/` scope split collapses to one scope.
+- **Repo topology** → `{{REPO_TOPOLOGY}}` (monorepo vs single), which sub-projects exist and their dirs (`{{BACKEND_DIR}}`, `{{FRONTEND_DIR}}`, `{{SOURCE_DIR}}`, `{{IAC_DIR}}`), and the `{{SCOPES}}` model. Ask for **every** backend and frontend dir: a monorepo can hold several of each (two web apps, an API and a worker), on different stacks; `{{BACKEND_DIR}}` and `{{FRONTEND_DIR}}` then hold them all. If single-project, tell the user the `backend/` + `frontend/` scope split collapses to one scope.
 - **Tech stack & languages** → `{{PRIMARY_LANGUAGE}}`, `{{BACKEND_LANGUAGE}}`/`{{BACKEND_FRAMEWORK}}`/`{{BACKEND_RUNTIME}}`, `{{FRONTEND_LANGUAGE}}`/`{{FRONTEND_FRAMEWORK}}`, `{{DATABASE}}`, `{{ORM}}`, `{{CLOUD_PROVIDER}}`, `{{AUTH_PROVIDER}}`, `{{PACKAGE_MANAGER}}`, `{{IAC_TOOL}}`, `{{AI_STACK}}` (or "none").
-- **Commands** → `{{INSTALL_CMD}}`, `{{DEV_CMD}}`, `{{BUILD_CMD}}`, `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}`, `{{MIGRATE_CMD}}`.
+- **Commands** → `{{INSTALL_CMD}}`, `{{DEV_CMD}}`, `{{BUILD_CMD}}`, `{{TEST_CMD}}`, `{{LINT_CMD}}`, `{{TYPECHECK_CMD}}`, `{{MIGRATE_CMD}}`. When sub-projects use different tools (e.g. a .NET API beside Node apps), ask for each dir's lint and type-check command (→ `PACKAGE_CMDS`) and its own install/dev/build/test commands.
 - **Quality gate** (`.claude/scripts/quality-gate.sh`; every value optional) → a build and a test command runnable from the repo root (the test command should also write coverage: which format and where — lcov, Cobertura, JaCoCo or a Go profile), the source and test file globs, and the limits. Propose `COVERAGE_MIN=80`, `COMPLEXITY_MAX=15`, `CRAP_MAX=30` and say complexity/CRAP need `pip install lizard`. Ask whether the linter's own complexity rule is on (e.g. ESLint `complexity`, ruff `C901`). Mutation testing is opt-in and slow; offer the stack's tool (Stryker for JS/TS and .NET, mutmut for Python, PIT for Java) and its threshold flag. Recommend `SUPPRESSION_CHECK=warn`, and adding the lint/coverage/mutation config files to `SENSITIVE_CONFIG_GLOBS`. Default when unsure: suppression guard on (warn), mutation off.
 - **Conventions & principles** → `{{LAYERING_PATTERN}}`, `{{VALIDATION_LIB}}`, `{{RESPONSE_ENVELOPE}}`, `{{DATA_ACCESS_LAYER}}`, `{{ROUTING_PATTERN}}`; any project-specific rules to record in `.ai/standards/project/**`.
 - **Version control** → `{{VCS_PROVIDER}}` (GitHub/GitLab/Bitbucket), `{{VCS_CLI}}` (gh/glab/git), `{{PR_TERM}}` (pull/merge request), `{{DEFAULT_BRANCH}}`, `{{PROTECTED_BRANCHES}}`, `{{DEPLOY_STAGES}}`, `{{BRANCH_PREFIXES}}`, `{{COMMIT_CONVENTION}}`, `{{TICKET_PREFIX}}` (tracker issue-key prefix, e.g. `PROJ` for `PROJ-1234` — ask whether commits reference tickets at all).
@@ -57,15 +57,21 @@ Once values are confirmed:
      and `vcs/` profiles as-is (don't treat them as skeletons to fill).
 2. Replace each `> [FILL IN: ...]` block with the user's content. If a section genuinely doesn't apply
    (e.g. no frontend, no AI stack), delete that section/file and note it.
-3. Set the scope model in `.ai/config/current-scope.md` (usually leave as `auto`).
+3. A dir token that holds several dirs (`{{BACKEND_DIR}}`, `{{FRONTEND_DIR}}`) is written in prose as each dir
+   in its own backticks, comma-separated (`apps/web`, `apps/admin`), replacing the token's own backticks.
+   Where a section describes one dir (a `CLAUDE.md` commands block, a `project-config.md` stack or
+   commands section, a project-structure tree), or a token is followed by a path or names where a
+   command runs (`{{FRONTEND_DIR}}/.env.local.example`, "run `{{TEST_CMD}}` from `{{BACKEND_DIR}}`"),
+   repeat that line or section once per dir.
+4. Set the scope model in `.ai/config/current-scope.md` (usually leave as `auto`).
 
 ## Step 4 — Write behavioral config
 
 Write `.claude/hooks/hooks.env` from the answers:
 - `PROTECTED_BRANCHES`, `WORK_BRANCH_PREFIXES`, `VCS_CLI`, `PR_TERM`
 - `DEPLOY_CMD`, `PROD_STAGE` (if there's a deploy step)
-- `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR`
-- `TYPECHECK_CMD`, `LINT_CMD`
+- `PACKAGE_DIRS`, `BACKEND_DIR`, `FRONTEND_DIR` — space-separated lists: every sub-project dir, every backend dir, every frontend dir
+- `TYPECHECK_CMD`, `LINT_CMD` (the commands most dirs share), and `PACKAGE_CMDS` for each dir whose tools differ: `dir|lint|typecheck` entries separated by `;`, a blank field for the shared command, `-` for none (see the comment in `hooks.env`)
 - Quality gate: `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `SOURCE_GLOBS`, `TEST_FILE_PATTERNS`, `COVERAGE_REPORTS`, `COVERAGE_MIN`, `COVERAGE_EXEMPT_GLOBS` (entry points and generated code tests cannot reach), `COMPLEXITY_MAX`, `CRAP_MAX`, `MUTATION_CMD`, `MUTATION_GLOBS` (the file types the mutation tool covers), `SUPPRESSION_CHECK` (keep the default `SUPPRESSION_PATTERNS` and `TEST_ASSERTION_PATTERNS` unless the stack needs others). Then run `.claude/scripts/quality-gate.sh --base HEAD~1` once (the last commit plus any uncommitted work; it needs at least two commits) and show the user its output, so a wrong command or report path surfaces now rather than in the first feature. If `MUTATION_CMD` is set, also confirm its tool runs here (e.g. `dotnet tool restore`, `npx stryker --version`) and that it mutates only the changed files (`{files}` or `{each:…}`, see `hooks.env`; a pattern that matches nothing can exit 0 with no score): the gate only runs it with `--mutation`, so a missing tool or a wrong pattern would otherwise first show in a feature. Then run `.claude/scripts/quality-gate.sh --baseline` and walk the user through `.ai/reports/quality-baseline.md`: confirm or adjust the limits against it (the gate judges only touched code, and old code already over a limit only WARNs, so a messy codebase is no reason for loose limits), add to `COVERAGE_EXEMPT_GLOBS` the files under "In no coverage report" that tests cannot reach (config files, entry points), and re-run it. If its line coverage says no report loaded, fix the report path or the test command first: never exempt files because of that. Values chosen here are the starting point, not a loosening, so the tuning rule's decisions line does not apply to them (Step 5's line records the setup). Commit the file with the setup.
 - `MIGRATIONS_GLOB` + `MIGRATIONS_REGEN_CMD` (if generated migrations exist), `SENSITIVE_CONFIG_GLOBS`
 - `E2E_FORBIDDEN_HOSTS` — the production hosts from the Test environments round (substrings that identify them)

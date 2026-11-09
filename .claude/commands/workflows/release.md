@@ -61,8 +61,8 @@ Get explicit confirmation before proceeding to step 4.
 ## Step 4 — Finalize
 
 On user confirmation:
-1. Bump the version in each sub-project's manifest — e.g. `{{BACKEND_DIR}}` (semver: fix → patch, feat → minor, BREAKING → major)
-2. Bump the version in the other sub-projects' manifests — e.g. `{{FRONTEND_DIR}}` — to match
+1. Bump the version in each sub-project's manifest — e.g. each `{{BACKEND_DIR}}` directory (semver: fix → patch, feat → minor, BREAKING → major)
+2. Bump the version in the other sub-projects' manifests — e.g. each `{{FRONTEND_DIR}}` directory — to match
 3. Update `CHANGELOG.md` with the release notes content (Keep a Changelog format)
 4. **Deployment guide** — only if switched on in `project-config.md` → Release deliverables; skip
    this step otherwise. Create-or-merge `docs/release/<version>/deployment-guide-<version>.md`,

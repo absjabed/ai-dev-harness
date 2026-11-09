@@ -13,6 +13,10 @@
 
 ## Tech Stack
 
+> [FILL IN: more than one backend or frontend directory (a monorepo)? Give each its own
+> section here and under Development Commands, e.g. `### Frontend — admin (apps/admin)`, with
+> its own stack and commands. Delete this note.]
+
 ### Backend (`{{BACKEND_DIR}}`)
 
 - **Language:** {{BACKEND_LANGUAGE}}

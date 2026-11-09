@@ -14,6 +14,7 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "$HOOK_DIR/hooks.env" ]] && source "$HOOK_DIR/hooks.env"
 
 PACKAGE_DIRS="${PACKAGE_DIRS:-}"
+PACKAGE_CMDS="${PACKAGE_CMDS:-}"
 BACKEND_DIR="${BACKEND_DIR:-}"
 FRONTEND_DIR="${FRONTEND_DIR:-}"
 TYPECHECK_CMD="${TYPECHECK_CMD:-}"
@@ -99,20 +100,54 @@ in_dir() {
   fi
   [[ "$FILE" == */"$1"/* || "$FILE" == "$1"/* ]]
 }
+# helper: is $FILE inside any of the space-separated dirs in $1 ?
+in_any() {
+  local d
+  for d in $1; do in_dir "$d" && return 0; done
+  return 1
+}
+
+# PACKAGE_CMDS: optional per-folder commands, "dir|lint|typecheck" entries separated by ";".
+trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; printf '%s' "${s%"${s##*[![:space:]]}"}"; }
+norm_dir() { local d; d="$(trim "$1")"; d="${d#./}"; [[ "$d" == "." ]] || d="${d%/}"; [[ -n "$d" || -z "$(trim "$1")" ]] || d="."; printf '%s' "$d"; }
+# pkg_dirs <PACKAGE_DIRS> <PACKAGE_CMDS>: each PACKAGE_CMDS dir, then the PACKAGE_DIRS not among them.
+pkg_dirs() {
+  local out=" " d rest
+  while IFS='|' read -r d rest; do
+    d="$(norm_dir "$d")"
+    if [[ -n "$d" && "$out" != *" $d "* ]]; then out+="$d "; fi
+  done <<< "$(printf '%s' "$2" | tr ';' '\n')"
+  for d in $1; do [[ "$out" == *" $(norm_dir "$d") "* ]] || out+="$d "; done
+  trim "$out"
+}
+# pkg_cmd <PACKAGE_CMDS> <dir> <2 = lint | 3 = typecheck> <default>: the command for <dir>. An
+# entry's blank field keeps <default>; "-" means none there (prints nothing).
+pkg_cmd() {
+  local out="$4" d l t c
+  while IFS='|' read -r d l t; do
+    [[ -n "$d" && "$(norm_dir "$d")" == "$(norm_dir "$2")" ]] || continue
+    if [[ "$3" == 2 ]]; then c="$(trim "$l")"; else c="$(trim "$t")"; fi
+    if [[ "$c" == "-" ]]; then out=""; elif [[ -n "$c" ]]; then out="$c"; fi
+  done <<< "$(printf '%s' "$1" | tr ';' '\n')"
+  printf '%s' "$out"
+}
+PKG_DIRS="$(pkg_dirs "$PACKAGE_DIRS" "$PACKAGE_CMDS")"
 
 # ── Type-check / lint the changed sub-project (config-driven) ────────────────
 PKG_ROOT="${FILE_TOP:-$REPO_ROOT}"  # the edited file's checkout: an epic worktree has its own
-if [[ -n "$PACKAGE_DIRS" && -n "$REPO_ROOT" ]]; then
-  for d in $PACKAGE_DIRS; do
+if [[ -n "$PKG_DIRS" && -n "$REPO_ROOT" ]]; then
+  for d in $PKG_DIRS; do
     if in_dir "$d"; then
       [[ -d "$PKG_ROOT/$d" ]] || PKG_ROOT="$REPO_ROOT"  # a nested repo: its root holds no $d
+      TC="$(pkg_cmd "$PACKAGE_CMDS" "$d" 3 "$TYPECHECK_CMD")"
+      LC="$(pkg_cmd "$PACKAGE_CMDS" "$d" 2 "$LINT_CMD")"
       # Only a failing run is reported, capped at 20 lines, so a clean edit costs no context.
-      if [[ -n "$TYPECHECK_CMD" && -d "${PKG_ROOT}/${d}" ]]; then
-        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$TYPECHECK_CMD" 2>&1)" \
+      if [[ -n "$TC" && -d "${PKG_ROOT}/${d}" ]]; then
+        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$TC" 2>&1)" \
           || note "Type-check failed in ${d}/ after editing $FILE:"$'\n'"$(printf '%s\n' "$OUT" | head -20)"
       fi
-      if [[ -n "$LINT_CMD" && -d "${PKG_ROOT}/${d}" ]]; then
-        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$LINT_CMD \"$FILE\"" 2>&1)" \
+      if [[ -n "$LC" && -d "${PKG_ROOT}/${d}" ]]; then
+        OUT="$(cd "${PKG_ROOT}/${d}" && eval "$LC \"$FILE\"" 2>&1)" \
           || note "Lint failed on $FILE:"$'\n'"$(printf '%s\n' "$OUT" | head -20)"
       fi
       break
@@ -122,8 +157,9 @@ fi
 
 # ── Optional: multi-tenant isolation check ───────────────────────────────────
 # Warn when a diff adds query patterns but no tenant key. Heuristic, not a gate.
+# BACKEND_DIR and FRONTEND_DIR may each list several dirs (space-separated).
 if [[ "$TENANT_ISOLATION_CHECK" == "on" && -n "$TENANT_KEY" ]]; then
-  if [[ -z "$BACKEND_DIR" ]] || in_dir "$BACKEND_DIR"; then
+  if [[ -z "$BACKEND_DIR" ]] || in_any "$BACKEND_DIR"; then
     DIFF="$(git diff HEAD -- "$FILE" 2>/dev/null || true)"
     if [[ -n "$DIFF" ]]; then
       ADDED="$(echo "$DIFF" | grep '^+' | grep -v '^+++' || true)"
@@ -141,7 +177,7 @@ fi
 
 # ── Optional: frontend env-accessor check ────────────────────────────────────
 if [[ "$FRONTEND_ENV_CHECK" == "on" && -n "$FRONTEND_ENV_BAD_PATTERN" ]]; then
-  if [[ -z "$FRONTEND_DIR" ]] || in_dir "$FRONTEND_DIR"; then
+  if [[ -z "$FRONTEND_DIR" ]] || in_any "$FRONTEND_DIR"; then
     if grep -qE "$FRONTEND_ENV_BAD_PATTERN" "$FILE" 2>/dev/null; then
       note "WARNING: $FILE uses a disallowed env accessor (/$FRONTEND_ENV_BAD_PATTERN/).${FRONTEND_ENV_GOOD_HINT:+ Use $FRONTEND_ENV_GOOD_HINT instead.}"
     fi
@@ -150,7 +186,7 @@ fi
 
 # ── Optional: raw-hex design-token check ─────────────────────────────────────
 if [[ "$DESIGN_TOKEN_CHECK" == "on" ]]; then
-  if [[ -z "$FRONTEND_DIR" ]] || in_dir "$FRONTEND_DIR"; then
+  if [[ -z "$FRONTEND_DIR" ]] || in_any "$FRONTEND_DIR"; then
     # Exempt token-source files (the theme/palette definitions) via DESIGN_TOKEN_EXEMPT_GLOBS.
     EXEMPT=0
     set -f  # keep the configured globs literal while word-splitting them below
@@ -180,10 +216,10 @@ if [[ "$TDD_CHECK" == "on" && -n "$TEST_FILE_PATTERNS" && -n "$REPO_ROOT" ]]; th
   for g in $TEST_FILE_PATTERNS ${TDD_EXEMPT_GLOBS:-}; do
     [[ "$FILE" == $g ]] && SKIP=1 && break
   done
-  # When PACKAGE_DIRS is set, only nudge on files inside a sub-project.
-  if [[ "$SKIP" -eq 0 && -n "$PACKAGE_DIRS" ]]; then
+  # When PACKAGE_DIRS (or PACKAGE_CMDS) is set, only nudge on files inside a sub-project.
+  if [[ "$SKIP" -eq 0 && -n "$PKG_DIRS" ]]; then
     SKIP=1
-    for d in $PACKAGE_DIRS; do
+    for d in $PKG_DIRS; do
       in_dir "$d" && SKIP=0 && break
     done
   fi
