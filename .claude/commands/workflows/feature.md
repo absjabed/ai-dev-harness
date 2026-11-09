@@ -18,14 +18,14 @@ allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwr
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
 2. Otherwise, analyze "$ARGUMENTS" to determine scope. Features often span both layers — when in doubt, pick fullstack:
    - **backend** — a data-layer change, a migration, a new/changed API endpoint, a background service, and (where the backend renders its own UI) a **server-rendered feature** end to end: view + controller/handler + service + data access. A server-rendered feature is **backend**, NOT fullstack.
-   - **frontend** — work inside `{{FRONTEND_DIR}}`: a screen redesign, a styling fix, client-side validation, or porting a server-rendered screen into the {{FRONTEND_FRAMEWORK}} app.
+   - **frontend** — work inside `{{FRONTEND_DIR}}` (any of them, if several): a screen redesign, a styling fix, client-side validation, or porting a server-rendered screen into the {{FRONTEND_FRAMEWORK}} app.
    - **fullstack** — a change spanning the {{FRONTEND_FRAMEWORK}} app **and** a new/changed API together.
    - If unsure → ask the user.
    > [FILL IN: replace the examples above with signals specific to your stack — e.g. **backend:**
    > {{BACKEND_LANGUAGE}} file extensions, {{BACKEND_FRAMEWORK}} controllers/handlers, server-rendered
-   > view files, {{ORM}} migrations, DI wiring, anything under `{{BACKEND_DIR}}`; **frontend:**
+   > view files, {{ORM}} migrations, DI wiring, anything under `{{BACKEND_DIR}}` (any of them); **frontend:**
    > {{FRONTEND_LANGUAGE}} extensions, {{FRONTEND_FRAMEWORK}} components, {{COMPONENT_LIBRARY}},
-   > anything under `{{FRONTEND_DIR}}`. If the project is mid-migration between two UI stacks, state
+   > anything under `{{FRONTEND_DIR}}` (any of them). If the project is mid-migration between two UI stacks, state
    > the rule for which one a new feature belongs to.]
 3. Load only the files for the determined scope using the Read tool:
    - **backend**: `.ai/config/backend/project-config.md`, `.ai/context/backend/architecture.md`,

@@ -106,9 +106,9 @@ It interviews you in rounds and then writes every skeleton. Have answers ready f
 | Round | What it asks |
 |---|---|
 | Identity & domain | Product name, tagline, purpose, target users, core journeys |
-| Repo topology | Monorepo or single project; the backend / frontend / infra directories |
+| Repo topology | Monorepo or single project; every backend and frontend directory (a monorepo may have several of each) and the infra directory |
 | Tech stack | Languages, frameworks, database, ORM, cloud, auth provider, package manager |
-| Commands | install / dev / build / test / lint / typecheck / migrate |
+| Commands | install / dev / build / test / lint / typecheck / migrate; each directory's own lint and typecheck when sub-projects use different tools |
 | Conventions | Layering pattern, validation library, response envelope, routing pattern |
 | Version control | Provider, CLI, PR term, default and protected branches, branch prefixes, commit convention, ticket prefix |
 | Security | Auth mechanism; whether multi-tenant isolation applies and what the tenant key is |
@@ -153,7 +153,7 @@ An un-customised file blocks nothing, even though the hooks look fully installed
 | Key | Effect if unset |
 |---|---|
 | `PROTECTED_BRANCHES` | Direct pushes to main/develop are not blocked |
-| `TYPECHECK_CMD` / `LINT_CMD` + `PACKAGE_DIRS` | No type-check or lint runs after edits |
+| `TYPECHECK_CMD` / `LINT_CMD` + `PACKAGE_DIRS` (or `PACKAGE_CMDS` per dir, for mixed stacks) | No type-check or lint runs after edits |
 | `GATE_BUILD_CMD`, `GATE_TEST_CMD`, `COVERAGE_REPORTS` + the limits | The quality gate prints `NOT CONFIGURED` and the workflows fall back to the agent's own verification |
 | `SUPPRESSION_CHECK` | Nothing notices an agent silencing a lint rule, or skipping, deleting or rewriting a test, to get past the gate |
 | `MIGRATIONS_GLOB` | Generated migrations can be hand-edited without warning |

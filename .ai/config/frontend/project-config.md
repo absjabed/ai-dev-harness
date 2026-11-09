@@ -4,6 +4,8 @@
 ## Identity
 **Project**: {{PROJECT_NAME}} — Frontend
 **Root directory**: `{{FRONTEND_DIR}}`
+> [FILL IN: several frontend apps? List each directory, and give each its own framework and
+> commands below where they differ. Otherwise delete this note.]
 **Framework**: {{FRONTEND_FRAMEWORK}}
 **Language**: {{FRONTEND_LANGUAGE}}
 **Dev server**: > [FILL IN: dev server port]

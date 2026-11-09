@@ -4,6 +4,8 @@
 ## Identity
 **Project**: {{PROJECT_NAME}} — Backend API
 **Root directory**: `{{BACKEND_DIR}}`
+> [FILL IN: several backend services? List each directory, and give each its own runtime and
+> commands below where they differ. Otherwise delete this note.]
 **Runtime**: {{BACKEND_RUNTIME}}
 **Language**: {{BACKEND_LANGUAGE}}
 **Framework**: {{BACKEND_FRAMEWORK}}

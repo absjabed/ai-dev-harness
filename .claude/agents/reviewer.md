@@ -23,8 +23,8 @@ You are a code review sub-agent. Read-only for the project — you do NOT edit i
 **Scope determination (do this first, before any other action):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
 2. Otherwise, analyze the files being reviewed to determine scope:
-   - Files under `{{BACKEND_DIR}}/` → backend
-   - Files under `{{FRONTEND_DIR}}/` → frontend
+   - Files under `{{BACKEND_DIR}}` (any of them, if several) → backend
+   - Files under `{{FRONTEND_DIR}}` (any of them, if several) → frontend
    - Both → fullstack
 3. Load only the files for the determined scope using the Read tool:
    - **backend**: `.ai/config/backend/project-config.md`, `.ai/standards/project/backend/tech-specific.md`

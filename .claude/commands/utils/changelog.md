@@ -11,4 +11,4 @@ allowed-tools: Read, Bash
 Generate a changelog from git log since: $ARGUMENTS (default: last tag)
 
 Format as Keep a Changelog (keepachangelog.com). Group by: Added, Changed, Fixed, Security, Removed.
-Focus git log on the `{{BACKEND_DIR}}/` or `{{FRONTEND_DIR}}/` directory if scoped, otherwise all commits.
+Focus git log on the `{{BACKEND_DIR}}` or `{{FRONTEND_DIR}}` directories (all of that scope's, if several) if scoped, otherwise all commits.

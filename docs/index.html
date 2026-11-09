@@ -116,7 +116,7 @@ main a{color:var(--accent);text-underline-offset:2px}
         <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.1.0</span></div>
+    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.2.0</span></div>
   </div>
   <h2>Start here</h2>
   <a href="#what">What it is</a>
@@ -503,7 +503,10 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   it fills every skeleton and writes <code>.claude/hooks/hooks.env</code>.</p>
   <p>Shape the tree while you're there: single-project repos delete the <code>backend/</code> and
   <code>frontend/</code> subfolders; headless projects delete the design subtree; unused per-stack
-  reference folders can go.</p>
+  reference folders can go. A monorepo with several frontends or backends lists every directory:
+  <code>FRONTEND_DIR</code> and <code>BACKEND_DIR</code> take space-separated lists, and
+  <code>PACKAGE_CMDS</code> gives a directory on another stack its own lint and type-check
+  commands (<code>dir|lint|typecheck</code> entries separated by <code>;</code>).</p>
 </li>
 <li>
   <h3>Verify nothing is unfilled</h3>
@@ -521,7 +524,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   <thead><tr><th>Key</th><th>If left unset</th></tr></thead>
   <tbody>
   <tr><td><code>PROTECTED_BRANCHES</code></td><td>Direct pushes to main/develop aren't blocked</td></tr>
-  <tr><td><code>TYPECHECK_CMD</code> / <code>LINT_CMD</code> + <code>PACKAGE_DIRS</code></td><td>No checks run after edits</td></tr>
+  <tr><td><code>TYPECHECK_CMD</code> / <code>LINT_CMD</code> + <code>PACKAGE_DIRS</code> (or <code>PACKAGE_CMDS</code> per directory, for mixed stacks)</td><td>No checks run after edits</td></tr>
   <tr><td><code>MIGRATIONS_GLOB</code></td><td>Generated migrations can be hand-edited silently</td></tr>
   <tr><td><code>SENSITIVE_CONFIG_GLOBS</code></td><td>No warning before editing secrets-bearing config</td></tr>
   <tr><td><code>TENANT_ISOLATION_CHECK</code> + <code>TENANT_KEY</code></td><td>No tenant-scoping check on data access</td></tr>
@@ -710,7 +713,7 @@ only what the change touched.</p>
 <table>
 <thead><tr><th>Check</th><th>Set in <code>hooks.env</code></th><th>Fails when</th></tr></thead>
 <tbody>
-<tr><td>Build, type-check, lint, tests</td><td><code>GATE_BUILD_CMD</code>, <code>TYPECHECK_CMD</code>, <code>LINT_CMD</code>, <code>GATE_TEST_CMD</code></td><td>A command exits non-zero</td></tr>
+<tr><td>Build, type-check, lint, tests</td><td><code>GATE_BUILD_CMD</code>, <code>TYPECHECK_CMD</code>, <code>LINT_CMD</code> (or <code>PACKAGE_CMDS</code>), <code>GATE_TEST_CMD</code></td><td>A command exits non-zero</td></tr>
 <tr><td>Diff coverage</td><td><code>COVERAGE_REPORTS</code>, <code>COVERAGE_MIN</code>, <code>COVERAGE_EXEMPT_GLOBS</code></td><td>Too few changed lines ran under test, or no report came from this run. A changed file that no report mentions counts as untested unless it is exempt or every changed line in it is an interface, enum, type or import line and it holds no function</td></tr>
 <tr><td>Complexity</td><td><code>COMPLEXITY_MAX</code></td><td>A new function, or one that got more complex, is over the limit</td></tr>
 <tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high. A touched function already over it also fails when a line the change touched in it is untested</td></tr>

@@ -10,8 +10,8 @@ disallowed-tools: Write, Edit, MultiEdit, NotebookEdit
 **Scope determination (do this first, before any other action):**
 1. Read `.ai/config/current-scope.md` — if it starts with `# Forced scope:`, use that scope and skip to step 3.
 2. Otherwise, analyze "$ARGUMENTS" to determine scope:
-   - Files/paths under `{{BACKEND_DIR}}/` → backend
-   - Files/paths under `{{FRONTEND_DIR}}/` → frontend
+   - Files/paths under `{{BACKEND_DIR}}` (any of them, if several) → backend
+   - Files/paths under `{{FRONTEND_DIR}}` (any of them, if several) → frontend
    - Both, or no specific target given → fullstack
 3. Load only the files for the determined scope using the Read tool:
    - **backend**: `.ai/config/backend/project-config.md`, `.ai/context/backend/architecture.md`,

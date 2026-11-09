@@ -21,7 +21,8 @@
 #
 # Checks, each skipped while its hooks.env value is blank:
 #   build        GATE_BUILD_CMD, from the repo root
-#   typecheck    TYPECHECK_CMD, inside each PACKAGE_DIRS dir the change touched
+#   typecheck    TYPECHECK_CMD, inside each PACKAGE_DIRS dir the change touched (a dir's
+#                PACKAGE_CMDS entry overrides TYPECHECK_CMD and LINT_CMD there)
 #   lint         LINT_CMD on the changed source files, inside their package dir
 #   test         GATE_TEST_CMD, from the repo root; it should also write COVERAGE_REPORTS
 #   metrics      diff coverage (COVERAGE_MIN), complexity (COMPLEXITY_MAX) and CRAP (CRAP_MAX)
@@ -57,7 +58,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # line per key counts: '...' and "..." without $ or a backtick, joined segments, \x escapes, a
 # bare word, a trailing # comment. A key on any other kind of line is left unset (the base's
 # value applies where one is kept) and listed under gate-config.
-CFG_KEYS="GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD PACKAGE_DIRS SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_REPORTS COVERAGE_MIN COVERAGE_EXEMPT_GLOBS COMPLEXITY_MAX CRAP_MAX MUTATION_CMD MUTATION_GLOBS SUPPRESSION_CHECK SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS"
+CFG_KEYS="GATE_BUILD_CMD GATE_TEST_CMD TYPECHECK_CMD LINT_CMD PACKAGE_DIRS PACKAGE_CMDS SOURCE_GLOBS TEST_FILE_PATTERNS COVERAGE_REPORTS COVERAGE_MIN COVERAGE_EXEMPT_GLOBS COMPLEXITY_MAX CRAP_MAX MUTATION_CMD MUTATION_GLOBS SUPPRESSION_CHECK SUPPRESSION_PATTERNS TEST_ASSERTION_PATTERNS"
 CFG_BAD=""
 cfg_value() {  # cfg_value <text after KEY=>: prints the value, or fails if bash would expand it
   local s="$1" out="" seg
@@ -164,6 +165,31 @@ run_step() {
 skip() { printf '%-12s SKIP  %s\n' "$1" "$2"; }
 not_set() { skip "$1" "$2 not set"; NOT_SET+=("$1"); }  # build and test only: a PASS without them is partial
 
+# PACKAGE_CMDS: optional per-folder commands, "dir|lint|typecheck" entries separated by ";".
+trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; printf '%s' "${s%"${s##*[![:space:]]}"}"; }
+norm_dir() { local d; d="$(trim "$1")"; d="${d#./}"; [[ "$d" == "." ]] || d="${d%/}"; [[ -n "$d" || -z "$(trim "$1")" ]] || d="."; printf '%s' "$d"; }
+# pkg_dirs <PACKAGE_DIRS> <PACKAGE_CMDS>: each PACKAGE_CMDS dir, then the PACKAGE_DIRS not among them.
+pkg_dirs() {
+  local out=" " d rest
+  while IFS='|' read -r d rest; do
+    d="$(norm_dir "$d")"
+    if [[ -n "$d" && "$out" != *" $d "* ]]; then out+="$d "; fi
+  done <<< "$(printf '%s' "$2" | tr ';' '\n')"
+  for d in $1; do [[ "$out" == *" $(norm_dir "$d") "* ]] || out+="$d "; done
+  trim "$out"
+}
+# pkg_cmd <PACKAGE_CMDS> <dir> <2 = lint | 3 = typecheck> <default>: the command for <dir>. An
+# entry's blank field keeps <default>; "-" means none there (prints nothing).
+pkg_cmd() {
+  local out="$4" d l t c
+  while IFS='|' read -r d l t; do
+    [[ -n "$d" && "$(norm_dir "$d")" == "$(norm_dir "$2")" ]] || continue
+    if [[ "$3" == 2 ]]; then c="$(trim "$l")"; else c="$(trim "$t")"; fi
+    if [[ "$c" == "-" ]]; then out=""; elif [[ -n "$c" ]]; then out="$c"; fi
+  done <<< "$(printf '%s' "$1" | tr ';' '\n')"
+  printf '%s' "$out"
+}
+
 # expand_each <cmd>: replaces one {each:TEMPLATE} with TEMPLATE once per file in MUT_SOURCES,
 # each word shell-quoted; {file} = the file's path, {name} = its file name. For tools that take
 # one flag per file, e.g. Stryker.NET's "-m".
@@ -252,6 +278,7 @@ fi
 #   COVERAGE_MIN (higher), COMPLEXITY_MAX and CRAP_MAX (lower)
 #   GATE_BUILD_CMD, GATE_TEST_CMD, TYPECHECK_CMD, LINT_CMD, MUTATION_CMD  the base's, if the change blanks one
 #                                             (a changed command is used, and listed)
+#   a dir's PACKAGE_CMDS type-check or lint   the base's for that dir, if the change blanks it
 # Only keys the base's hooks.env sets count, so a new hooks.env (setup) is read as it is.
 BASE_CFG="$(git show "$MERGE_BASE:.claude/hooks/hooks.env" 2>/dev/null | tr -d '\r')"
 # base_has <KEY>: the base's hooks.env assigns KEY. base_value <KEY>: its value there.
@@ -288,7 +315,7 @@ if [[ -n "$BASE_CFG" ]]; then
   # SOURCE_GLOBS also scopes typecheck and lint. Only a harness with the gate has the key, so an
   # upgrade from one without it still reads the change's lists.
   lint_on=$base_on
-  [[ -n "$(base_value TYPECHECK_CMD)$(base_value LINT_CMD)" ]] && lint_on=1
+  [[ -n "$(base_value TYPECHECK_CMD)$(base_value LINT_CMD)$(base_value PACKAGE_CMDS)" ]] && lint_on=1
   if [[ $lint_on -eq 1 ]] && base_has SOURCE_GLOBS; then  # may only grow: a narrower list judges less
     b="$(base_value SOURCE_GLOBS)"
     if [[ -z "$b" ]]; then SOURCE_GLOBS=""
@@ -308,6 +335,50 @@ if [[ -n "$BASE_CFG" ]]; then
     if [[ -z "${!k:-}" ]] && base_has "$k"; then printf -v "$k" '%s' "$(base_value "$k")"; fi
   done
 fi
+
+# Each package dir's type-check and lint commands: its PACKAGE_CMDS entry, else TYPECHECK_CMD /
+# LINT_CMD. A command the change blanks (or sets to "-") for a dir the base commit checked (itself,
+# or a base dir it sits under, "." included) is the base's for that dir, as for the commands above;
+# so is a dir the base's PACKAGE_CMDS gave a command and the change no longer lists.
+PKG_DIRS="$(pkg_dirs "${PACKAGE_DIRS:-}" "${PACKAGE_CMDS:-}")"
+PKG_D=(); PKG_TC=(); PKG_LC=(); KEPT_PKG=""
+B_DIRS=""; B_CMD_DIRS=""
+if [[ -n "$BASE_CFG" ]]; then
+  B_CMDS="$(base_value PACKAGE_CMDS)"; B_TC="$(base_value TYPECHECK_CMD)"; B_LC="$(base_value LINT_CMD)"
+  b="$(pkg_dirs "$(base_value PACKAGE_DIRS)" "$B_CMDS")"
+  for d in ${b:-.}; do B_DIRS="$B_DIRS $(norm_dir "$d")"; done
+  B_CMD_DIRS="$(pkg_dirs "" "$B_CMDS")"
+fi
+base_dir() {  # base_dir <dir>: the base's package dir that checked <dir>: itself, else the closest above it
+  local b best=""
+  for b in $B_DIRS; do
+    if [[ "$b" == "." || "$1" == "$b" || "$1" == "$b"/* ]] && [[ -z "$best" || ${#b} -gt ${#best} ]]; then best="$b"; fi
+  done
+  printf '%s' "$best"
+}
+for d in ${PKG_DIRS:-.}; do
+  tc="$(pkg_cmd "${PACKAGE_CMDS:-}" "$d" 3 "${TYPECHECK_CMD:-}")"
+  lc="$(pkg_cmd "${PACKAGE_CMDS:-}" "$d" 2 "${LINT_CMD:-}")"
+  bd="$(base_dir "$(norm_dir "$d")")"
+  if [[ -n "$bd" ]]; then
+    if [[ -z "$tc" ]]; then
+      tc="$(pkg_cmd "$B_CMDS" "$bd" 3 "$B_TC")"; [[ -n "$tc" ]] && KEPT_PKG="$KEPT_PKG PACKAGE_CMDS($d typecheck)"
+    fi
+    if [[ -z "$lc" ]]; then
+      lc="$(pkg_cmd "$B_CMDS" "$bd" 2 "$B_LC")"; [[ -n "$lc" ]] && KEPT_PKG="$KEPT_PKG PACKAGE_CMDS($d lint)"
+    fi
+  fi
+  PKG_D+=("$d"); PKG_TC+=("$tc"); PKG_LC+=("$lc")
+done
+for d in $B_CMD_DIRS; do  # the change dropped the dir from PACKAGE_CMDS (and PACKAGE_DIRS)
+  listed=0
+  for c in ${PKG_DIRS:-.}; do [[ "$(norm_dir "$c")" == "$d" ]] && listed=1 && break; done
+  [[ $listed -eq 1 ]] && continue
+  tc="$(pkg_cmd "$B_CMDS" "$d" 3 "$B_TC")"; lc="$(pkg_cmd "$B_CMDS" "$d" 2 "$B_LC")"
+  [[ -z "$tc$lc" ]] && continue
+  PKG_D+=("$d"); PKG_TC+=("$tc"); PKG_LC+=("$lc"); PKG_DIRS="${PKG_DIRS:-.} $d"
+  KEPT_PKG="$KEPT_PKG PACKAGE_CMDS($d${tc:+ typecheck}${lc:+ lint})"
+done
 
 # a value on a line the gate cannot read, with no base value standing in: its check
 # would silently not run (or SKIP as "not set"), so it FAILs until the line is made plain.
@@ -396,8 +467,9 @@ else
   # Every changed line that is not a comment: assignments, exports, anything bash would run.
   cfg_lines="$(git diff --no-ext-diff --no-textconv --text -U0 "$MERGE_BASE" -- "$CFG" 2>/dev/null \
     | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]*(#|$)')"
-  # Every NAME= on the line, not just the first (a second assignment would hide behind it).
-  cfg_keys="$(printf '%s\n' "$cfg_lines" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
+  # Every NAME= on the line, not just the first (a second assignment would hide behind it). Quoted
+  # text is dropped first: a PACKAGE_CMDS value holds "|" and ";", which are not assignments there.
+  cfg_keys="$(printf '%s\n' "$cfg_lines" | sed -E "s/'[^']*'//g; s/\"([^\"\\\\]|\\\\.)*\"//g" | grep -oE '(^[+-]|[;&|[:space:]])[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' \
     | sed -E 's/^[-+;&|[:space:]]*(export[[:space:]]+)?//; s/=$//' | sort -u | tr '\n' ' ')"
   cfg_keys="${cfg_keys% }"
   cfg_other="$(printf '%s\n' "$cfg_lines" | grep -vcE '^[+-][[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*=' || true)"
@@ -410,6 +482,7 @@ else
 fi
 kept=""
 for k in $KEPT_KEYS; do w="WORK_$k"; [[ "${!w}" != "${!k:-}" ]] && kept="$kept $k"; done
+kept="$kept$KEPT_PKG"
 [[ -n "$kept" ]] && printf '%-12s WARN  the base commit'"'"'s value was kept for%s: the change'"'"'s counts once merged (land such a hooks.env change on its own first)\n' gate-config "$kept"
 [[ -n "$PATTERN_NOTES" ]] && printf '%-12s WARN  a pattern does not compile as an extended regex; used instead:%s\n' gate-config "$PATTERN_NOTES"
 [[ -n "$BAD_PATTERNS" ]] && { FAILED=1; printf '%-12s FAIL  no value of%s compiles as an extended regex, so its check could not run\n' gate-config "$BAD_PATTERNS"; }
@@ -473,16 +546,17 @@ else
 fi
 
 # ── typecheck + lint, per package dir the change touched ─────────────────────
-if [[ -n "${TYPECHECK_CMD:-}" || -n "${LINT_CMD:-}" ]]; then
-  OUTSIDE=0
-  if [[ -n "${PACKAGE_DIRS:-}" ]]; then
-    for f in "${SOURCES[@]}" "${TESTS[@]}"; do
-      inside=0
-      for d in $PACKAGE_DIRS; do [[ "$d" == "." || "$f" == "$d"/* ]] && inside=1 && break; done
-      [[ $inside -eq 0 ]] && OUTSIDE=$((OUTSIDE + 1))
-    done
-  fi
-  for d in ${PACKAGE_DIRS:-.}; do
+OUTSIDE=0
+if [[ -n "$PKG_DIRS" ]]; then
+  for f in "${SOURCES[@]}" "${TESTS[@]}"; do
+    inside=0
+    for d in $PKG_DIRS; do [[ "$d" == "." || "$f" == "$d"/* ]] && inside=1 && break; done
+    [[ $inside -eq 0 ]] && OUTSIDE=$((OUTSIDE + 1))
+  done
+fi
+if [[ -n "$(printf '%s' "${PKG_TC[@]}" "${PKG_LC[@]}")" ]]; then
+  for i in "${!PKG_D[@]}"; do
+    d="${PKG_D[$i]}"; tc="${PKG_TC[$i]}"; lc="${PKG_LC[$i]}"
     lint_files=()
     touched=0
     for f in "${SOURCES[@]}" "${TESTS[@]}"; do
@@ -492,18 +566,24 @@ if [[ -n "${TYPECHECK_CMD:-}" || -n "${LINT_CMD:-}" ]]; then
     for f in "${DELETED[@]}"; do [[ "$d" == "." || "$f" == "$d"/* ]] && touched=1; done  # a deletion can break the build
     [[ $touched -eq 0 ]] && continue
     [[ -d "$d" ]] || { skip typecheck "$d no longer exists (the build covers what used it)"; continue; }
-    if [[ -n "${TYPECHECK_CMD:-}" ]]; then
-      run_step typecheck "$d" "$TYPECHECK_CMD" "$d" || OTHERS_OK=0
+    if [[ -n "$tc" ]]; then
+      run_step typecheck "$d" "$tc" "$d" || OTHERS_OK=0
+    elif [[ -n "${PACKAGE_CMDS:-}" ]]; then
+      skip typecheck "no type-check command for $d (TYPECHECK_CMD, PACKAGE_CMDS)"
     else
       skip typecheck "TYPECHECK_CMD not set"
     fi
-    if [[ -z "${LINT_CMD:-}" ]]; then
-      skip lint "LINT_CMD not set"
+    if [[ -z "$lc" ]]; then
+      if [[ -n "${PACKAGE_CMDS:-}" ]]; then skip lint "no lint command for $d (LINT_CMD, PACKAGE_CMDS)"; else skip lint "LINT_CMD not set"; fi
     elif [[ ${#lint_files[@]} -gt 0 ]]; then
       quoted="$(printf '%q ' "${lint_files[@]}")"
-      run_step lint "$d" "$LINT_CMD $quoted" "$d, ${#lint_files[@]} file(s)" || OTHERS_OK=0
+      run_step lint "$d" "$lc $quoted" "$d, ${#lint_files[@]} file(s)" || OTHERS_OK=0
     fi
   done
+  [[ $OUTSIDE -gt 0 ]] && skip lint "$OUTSIDE changed file(s) outside PACKAGE_DIRS are not type-checked or linted here"
+elif [[ -n "${TYPECHECK_CMD:-}${LINT_CMD:-}${PACKAGE_CMDS:-}" ]]; then  # every dir set to "-"
+  skip typecheck "no package dir has a type-check command (TYPECHECK_CMD, PACKAGE_CMDS)"
+  skip lint "no package dir has a lint command (LINT_CMD, PACKAGE_CMDS)"
   [[ $OUTSIDE -gt 0 ]] && skip lint "$OUTSIDE changed file(s) outside PACKAGE_DIRS are not type-checked or linted here"
 else
   skip typecheck "TYPECHECK_CMD not set"
