@@ -116,7 +116,7 @@ main a{color:var(--accent);text-underline-offset:2px}
         <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.0.0</span></div>
+    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.1.0</span></div>
   </div>
   <h2>Start here</h2>
   <a href="#what">What it is</a>
@@ -133,6 +133,7 @@ main a{color:var(--accent);text-underline-offset:2px}
   <a href="#hooks">Hooks &amp; guardrails</a>
   <a href="#rules">Path-scoped rules</a>
   <a href="#workflows">Workflows</a>
+  <a href="#gate">Quality gate</a>
   <a href="#runtime">Runtime verification</a>
   <a href="#release">Release flow</a>
   <a href="#standards">Standards &amp; templates</a>
@@ -140,6 +141,7 @@ main a{color:var(--accent);text-underline-offset:2px}
   <a href="#scope">Scope model</a>
   <a href="#artifacts">Where artifacts land</a>
   <h2>Reference</h2>
+  <a href="standards.html">Standards &amp; sources &rarr;</a>
   <a href="#portability">Other AI agents</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#cheat">Cheat sheet</a>
@@ -160,7 +162,7 @@ cooperates. It ships as a template: every project-specific value is a <code>{{TO
 <div class="grid">
   <div class="tile"><h4>16 agent personas</h4><p>BA, architect, designer, developer, QA, reviewer, security, DevOps, PM, release, orchestrator, critic and more.</p></div>
   <div class="tile"><h4>27 slash commands</h4><p>Studios, specialists, workflows, utilities and harness maintenance.</p></div>
-  <div class="tile"><h4>9 automated hooks</h4><p>Block force pushes, protected-branch pushes and any request to a production host; type-check and lint after edits; warn on sensitive files.</p></div>
+  <div class="tile"><h4>9 automated hooks</h4><p>Block force pushes, protected-branch pushes and any request to a production host; type-check and lint after edits; warn on sensitive files and on silenced checks or skipped tests.</p></div>
   <div class="tile"><h4>Resumable workflows</h4><p><code>STATE.md</code> records phase, tasks and decisions, so a fresh session picks up exactly where the last one stopped.</p></div>
 </div>
 
@@ -178,6 +180,7 @@ it.</p>
 <tr><td>AI-written code lands with a glance, because reviewing it is slower than accepting it</td><td>A reviewer and a security scanner run in parallel, in separate contexts, and report findings without changing code. CRITICAL findings block the commit, and nobody has to remember to run the check</td></tr>
 <tr><td>The code passed review and tests, but nobody called the API or clicked through the screen</td><td>After review and the security scan, runtime verification makes real API calls, runs the user journeys in a browser and checks the database read-only, all against the test environment. A failed or skipped check blocks the commit until you accept it</td></tr>
 <tr><td>"Tests pass", but nobody checks whether that part of the code has tests at all</td><td>Verification depends on the scope: real tests where a test runner exists, otherwise a clean build plus a documented manual reproduction. The report says which one happened</td></tr>
+<tr><td>The agent gets the checks to pass by silencing them, or writes code nobody can follow</td><td>The quality gate measures what the change touched: coverage of the changed lines, complexity and CRAP of each function, and optional mutation testing. The suppression guard catches a silenced lint rule, a coverage exclusion or a skipped test</td></tr>
 <tr><td>One bad command (a force push, a hard reset, a deploy to production) undoes a day's work</td><td>Hooks block these commands at the tool call, whatever the model intended</td></tr>
 <tr><td>Why a decision was made lives in a Slack thread that's now gone</td><td>Append-only <code>decisions</code>, <code>learnings</code> and <code>design-taste</code> logs. The designer reads the rejected patterns before proposing anything, so a rejected idea doesn't come back</td></tr>
 <tr><td>A long session loses the thread, and the next one starts cold</td><td><code>STATE.md</code> records the phase, tasks and decisions. Re-running the workflow resumes from there and checks that each finished phase's output still exists</td></tr>
@@ -256,7 +259,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <line x1="418" y1="181.0" x2="429" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="430" y="157.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
 <text x="474.0" y="178.0" class="dg-t" text-anchor="middle">Implement</text>
-<text x="474.0" y="192.0" class="dg-s" text-anchor="middle">+ tests</text>
+<text x="474.0" y="192.0" class="dg-s" text-anchor="middle">+ quality gate</text>
 <line x1="518" y1="181.0" x2="529" y2="181.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="530" y="157.0" width="88" height="48" rx="6" class="dg-n dg-par"/>
 <text x="574.0" y="178.0" class="dg-t" text-anchor="middle">Review ‖</text>
@@ -302,7 +305,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <line x1="518" y1="289.0" x2="529" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="530" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
 <text x="574.0" y="286.0" class="dg-t" text-anchor="middle">Verify +</text>
-<text x="574.0" y="300.0" class="dg-s" text-anchor="middle">blast radius</text>
+<text x="574.0" y="300.0" class="dg-s" text-anchor="middle">gate · blast radius</text>
 <line x1="618" y1="289.0" x2="629" y2="289.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="630" y="265.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
 <text x="674.0" y="293.0" class="dg-t" text-anchor="middle">Deploy notes</text>
@@ -332,7 +335,8 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <text x="274.0" y="378.0" class="dg-s" text-anchor="middle">+ guard</text>
 <line x1="318" y1="367.0" x2="329" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="330" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
-<text x="374.0" y="371.0" class="dg-t" text-anchor="middle">Verify</text>
+<text x="374.0" y="364.0" class="dg-t" text-anchor="middle">Verify</text>
+<text x="374.0" y="378.0" class="dg-s" text-anchor="middle">quality gate</text>
 <line x1="418" y1="367.0" x2="429" y2="367.0" class="dg-e" marker-end="url(#dg-arrow)"/>
 <rect x="430" y="343.0" width="88" height="48" rx="6" class="dg-n dg-proc"/>
 <text x="474.0" y="371.0" class="dg-t" text-anchor="middle">Deploy notes</text>
@@ -453,7 +457,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <text x="63.0" y="672" class="dg-lt" text-anchor="middle">Always on</text>
 <text x="63.0" y="686" class="dg-lc" text-anchor="middle">hooks</text>
 <text x="130" y="672" class="dg-t">git-guard: no force push · no push to protected branches · no prod deploy   |   e2e-guard: no request or browser visit to production</text>
-<text x="130" y="687" class="dg-s">Edit guards on migrations + sensitive config · type-check + lint after edits · deploy notes from every path feed the release by fix version</text>
+<text x="130" y="687" class="dg-s">Edit guards on migrations + sensitive config · type-check + lint after edits · quality gate at every verify · deploy notes from every path feed the release by fix version</text>
 </svg>
 </div>
 <p>Details for each lane: <a href="#first">Your first feature</a>, <a href="#workflows">Workflows</a>,
@@ -467,6 +471,7 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <tr><td><strong>Claude Code</strong> at the repo root</td><td>Commands, sub-agents and hooks are discovered per repo from <code>.claude/</code></td></tr>
 <tr><td><strong>Bash</strong> on <code>PATH</code> (Git Bash or WSL on Windows)</td><td>All nine hooks are <code>.sh</code> scripts. Without bash they fail quietly, and every guardrail is off even though it looks installed</td></tr>
 <tr><td><strong>git</strong></td><td>Branch guards, changelog/standup commands, and the epic path's worktrees</td></tr>
+<tr><td><em>for the quality gate's complexity and CRAP checks</em> <strong>python 3</strong> + <code>pip install lizard</code></td><td>Only when <code>COMPLEXITY_MAX</code> or <code>CRAP_MAX</code> is set. If they are missing, the gate reports a FAIL instead of passing silently</td></tr>
 <tr><td><em>optional</em> an MCP server</td><td><code>.mcp.json</code> ships Atlassian, a Figma bridge and Playwright. Authenticate once with <code>/mcp</code>. Without a server, the features that use it are skipped and everything else still works</td></tr>
 <tr><td><em>for UI runtime checks</em> <strong>Claude in Chrome</strong></td><td>The default UI driver: start with <code>claude --chrome</code> (or <code>/chrome</code> → Enabled by default), install the extension, sign in with <code>/login</code>. Without it, Playwright is used</td></tr>
 </tbody>
@@ -520,9 +525,18 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
   <tr><td><code>MIGRATIONS_GLOB</code></td><td>Generated migrations can be hand-edited silently</td></tr>
   <tr><td><code>SENSITIVE_CONFIG_GLOBS</code></td><td>No warning before editing secrets-bearing config</td></tr>
   <tr><td><code>TENANT_ISOLATION_CHECK</code> + <code>TENANT_KEY</code></td><td>No tenant-scoping check on data access</td></tr>
+  <tr><td><code>GATE_BUILD_CMD</code>, <code>GATE_TEST_CMD</code>, <code>COVERAGE_REPORTS</code> + the limits</td><td>The quality gate prints <code>NOT CONFIGURED</code> and the workflows fall back to the agent's own verification</td></tr>
+  <tr><td><code>SUPPRESSION_CHECK</code></td><td>Nothing notices an agent silencing a lint rule, or skipping, deleting or rewriting a test, to get past the gate</td></tr>
   </tbody>
   </table>
-  <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.</p>
+  <p>Smoke-test it: on a protected branch, ask Claude to <code>git push --force</code> and confirm it refuses.
+  Then run the quality gate once on the last commit plus uncommitted work (this needs at least two
+  commits), and take a baseline of the whole codebase:</p>
+  <pre><code>.claude/scripts/quality-gate.sh --base HEAD~1
+.claude/scripts/quality-gate.sh --baseline</code></pre>
+  <p>The second command writes <code>.ai/reports/quality-baseline.md</code>: the whole codebase's
+  coverage, complexity spread and worst functions. Choose the limits from it, and exempt the files it
+  lists as in no coverage report that tests can't reach.</p>
 </li>
 </ol>
 
@@ -539,9 +553,9 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <tr><td>Technical spec</td><td>Written, then shown to you; asks once about per-task atomic commits</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>Design</td><td>For any UI surface: UX → visual design → Artifact preview → approval loop</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>Implement</td><td>Delegated to a developer sub-agent with fresh context</td><td>none</td></tr>
-<tr><td>Verify</td><td>Tests where a test runner exists, otherwise a clean build plus a documented manual check. The report says which</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Verify</td><td>The quality gate, run by the developer agent and then re-run by the workflow itself: build, lint, tests, coverage of the changed lines, complexity and CRAP, mutation. Where it isn't configured, tests where a test runner exists, otherwise a clean build plus a documented manual check. The report says which</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>Review + security</td><td>The reviewer and the security scanner run in parallel on the diff</td><td>CRITICAL blocks</td></tr>
-<tr><td>Commit</td><td>Message shown for confirmation</td><td><span class="pill block">STOP</span></td></tr>
+<tr><td>Commit</td><td>Message shown for confirmation, with the gate's verdict and its table of touched functions, so you review the change's shape instead of every line</td><td><span class="pill block">STOP</span></td></tr>
 <tr><td>PR</td><td>Description generated and shown before anything is opened</td><td><span class="pill block">STOP</span></td></tr>
 </tbody>
 </table>
@@ -632,17 +646,20 @@ sub-agent write to its own memory folder.</p>
 <tbody>
 <tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>none</td><td>Complex multi-part tasks</td></tr>
 <tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>none</td><td>Feature and bugfix implementation</td></tr>
-<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
+<tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">Write/Edit only in its memory</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
 <tr><td><code>qa-runner</code></td><td>Read, Write, Edit, Bash, Playwright MCP</td><td>inherit</td><td>none</td><td>Test writing and running, live browser checks (runtime verification runs in the main session instead)</td></tr>
 <tr><td><code>release-manager</code></td><td>Read, Write, Edit, Bash</td><td>sonnet</td><td>none</td><td><code>/workflows:release</code></td></tr>
-<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">no Write/Edit</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
+<tr><td><code>critic</code></td><td>Read, Bash <span class="pill">Write/Edit only in its memory</span></td><td>inherit</td><td>project</td><td><code>/harness:improve</code></td></tr>
 <tr><td><code>harness-engineer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>project</td><td><code>/harness:improve</code> work packages</td></tr>
 </tbody>
 </table>
 <p><code>memory: project</code> gives that sub-agent a persistent <code>.claude/agent-memory/&lt;agent&gt;/</code>
 folder: a <code>MEMORY.md</code> index plus topic files it writes as it learns, such as recurring
-defects, easy-to-miss files and project quirks. The first 200 lines (25&nbsp;KB) of the index load into
+defects, easy-to-miss files and project quirks. Claude Code adds Read, Write and Edit for that folder
+even when the agent's <code>tools</code> leave them out. Each of the four agents reads its index before
+the work, writes only inside its own folder, and ends its reply with a <code>Memory:</code> line naming
+what it recorded. The first 200 lines (25&nbsp;KB) of the index load into
 its prompt on every run. Project memory is meant to be committed, so every developer's runs benefit
 from it; review changes to it like any other diff. For per-developer memory, set
 <code>memory: local</code> (stored in <code>.claude/agent-memory-local/</code> and kept out of git).
@@ -654,8 +671,8 @@ Sub-agent memory is off when auto memory is disabled.</p>
 <tbody>
 <tr><td><code>e2e-guard.sh</code></td><td>PreToolUse (Bash, browser MCP tools)</td><td>Blocks HTTP requests, and Claude in Chrome or Playwright navigation, to any host in <code>E2E_FORBIDDEN_HOSTS</code>, so runtime checks never reach production</td></tr>
 <tr><td><code>git-guard.sh</code></td><td>PreToolUse (Bash)</td><td>Blocks <code>git push --force</code>, <code>git reset --hard</code>, pushes to protected branches and deploys to the production stage. The first two have no override flag, so a deliberate history rewrite has to run from a terminal outside Claude Code</td></tr>
-<tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config</td></tr>
-<tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check and lint for the edited package, plus the tenant-isolation, frontend-env, design-token and TDD checks</td></tr>
+<tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config; with <code>SUPPRESSION_CHECK=block</code>, blocks an edit that adds a lint suppression, coverage exclusion or skipped test</td></tr>
+<tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check and lint for the edited package, plus the tenant-isolation, frontend-env, design-token, TDD and (in <code>warn</code> mode) suppression checks</td></tr>
 <tr><td><code>post-tool-batch.sh</code></td><td>PostToolBatch</td><td>Full-project type-check after parallel edits</td></tr>
 <tr><td><code>post-tool-failure.sh</code></td><td>PostToolUseFailure</td><td>Classifies the failure and feeds back a hint</td></tr>
 <tr><td><code>stop-check.sh</code></td><td>Stop</td><td>Flags uncommitted changes on feature/epic branches</td></tr>
@@ -664,10 +681,12 @@ Sub-agent memory is off when auto memory is disabled.</p>
 </tbody>
 </table>
 <div class="callout"><p>All hook behaviour comes from <code>.claude/hooks/hooks.env</code>, which has
-26 keys. They cover version control, the deploy guard, repo layout, quality commands, sensitive
-files, tenant isolation, frontend env, design tokens, the TDD nudge and the runtime-verification
-guard. Warnings go to stderr and don't block anything. Only the git guard, the e2e guard and the
-sensitive-file rules block.</p></div>
+39 keys. They cover version control, the deploy guard, repo layout, quality commands, the quality
+gate, sensitive files, tenant isolation, frontend env, design tokens, the TDD nudge, the
+suppression guard and the runtime-verification guard. Warnings don't block anything, and they
+reach Claude itself: a hook that exits 0 sends them as <code>additionalContext</code>, because
+Claude never sees its stderr. The Stop reminder about uncommitted work is shown to you instead. Only the git guard, the e2e guard, the migrations guard and
+<code>SUPPRESSION_CHECK=block</code> block; <code>SENSITIVE_CONFIG_GLOBS</code> only warns.</p></div>
 
 <h2 id="rules">Path-scoped rules</h2>
 <p>Claude Code loads every <code>.md</code> file under <code>.claude/rules/</code>. A rule with
@@ -681,6 +700,42 @@ save a lesson this way when it applies to one area only.</p>
 <p>The playbooks in <code>.ai/workflows/</code> are the method the commands follow, so editing a
 playbook changes how the matching command behaves. They cover feature development, bug fixing, hotfixes,
 runtime verification, releases, code review, story generation, and harness improvement.</p>
+<h3 id="gate">Quality gate</h3>
+<p>Telling an agent to write good code isn't enough, so the harness measures it.
+<code>.claude/scripts/quality-gate.sh</code> runs at each verify step and prints PASS or FAIL with the
+numbers. The developer agent has to fix every failure at its cause, at most three runs before it
+stops and reports, then do one clean-up pass. The feature workflow then re-runs the gate itself, so
+the verdict never rests on the agent's own word. A FAIL that remains stops for you. The gate judges
+only what the change touched.</p>
+<table>
+<thead><tr><th>Check</th><th>Set in <code>hooks.env</code></th><th>Fails when</th></tr></thead>
+<tbody>
+<tr><td>Build, type-check, lint, tests</td><td><code>GATE_BUILD_CMD</code>, <code>TYPECHECK_CMD</code>, <code>LINT_CMD</code>, <code>GATE_TEST_CMD</code></td><td>A command exits non-zero</td></tr>
+<tr><td>Diff coverage</td><td><code>COVERAGE_REPORTS</code>, <code>COVERAGE_MIN</code>, <code>COVERAGE_EXEMPT_GLOBS</code></td><td>Too few changed lines ran under test, or no report came from this run. A changed file that no report mentions counts as untested unless it is exempt or every changed line in it is an interface, enum, type or import line and it holds no function</td></tr>
+<tr><td>Complexity</td><td><code>COMPLEXITY_MAX</code></td><td>A new function, or one that got more complex, is over the limit</td></tr>
+<tr><td>CRAP</td><td><code>CRAP_MAX</code></td><td>The same for complexity² × (1 − coverage)³ + complexity, which scores complex, untested code high. A touched function already over it also fails when a line the change touched in it is untested</td></tr>
+<tr><td>Suppressions</td><td><code>SUPPRESSION_CHECK</code></td><td><code>block</code> mode and the change silences a check or skips a test; <code>warn</code> lists each one for the reviewer</td></tr>
+<tr><td>Removed tests</td><td><code>SUPPRESSION_CHECK</code>, <code>TEST_ASSERTION_PATTERNS</code></td><td><code>block</code> mode and the change deletes or rewrites a test case or assertion without re-adding it elsewhere; <code>warn</code> lists each one for the reviewer</td></tr>
+<tr><td>Gate config</td><td>Always on</td><td>When a check would run blind: no suppression or assertion pattern compiles, a value is set only on a <code>hooks.env</code> line the gate cannot read and no base value applies, a build, lint or test command changed HEAD, the changed files or what git reads beside them, or the change edits a <code>.gitattributes</code> together with source or test files on a git older than 2.40 (on its own it is a WARN). Otherwise it warns with every <code>hooks.env</code> line the change alters, every <code>.gitattributes</code> it edits, and every edit to the gate's own scripts and hooks, since loosening the gate needs your words. It also keeps the base commit's stricter limits, suppression settings and file lists (<code>SOURCE_GLOBS</code> may only grow; <code>TEST_FILE_PATTERNS</code> and <code>COVERAGE_EXEMPT_GLOBS</code> are the base's once its gate is configured), so a change can't loosen those for itself. Anything else (a gate command, <code>PACKAGE_DIRS</code>, the scripts, hooks and <code>.claude/settings.json</code>) is only listed, for the reviewer and for you to judge</td></tr>
+<tr><td>Mutation</td><td><code>MUTATION_CMD</code>, <code>MUTATION_GLOBS</code> (feature and epic only)</td><td>The mutation tool's threshold is missed: the tests don't notice injected bugs</td></tr>
+</tbody>
+</table>
+<p>Legacy code a change touches only has to not get worse, so a bug fix never turns into a rewrite.
+Complexity and CRAP need python 3 and <code>pip install lizard</code>. A check that is configured but
+can't run counts as a FAIL, and <code>PASS (partial: …)</code> names a build or test step that isn't
+configured, so you run it by hand. Mutation runs once, on the developer agent's last run, and its
+result is kept for that exact code. At the final STOP you see the gate's table of touched functions with
+their complexity, coverage and CRAP. That lets you review structure and names instead of reading
+every line. Bugfix runs the gate without mutation; hotfix runs it once.</p>
+<p>Each run's first line names a change id, so you can tell which code a recorded result measured.
+If review or runtime fixes change the code, the gate runs again, and the final run is what's kept:
+in the test report for features, bugfixes and epics, and in the PR for a hotfix.</p>
+<p><code>--baseline</code> measures the whole codebase instead of a change and writes
+<code>.ai/reports/quality-baseline.md</code>. It never fails anything; <code>/init-project</code>
+runs it to set the limits, and re-running it later shows the trend. The limits are values you
+tune: tightening one is always fine; after setup, loosening one needs your explicit approval and a line in
+<code>.ai/memory/decisions.md</code>. Removing a check is refused as weakening a gate.</p>
+
 <h3 id="runtime">Runtime verification</h3>
 <p>After review and the security scan, the feature, bugfix and hotfix workflows test the change
 against a running system. The agent proposes the checks the change needs: API calls with
@@ -735,6 +790,10 @@ confirmation gate, with an optional Word copy from <code>.claude/scripts/md-to-d
 existing guide is merged into, never overwritten.</p>
 
 <h2 id="standards">Standards &amp; templates</h2>
+<div class="callout"><p>The harness builds on public standards: Clean Code and SOLID, test-driven
+development, the OWASP Top 10, WCAG 2.1 AA, Conventional Commits, Semantic Versioning, ADRs and more.
+<a href="standards.html"><strong>Standards &amp; sources</strong></a> lists each one, where it comes from
+and the file that applies it.</p></div>
 <table>
 <thead><tr><th>Tree</th><th>Nature</th></tr></thead>
 <tbody>
@@ -780,13 +839,15 @@ with <code>/utils:scope auto</code>.</p>
 ├── STATE.md                     # the workflow — resumable state, never branded
 ├── technical-specs/             # backend.md / frontend.md when fullstack
 ├── design/design-spec.md        # /agents:design
-├── test-specs/test-report.md    # what was and wasn't verified
+├── test-specs/test-report.md    # what was verified, with the final quality gate run
 ├── test-specs/e2e-report.md     # runtime checks against a running system
+├── test-specs/quality-gate.md   # epics: the gate run on the integrated branch
 ├── review-report.md             # reviewer sub-agent
 ├── security-report.md           # security-scanner sub-agent
 ├── deploy-notes.md              # deploy impact + fix version; never branded
 └── pr-description.md            # the final report</code></pre>
-<p>Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
+<p>The quality baseline lives at <code>.ai/reports/quality-baseline.md</code>.
+Standalone runs write to <code>.ai/reports/</code>; releases to <code>.ai/releases/&lt;version&gt;/</code>.
 Every document except <code>STATE.md</code> and <code>deploy-notes.md</code> opens with your branded header.
 With the deployment guide switched on, releases also write <code>docs/release/&lt;version&gt;/</code>.</p>
 
@@ -815,6 +876,10 @@ other agents these become written instructions, which the agent may or may not f
 <tbody>
 <tr><td>Hooks never fire</td><td>No bash on <code>PATH</code></td><td>Install Git Bash / WSL, re-test</td></tr>
 <tr><td>Hooks fire, nothing blocked</td><td><code>hooks.env</code> still inert</td><td>Fill the branch, command and <code>*_CHECK</code> keys</td></tr>
+<tr><td>Gate prints <code>NOT CONFIGURED</code></td><td>No quality gate values in <code>hooks.env</code></td><td>Set <code>GATE_BUILD_CMD</code>, <code>GATE_TEST_CMD</code>, <code>COVERAGE_REPORTS</code> and the limits, then run <code>.claude/scripts/quality-gate.sh --base HEAD~1</code> (the last commit plus uncommitted work)</td></tr>
+<tr><td>Gate fails on complexity or CRAP with "lizard is not installed"</td><td>The metrics need it</td><td><code>pip install lizard</code></td></tr>
+<tr><td>Gate fails on mutation with "command not found" or "does not exist"</td><td>The mutation tool in <code>MUTATION_CMD</code> is not installed</td><td>Install it (for .NET, a committed <code>dotnet-tools.json</code> plus <code>dotnet tool restore</code>), then re-run with <code>--mutation</code>.</td></tr>
+<tr><td>Gate fails on mutation over code the change never touched</td><td><code>MUTATION_CMD</code> mutates the whole codebase, so untested old code drags the score down</td><td>Scope it to the changed files with <code>{files}</code> or <code>{each:…}</code> (see <code>hooks.env</code>). For Stryker.NET: <code>dotnet stryker {each:-m **/{name}} --break-at 70</code></td></tr>
 <tr><td>Workflow says artifacts missing</td><td>Studios haven't run</td><td><code>/ba &lt;slug&gt;</code> then <code>/qa &lt;slug&gt;</code></td></tr>
 <tr><td>Agents cite the wrong stack</td><td>A config or tech-specific file is still a skeleton</td><td>Re-run the verify grep</td></tr>
 <tr><td>Too much context loaded</td><td>Scope guessed wide</td><td><code>/utils:scope backend</code></td></tr>
@@ -836,6 +901,8 @@ other agents these become written instructions, which the agent may or may not f
 <tr><td>Prove a change on the running system</td><td><code>/workflows:verify "&lt;what changed&gt;"</code></td></tr>
 <tr><td>Release</td><td><code>/agents:security</code> → <code>/workflows:release &lt;version&gt;</code></td></tr>
 <tr><td>Review what I just wrote</td><td><code>/agents:review</code></td></tr>
+<tr><td>Check my change against the quality gate</td><td><code>.claude/scripts/quality-gate.sh --base main</code> (add <code>--mutation</code> for mutation testing)</td></tr>
+<tr><td>Where does the codebase stand?</td><td><code>.claude/scripts/quality-gate.sh --baseline</code></td></tr>
 <tr><td>Daily check-in</td><td><code>/utils:status</code>, <code>/utils:standup</code></td></tr>
 <tr><td>Capture a lesson</td><td><code>/utils:learn "&lt;lesson&gt;"</code></td></tr>
 <tr><td>Question about the harness</td><td><code>/harness:ask "&lt;question&gt;"</code></td></tr>
@@ -846,7 +913,8 @@ other agents these become written instructions, which the agent may or may not f
 
 <footer>
 <p>Source docs: <code>docs/getting-started.md</code>, <code>docs/components.md</code> and
-<code>docs/portability.md</code> in this repository. More detail: <code>COMMANDS.md</code>
+<code>docs/portability.md</code> in this repository; the standards behind the harness are in
+<a href="standards.html">Standards &amp; sources</a>. More detail: <code>COMMANDS.md</code>
 (every command), <code>.ai/CUSTOMIZATION.md</code> (the 13 variability axes),
 <code>AGENTS.md</code> (non-Claude agents), <code>.ai/README.md</code> and
 <code>.claude/README.md</code> (per-layer detail), and <code>examples/fleetkeep/</code> (a fully

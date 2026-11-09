@@ -29,7 +29,10 @@ allowed-tools: Read, Write, Edit, Bash, Task, mcp__claude-in-chrome, mcp__playwr
 Bug to fix: $ARGUMENTS
 
 Follow the bug-fixing workflow completely. Guard the fix first — a failing test where the scope has
-a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify.
+a test runner, a documented manual reproduction where it has none. Fix the root cause. Verify: where
+the quality gate is configured, run the quality gate loop from `developer-agent.md` with
+`.claude/scripts/quality-gate.sh --base <branch the fix started from>` (no `--mutation`; at most 3
+failing runs; never weaken a check). Still failing → stop and show the user before the review gate.
 Then do step 6a: write `.ai/features/<slug>/deploy-notes.md` (fix version from the spec if one
 exists, otherwise ask the user once; `unknown — to be confirmed` if nobody knows; an explicit
 *No deploy impact* line if the fix needs nothing beyond the standard pipeline run).
@@ -51,4 +54,10 @@ then run it and write `.ai/features/<slug>/test-specs/e2e-report.md`. A FAIL or 
 did not run blocks the commit unless the user explicitly accepts it.
 
 Before committing, re-read the e2e report for secrets and personal data (screenshots are never
-committed). Then commit with a "fix:" prefix, including the deploy notes and the e2e report.
+committed). Then run the quality gate once more yourself on the final code (after any review or
+runtime fixes; same base, no `--mutation`) and save its output to
+`.ai/features/<slug>/test-specs/test-report.md` under `## Quality gate`, with the reason for any
+suppression or removed test line it lists (where the gate is not configured, record there what you verified by hand).
+Show the user that run (verdict, diff coverage, touched functions, any suppression or removed test line with its
+reason) with the review verdict. Then commit with a "fix:" prefix, including the deploy notes, the
+test report, the e2e report and any changes under `.claude/agent-memory/` (what the reviewer learned; project memory is shared with the team).

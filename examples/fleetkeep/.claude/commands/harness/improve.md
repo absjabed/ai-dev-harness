@@ -58,6 +58,7 @@ Run the playbook's verification block yourself and show the user: `git diff --st
 summary of what changed and what the critics caught, and any open questions.
 
 **STOP** — get explicit confirmation, then commit as a conventional commit on a
-`feature/<slug>` branch (create it if on the default branch). Never push without being
+`feature/<slug>` branch (create it if on the default branch), including
+any changes under `.claude/agent-memory/` (what the critic and harness engineer learned; project memory is shared with the team; the template repo ignores it, so never force-add it there). Never push without being
 asked. Finally, append what the loop taught to `.ai/memory/learnings.md`
 (`YYYY-MM-DD | harness-improvement | <learning> | harness-engineer`).

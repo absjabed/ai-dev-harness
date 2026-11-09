@@ -23,10 +23,17 @@ before they land. Used by `/harness:improve`.
    services) outside comments or `e.g.` examples.
 4. **Inert-safety** — every hook check is opt-in via `.claude/hooks/hooks.env`; a blank
    value or `*_CHECK="off"` must mean *exactly* the pre-change behavior. Warnings go to
-   stderr; hooks exit 0 unless they are a deliberate hard block (`exit 2`).
+   stderr **and** to Claude as `hookSpecificOutput.additionalContext` JSON on stdout — Claude
+   never sees the stderr of a hook that exits 0, so a stderr-only warning reaches nobody; hooks
+   exit 0 unless they are a deliberate hard block (`exit 2`, whose stderr Claude does see).
 5. **Gate integrity** — never weaken, reorder around, or make skippable an existing STOP
    gate or hard block. New autonomy (auto-commits, spawned agents, external writes) is
-   opt-in and sits *behind* a gate, off by default.
+   opt-in and sits *behind* a gate, off by default. Quality-gate limits in `hooks.env` are
+   tunable values, not gates: tightening one (`COVERAGE_MIN` up, `COMPLEXITY_MAX` or `CRAP_MAX`
+   down, a stricter mutation threshold) is always fine; once `/init-project` has set them, loosening one, or widening
+   `COVERAGE_EXEMPT_GLOBS`, needs the user's explicit words in this run and a line appended to
+   `.ai/memory/decisions.md` with old → new and the reason. Blanking a configured gate command,
+   removing a check, or making a gate FAIL non-blocking is weakening a gate.
 6. **Mirror invariant** *(only while `examples/` exists — it is deleted in real projects)* —
    the `.claude/hooks/*.sh` scripts stay byte-identical between the root and
    `examples/<example-project>/`; only `hooks.env` differs. Portable files copied into the example
@@ -35,10 +42,12 @@ before they land. Used by `/harness:improve`.
 7. **Docs inventories stay true** — `COMMANDS.md`, `README.md`, `AGENTS.md`, `.ai/README.md`,
    `.claude/README.md`, `.ai/CUSTOMIZATION.md`, and everything under `docs/`
    (`getting-started.md`, `components.md`, `portability.md`, and the hand-written
-   `index.html`) enumerate commands, agents, sub-agents, hooks, templates, memory files and
-   hook toggles — several of them by **count** as well as by name. Any addition/rename updates
-   every list that names it, and any count it changes. `docs/index.html` is not generated:
-   edit it in the same change as the markdown it mirrors.
+   `index.html` and `standards.html`) enumerate commands, agents, sub-agents, hooks, templates,
+   memory files, hook toggles and the standards behind them — several of them by **count** as
+   well as by name. Any addition/rename updates every list that names it, and any count it
+   changes. `docs/index.html` is not generated: edit it in the same change as the markdown it
+   mirrors. A standard added to or dropped from `.ai/standards/` or an agent updates its row in
+   `docs/standards.html`.
 8. **Tool least-privilege** — command/sub-agent frontmatter grants only the tools the role
    needs; anything the instructions tell the agent to run must be grantable from its
    `allowed-tools`/`tools` line (e.g. `date +%F` needs Bash).
@@ -94,7 +103,8 @@ use one. These extend the invariants above — violating one is likewise a CRITI
    broken-reference sweep, and the docs inventories (invariant 7).
 7. **Verify & land** — run the full verification block below, show the user the diff
    summary and any open questions, then STOP — commit only on explicit approval, as a
-   conventional commit on a `feature/…` branch (never directly on the default branch).
+   conventional commit on a `feature/…` branch (never directly on the default branch), including
+   any changes under `.claude/agent-memory/` (what the critic and harness engineer learned; project memory is shared with the team; the template repo ignores it, so never force-add it there).
    **In the template repo**, when the change is released, bump `.claude/HARNESS_VERSION` **and**
    the version in the `docs/index.html` sidebar (`Setup &amp; component guide · v<version>`) — patch
    for fixes and docs, minor for new capability that needs no project action, major when an
@@ -105,7 +115,8 @@ use one. These extend the invariants above — violating one is likewise a CRITI
 ## Verification block (run before the final STOP)
 
 ```bash
-bash -n .claude/hooks/*.sh                                  # every hook parses
+bash -n .claude/hooks/*.sh .claude/scripts/*.sh            # every hook and script parses
+git ls-files -s .claude | grep -E '\.(sh|py)$' | grep -v '^100755'   # empty: all executable (settings.json runs hooks directly)
 grep -rn '{{' <changed root files>                          # tokens only where intended
 # if examples/ exists:
 for d in examples/*/; do for f in .claude/hooks/*.sh; do cmp "$f" "$d$f"; done; done

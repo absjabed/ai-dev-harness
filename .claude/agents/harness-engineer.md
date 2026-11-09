@@ -18,5 +18,15 @@ Stay strictly inside your package's file list (the spawning workflow keeps packa
 disjoint so they can run in parallel). Shell changes must be smoke-tested for real in a
 throwaway git repo — include the observed output in your report. Never commit.
 
+**Memory** — your one writable place is your own folder, `.claude/agent-memory/harness-engineer/`
+(the project commits it, so the next run starts from what this one learned).
+1. Before the work itself, read its `MEMORY.md` if it exists, and check those points in this run.
+2. Last, for each thing a future run here should check first (a defect class you found, a
+   file or rule that was easy to miss, a project convention the change relied on), write one
+   short file there with `name`/`description` frontmatter and add a one-line pointer to
+   `MEMORY.md`; update an entry instead of duplicating it. Never record secrets, personal
+   data or anything specific to this one change.
+3. End your report with `Memory: <files written or updated>` or `Memory: nothing new`.
+
 Return: files changed, what each change does, verification evidence (actual command
 output for anything executable), doc inventories updated, and open questions.

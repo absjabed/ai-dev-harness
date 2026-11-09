@@ -152,6 +152,7 @@ enforcement.
 | Sensitive config warning | stderr warning | `pre-commit` warning |
 | Tenant isolation / env / design tokens | Heuristic warnings | Lint rules or a CI grep step |
 | TDD nudge | Prompt-time nudge | Coverage gate in CI (a blunter instrument) |
+| Quality gate | `.claude/scripts/quality-gate.sh` at the workflows' verify steps | The same script as a CI job (`--base origin/<target-branch>`): plain bash and python, no Claude Code dependency |
 
 ---
 
