@@ -9,8 +9,9 @@ These docs cover adopting the harness and what each part of it does.
 | [`components.md`](components.md) | Look up any component: every command, persona, sub-agent, hook, workflow, template and where its output lands |
 | [`portability.md`](portability.md) | Run the harness on a non-Claude agent: what travels, what doesn't, and how to make the guardrails tool-independent |
 | [`standards.html`](standards.html) | See the standards and practices the harness is built on, who they come from, and where each is applied |
+| [`harness-docs/ai-dev-harness.md`](harness-docs/ai-dev-harness.md) | See how the agent system fits together, with an editable draw.io diagram for each part |
 
-These five are the entry point. The deeper references live with the code they describe:
+These six are the entry point. The deeper references live with the code they describe:
 
 | Reference | Covers |
 |---|---|

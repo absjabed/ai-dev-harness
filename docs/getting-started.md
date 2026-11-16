@@ -39,7 +39,7 @@ irreversible. Each mechanism below addresses a specific failure mode.
 | Every repo grows its own private way of working with AI | Every project gets the same harness, commands and gates, so someone joining learns it once |
 
 The harness has a cost in process overhead. The full path (`/ba` → `/qa` → `/workflows:feature`, with
-five STOP gates) is built for work that deserves a spec. For a typo or a one-line fix the overhead is
+its STOP gates) is built for work that deserves a spec. For a typo or a one-line fix the overhead is
 real and not worth paying, so use `/agents:dev` or `/workflows:bugfix` instead. The harness also can't
 make a codebase testable, and it won't catch a bad decision you approve at a gate. It prevents the
 failures that come from forgetting a step, but failures of judgment still get through.
@@ -203,10 +203,12 @@ What to expect from `/workflows:feature`:
 7. Verification follows the scope's gates: real tests where a test runner exists, or a clean build
    plus a documented manual reproduction where none does. It states which one it did.
 8. The reviewer and security scanner run in parallel on the diff. CRITICAL findings block the commit.
-9. It stops before committing, and again before opening the pull request.
+9. It stops before committing and shows you the test, review, security and runtime results. Then it
+   writes the pull request description; you open the pull request.
 
-That workflow has five STOP gates, and they are its purpose. The harness is built so that a human
-approves the spec, the design, the commit and the PR.
+The STOP gates are the point of that workflow. The harness is built so that a human approves the
+spec, the design (for UI work) and the commit. The epic path adds a stop to confirm the breakdown
+and another before it opens the pull request.
 
 Everything lands under `.ai/features/<slug>/`, and each document carries your branded header.
 

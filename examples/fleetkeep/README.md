@@ -285,6 +285,7 @@ The documentation is a set of layered guides. Start here and go deeper into whic
 | `docs/getting-started.md` *(template repo)* | Go from clone to a configured harness and a first feature, with troubleshooting |
 | `docs/components.md` *(template repo)* | Look up any single component (command, persona, sub-agent, hook, template) and what it produces |
 | `docs/standards.html` *(template repo)* | See the standards and practices the harness is built on, who they come from, and where each is applied |
+| `docs/harness-docs/ai-dev-harness.md` *(template repo)* | See how the agent system fits together, with an editable draw.io diagram for each part |
 | **README.md** (this file) | Understand the whole system and [set it up](#setup) in a repo |
 | [`.ai/README.md`](.ai/README.md) | Understand the Knowledge Layer: what lives in `.ai/` and what to fill in |
 | [`.claude/README.md`](.claude/README.md) | Understand the Execution Layer: commands, sub-agents, and hooks in `.claude/` |

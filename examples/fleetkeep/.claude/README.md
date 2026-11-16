@@ -59,8 +59,8 @@ stderr of a hook that exits 0). Registration is in `settings.json`:
 | `git-guard.sh` | `PreToolUse` (Bash) | Block destructive git/deploy commands (e.g. `git push --force`). |
 | `e2e-guard.sh` | `PreToolUse` (Bash, `mcp__claude-in-chrome__*`, `mcp__playwright__*`) | Block runtime checks (HTTP requests, browser navigation) aimed at a host in `E2E_FORBIDDEN_HOSTS`. |
 | `post-tool-use.sh` | `PostToolUse` (Edit/Write/MultiEdit) | React to individual edits: lint/type-check failures, domain checks, added suppressions (`warn`). |
-| `post-tool-batch.sh` | `PostToolBatch` | Run type-check / lint after a batch of edits. |
-| `post-tool-failure.sh` | `PostToolUseFailure` (Edit/Write/Bash) | Handle a failed tool call. |
+| `post-tool-batch.sh` | `PostToolBatch` | Run a full type-check after a batch of edits. |
+| `post-tool-failure.sh` | `PostToolUseFailure` (Edit/Write/Bash) | Classify a failed tool call and pass Claude a fix hint. |
 | `stop-check.sh` | `Stop` | Final checks when a turn ends. |
 | `compact-restore.sh` | `SessionStart` (compact) | Restore working context after a context compaction. |
 | `user-prompt-context.sh` | `UserPromptSubmit` | Inject session context (branch, scope) into each prompt. |
