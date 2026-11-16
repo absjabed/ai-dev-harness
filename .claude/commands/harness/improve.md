@@ -48,7 +48,8 @@ Spawn one final `critic` Task agent across the whole change: file ownership (`gi
 --porcelain` — nothing touched that no package owns), cross-file contracts, the mirror
 invariant (only if `examples/` exists), `bash -n` over all hooks, a broken-reference
 sweep, and the doc inventories (COMMANDS.md, README.md, AGENTS.md, .ai/README.md,
-.claude/README.md, .ai/CUSTOMIZATION.md, and docs/* including the hand-written index.html —
+.claude/README.md, .ai/CUSTOMIZATION.md, and docs/* including the hand-written index.html and the
+draw.io guide in docs/harness-docs/ (edit the .drawio, then re-export its PNGs) —
 check the counts they quote, not just the names). Fix anything it finds yourself, or loop back to step 4 for
 anything substantial.
 

@@ -116,7 +116,7 @@ main a{color:var(--accent);text-underline-offset:2px}
         <path d="M12.6 15.9l2.5 2.5 4.4-4.8" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.2.0</span></div>
+    <div><strong>AI Dev Harness</strong><span>Setup &amp; component guide · v1.2.1</span></div>
   </div>
   <h2>Start here</h2>
   <a href="#what">What it is</a>
@@ -142,6 +142,7 @@ main a{color:var(--accent);text-underline-offset:2px}
   <a href="#artifacts">Where artifacts land</a>
   <h2>Reference</h2>
   <a href="standards.html">Standards &amp; sources &rarr;</a>
+  <a href="harness-docs/ai-dev-harness.md">Diagram guide (draw.io) &rarr;</a>
   <a href="#portability">Other AI agents</a>
   <a href="#trouble">Troubleshooting</a>
   <a href="#cheat">Cheat sheet</a>
@@ -191,14 +192,15 @@ it.</p>
 
 <h3>What it costs</h3>
 <p>Process overhead. The full path (<code>/ba</code> → <code>/qa</code> → <code>/workflows:feature</code>,
-with five STOP gates) is built for work that deserves a spec. For a typo or a one-line fix it isn't
+with its STOP gates) is built for work that deserves a spec. For a typo or a one-line fix it isn't
 worth it, so use <code>/agents:dev</code> or <code>/workflows:bugfix</code> instead. The harness
 also can't make a codebase testable, and it won't catch a bad decision you approve at a gate. It
 prevents mistakes of forgetting; mistakes of judgment are still yours to catch.</p>
 
 <h2 id="map">Harness map</h2>
 <p>Each lane is one path through the harness, read left to right. Yellow boxes are where it stops
-and asks you. On a narrow screen, scroll the diagram sideways.</p>
+and asks you. On a narrow screen, scroll the diagram sideways. For a full diagram of each path, with
+an editable draw.io source, see the <a href="harness-docs/ai-dev-harness.md">diagram guide</a>.</p>
 <div class="dg-wrap">
 <svg viewBox="0 0 1040 708" role="img" aria-labelledby="dg-title dg-desc" class="dg">
 <title id="dg-title">Harness map: every path</title>
@@ -562,8 +564,10 @@ and asks you. On a narrow screen, scroll the diagram sideways.</p>
 <tr><td>PR</td><td>Description generated and shown before anything is opened</td><td><span class="pill block">STOP</span></td></tr>
 </tbody>
 </table>
-<div class="callout"><p>The five STOP gates are where you approve the work: the spec, the design,
-the verification results, the commit and the PR.</p></div>
+<div class="callout"><p>The STOP gates are where you approve the work: the spec, the design (for UI
+work) and the commit, where the test, review, security and runtime results are shown. The single path
+writes the PR description for you to open; the epic path also stops to confirm the breakdown and
+before it opens the PR.</p></div>
 
 <h2 id="layers">The two layers</h2>
 <table>
@@ -606,7 +610,7 @@ the same command works on a different stack once that stack's files are filled i
 <table>
 <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>A feature or epic from spec to PR, with 5 STOP gates and runtime verification (API / UI / DB) after review and the security scan</td></tr>
+<tr><td><code>/workflows:feature &lt;slug&gt;</code></td><td>A feature or epic from spec to PR, with STOP gates at the spec, design and commit, and runtime verification (API / UI / DB) after review and the security scan</td></tr>
 <tr><td><code>/workflows:bugfix "&lt;symptom&gt;"</code></td><td>Reproduce → root cause → fix → verify → deploy notes → review → runtime checks → commit. A BLOCKER or a failed check stops the commit</td></tr>
 <tr><td><code>/workflows:hotfix "&lt;symptom&gt;"</code></td><td>A fast, minimal production fix. Deploy notes, then a review and a smoke check before the PR, then a forward-port. The review and smoke check can be skipped only with a person's explicit approval, recorded in the PR</td></tr>
 <tr><td><code>/workflows:verify [&lt;slug&gt; | what changed]</code></td><td>Runtime verification on demand (API calls, a UI run in a real browser, read-only DB checks) for ad-hoc work or a re-check. It never commits</td></tr>
@@ -647,7 +651,7 @@ sub-agent write to its own memory folder.</p>
 <table>
 <thead><tr><th>Sub-agent</th><th>Tools</th><th>Model</th><th>Memory</th><th>Spawned by</th></tr></thead>
 <tbody>
-<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner</td><td>inherit</td><td>none</td><td>Complex multi-part tasks</td></tr>
+<tr><td><code>orchestrator</code></td><td>delegates to developer, reviewer, security-scanner, qa-runner</td><td>inherit</td><td>none</td><td>Complex multi-part tasks</td></tr>
 <tr><td><code>developer</code></td><td>Read, Write, Edit, Bash</td><td>inherit</td><td>none</td><td>Feature and bugfix implementation</td></tr>
 <tr><td><code>reviewer</code></td><td>Read, Bash <span class="pill">Write/Edit only in its memory</span></td><td>haiku</td><td>project</td><td>Review gates in <code>/workflows:feature</code>, <code>/workflows:bugfix</code> and <code>/workflows:hotfix</code></td></tr>
 <tr><td><code>security-scanner</code></td><td>Read, Bash, Write</td><td>sonnet</td><td>project</td><td>Feature and release gates</td></tr>
@@ -677,7 +681,7 @@ Sub-agent memory is off when auto memory is disabled.</p>
 <tr><td><code>pre-tool-use.sh</code></td><td>PreToolUse (edits)</td><td>Warns or blocks before editing generated migrations and sensitive config; with <code>SUPPRESSION_CHECK=block</code>, blocks an edit that adds a lint suppression, coverage exclusion or skipped test</td></tr>
 <tr><td><code>post-tool-use.sh</code></td><td>PostToolUse (edits)</td><td>Type-check and lint for the edited package, plus the tenant-isolation, frontend-env, design-token, TDD and (in <code>warn</code> mode) suppression checks</td></tr>
 <tr><td><code>post-tool-batch.sh</code></td><td>PostToolBatch</td><td>Full-project type-check after parallel edits</td></tr>
-<tr><td><code>post-tool-failure.sh</code></td><td>PostToolUseFailure</td><td>Classifies the failure and feeds back a hint</td></tr>
+<tr><td><code>post-tool-failure.sh</code></td><td>PostToolUseFailure</td><td>Classifies the failure and passes a fix hint to Claude; never blocks</td></tr>
 <tr><td><code>stop-check.sh</code></td><td>Stop</td><td>Flags uncommitted changes on feature/epic branches</td></tr>
 <tr><td><code>user-prompt-context.sh</code></td><td>UserPromptSubmit</td><td>Injects current branch and active scope</td></tr>
 <tr><td><code>compact-restore.sh</code></td><td>SessionStart (compact)</td><td>Re-injects orientation after compaction</td></tr>
@@ -915,8 +919,9 @@ other agents these become written instructions, which the agent may or may not f
 </div>
 
 <footer>
-<p>Source docs: <code>docs/getting-started.md</code>, <code>docs/components.md</code> and
-<code>docs/portability.md</code> in this repository; the standards behind the harness are in
+<p>Source docs: <code>docs/getting-started.md</code>, <code>docs/components.md</code>,
+<code>docs/portability.md</code> and <a href="harness-docs/ai-dev-harness.md"><code>docs/harness-docs/</code></a>
+(the draw.io diagram guide) in this repository; the standards behind the harness are in
 <a href="standards.html">Standards &amp; sources</a>. More detail: <code>COMMANDS.md</code>
 (every command), <code>.ai/CUSTOMIZATION.md</code> (the 13 variability axes),
 <code>AGENTS.md</code> (non-Claude agents), <code>.ai/README.md</code> and

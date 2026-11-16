@@ -60,7 +60,7 @@ command behaves differently in each project, and correctly for that project.
 
 | Command | Purpose | Gates |
 |---|---|---|
-| `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | 5 STOP gates: technical spec, design, verification (tests and runtime checks), commit, PR |
+| `/workflows:feature <slug>` | End-to-end feature or epic delivery; consumes BA/QA artifacts; parallelises where safe | STOP gates: technical spec, design (UI only) and commit, where test, review, security and runtime results are shown. The single path writes the PR description and you open the PR; the epic path also stops to confirm the breakdown and before opening the PR |
 | `/workflows:bugfix "<symptom>"` | Reproduce → root cause → fix → verify → deploy notes → review → runtime checks → commit | Verification, a review gate, then runtime checks of the original bug. BLOCKERs and failed checks block the commit |
 | `/workflows:hotfix "<symptom>"` | Fast, minimal, safe production fix; forward-port required | Minimal-change discipline and deploy notes, plus a review gate and a smoke check before the PR. Either can be skipped only with explicit human approval, and never silently |
 | `/workflows:verify [<slug> \| what changed]` | Runtime verification on demand, for ad-hoc work, a `/agents:dev` change or a re-check | You confirm the plan; failed or skipped planned checks are reported as blocking. Never commits |
@@ -123,7 +123,7 @@ to its own memory folder.
 
 | Sub-agent | Tools | Model | Memory | Spawned by |
 |---|---|---|---|---|
-| `orchestrator` | delegates to developer, reviewer, security-scanner | inherit | none | Complex multi-part tasks |
+| `orchestrator` | delegates to developer, reviewer, security-scanner, qa-runner | inherit | none | Complex multi-part tasks |
 | `developer` | Read, Write, Edit, Bash | inherit | none | Feature/bugfix implementation |
 | `reviewer` | Read, Bash (Write/Edit only in its memory folder) | haiku | project | Review gates in `/workflows:feature`, `/workflows:bugfix` and `/workflows:hotfix` |
 | `security-scanner` | Read, Bash, Write | sonnet | project | Feature and release gates |
@@ -159,7 +159,7 @@ the harness works whether or not the model cooperates.
 | `git-guard.sh` | PreToolUse (Bash) | Blocks `git push --force`, `git reset --hard`, pushes to protected branches, and deploys to the production stage. The first two are **unconditional, with no override flag**. A deliberate history rewrite has to be run from a terminal outside Claude Code |
 | `post-tool-use.sh` | PostToolUse (Edit/Write/MultiEdit) | Runs type-check and lint for the edited package, plus the domain checks (tenant isolation, frontend env, design tokens, TDD nudge) and, in `warn` mode, the suppression guard. A failure or warning goes back to Claude |
 | `post-tool-batch.sh` | PostToolBatch | Full-project type-check after a batch of parallel edits |
-| `post-tool-failure.sh` | PostToolUseFailure | Classifies a failed tool call (type error, lint, test) and feeds back a hint |
+| `post-tool-failure.sh` | PostToolUseFailure | Classifies a failed tool call (type error, lint, migration, missing module) and passes a fix hint to Claude as context; never blocks |
 | `stop-check.sh` | Stop | Reminds about uncommitted changes on feature/epic branches |
 | `user-prompt-context.sh` | UserPromptSubmit | Injects the current branch and active scope into context before each prompt |
 | `compact-restore.sh` | SessionStart (compact) | Re-injects orientation after context compaction |
