@@ -43,7 +43,8 @@ before they land. Used by `/harness:improve`.
    `.claude/README.md`, `.ai/CUSTOMIZATION.md`, and everything under `docs/`
    (`getting-started.md`, `components.md`, `portability.md`, the hand-written
    `index.html` and `standards.html`, and the draw.io guide in `harness-docs/` —
-   `ai-dev-harness.md` with its `.drawio` source and exported PNGs) enumerate commands, agents, sub-agents, hooks, templates,
+   `ai-dev-harness.md` with its `.drawio` source and exported PNGs, and `how-it-works.html`,
+   generated from it by `harness-docs/build-html.py`) enumerate commands, agents, sub-agents, hooks, templates,
    memory files, hook toggles and the standards behind them — several of them by **count** as
    well as by name. Any addition/rename updates every list that names it, and any count it
    changes. `docs/index.html` is not generated: edit it in the same change as the markdown it

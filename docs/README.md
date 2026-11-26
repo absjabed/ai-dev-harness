@@ -10,8 +10,9 @@ These docs cover adopting the harness and what each part of it does.
 | [`portability.md`](portability.md) | Run the harness on a non-Claude agent: what travels, what doesn't, and how to make the guardrails tool-independent |
 | [`standards.html`](standards.html) | See the standards and practices the harness is built on, who they come from, and where each is applied |
 | [`harness-docs/ai-dev-harness.md`](harness-docs/ai-dev-harness.md) | See how the agent system fits together, with an editable draw.io diagram for each part |
+| [`how-it-works.html`](how-it-works.html) | Read that guide as a browsable page. Generated from the Markdown by `harness-docs/build-html.py`; do not edit it by hand |
 
-These six are the entry point. The deeper references live with the code they describe:
+These seven are the entry point. The deeper references live with the code they describe:
 
 | Reference | Covers |
 |---|---|
@@ -25,7 +26,8 @@ These six are the entry point. The deeper references live with the code they des
 
 ## Keeping these honest
 
-`index.html` and `standards.html` are written by hand, not generated. If you change `getting-started.md` or `components.md`,
+`index.html` and `standards.html` are written by hand, not generated; `how-it-works.html` is generated (edit
+`harness-docs/ai-dev-harness.md`, then run `python docs/harness-docs/build-html.py`). If you change `getting-started.md` or `components.md`,
 update the matching section in the HTML in the same commit; if you add or change a standard under `.ai/standards/`, update its row in `standards.html`. All three describe real files, so when you
 add a command, a hook toggle or a sub-agent, updating them is part of the change (invariant 7 in
 [`../.ai/workflows/harness-improvement.md`](../.ai/workflows/harness-improvement.md) already requires
