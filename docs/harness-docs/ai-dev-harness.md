@@ -25,12 +25,13 @@ the pieces fit together, with a diagram for each part.
 6. [Bug fix — `/workflows:bugfix`](#6-bug-fix--workflowsbugfix)
 7. [Hotfix — `/workflows:hotfix`](#7-hotfix--workflowshotfix)
 8. [Runtime verification — `/workflows:verify`](#8-runtime-verification--workflowsverify)
-9. [Release — `/workflows:release`](#9-release--workflowsrelease)
-10. [Hooks and guardrails](#10-hooks-and-guardrails)
-11. [Self-improvement — `/harness:improve`](#11-self-improvement--harnessimprove)
-12. [Cross-cutting concepts](#12-cross-cutting-concepts)
-13. [Which command do I use?](#13-which-command-do-i-use)
-14. [Updating the diagrams](#updating-the-diagrams)
+9. [Quality gate — `quality-gate.sh`](#9-quality-gate--quality-gatesh)
+10. [Release — `/workflows:release`](#10-release--workflowsrelease)
+11. [Hooks and guardrails](#11-hooks-and-guardrails)
+12. [Self-improvement — `/harness:improve`](#12-self-improvement--harnessimprove)
+13. [Cross-cutting concepts](#13-cross-cutting-concepts)
+14. [Which command do I use?](#14-which-command-do-i-use)
+15. [Updating the diagrams](#updating-the-diagrams)
 
 ---
 
@@ -140,24 +141,35 @@ Some commands load a playbook instead of a persona: `/workflows:hotfix` loads
 
 ## 3. End-to-end delivery lifecycle
 
-![Delivery lifecycle — init, ba, qa, feature and release stages left to right, the files each writes, and the deploy-notes hand-off from feature, bugfix and hotfix to release](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
+![Delivery lifecycle — tracker issue, /ba, /qa, /workflows:feature, pull request, /workflows:release and deploy left to right, the artifacts each stage writes, the Fix version hand-offs from requirement-spec.md to deploy-notes.md and on to the release, and the other entry points](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
 
-The standard sequence:
+The standard path for a ticket:
 
 ```text
-/init-project                 → hooks.env, filled .ai/config + context + standards, decisions.md entry, quality-baseline.md
+tracker issue (key + Fix version)   → optional tracker MCP server, read-only
 /ba <slug>                    → requirement-spec.md (with Fix version), user-stories.md, epic-breakdown.md for an epic
 /qa <slug>                    → test-specs.md (one per sub-feature for an epic)
-/workflows:feature <slug>     → STATE.md, technical-specs/, design/design-spec.md, test-specs/test-report.md,
-                                review-report.md, security-report.md, deploy-notes.md, test-specs/e2e-report.md,
-                                pr-description.md
+/workflows:feature <slug>     → STATE.md, technical-specs/, design/design-spec.md, test-specs/test-report.md
+                                (with ## Quality gate), test-specs/quality-gate.md for an epic, review-report.md,
+                                security-report.md, deploy-notes.md, test-specs/e2e-report.md, pr-description.md
+  … pull request: you open it from pr-description.md (the epic path opens it after a STOP);
+    a person reviews and merges …
 /workflows:release <version>  → .ai/releases/<version>/ (release notes, migration plan, rollback plan,
                                 deployment checklist, security report), CHANGELOG.md, git tag,
                                 docs/release/<version>/ deployment guide if switched on
+  … deploy: people or CI; the agent never deploys and is blocked from production hosts …
 ```
 
 Key points:
 
+- **People decide at every stage.** `/ba` and `/qa` are interviews. `/workflows:feature` stops at
+  the spec, the design (UI only) and the commit; `/workflows:release` stops on a CRITICAL finding,
+  before it finalizes, and before any tracker update. Reviewing and merging the pull request, and
+  the deploy, are done by people.
+- **The quality gate runs inside the change workflows** (section 9): feature, epic, bug fix and
+  hotfix. Its final run is kept in `test-specs/test-report.md` (`test-specs/quality-gate.md` for an
+  epic, the PR for a hotfix). The release does not run it; it runs each changed sub-project's lint,
+  test and build commands.
 - **Studios produce, workflows consume.** `/workflows:feature` never writes stories, epic
   breakdowns or test specs. If they are missing it stops and tells you to run `/ba` and `/qa`.
 - **One folder per feature.** Everything lands under `.ai/features/<slug>/`, which is the hand-off
@@ -169,10 +181,11 @@ Key points:
 - **Branding.** Every document except `STATE.md` and `deploy-notes.md` opens with the header from
   `.ai/templates/artifact-header.md`.
 
-Other ways in: `/agents:dev "<change>"` for a quick change without studio specs (check it with
-`/workflows:verify`), any single specialist under `/agents:*`, `/workflows:bugfix` and
-`/workflows:hotfix` for fixes, and `/harness:ask` or `/harness:improve` for the harness itself. The
-`/utils:*` commands work at any time.
+Other ways in: `/agents:dev "<change>"` for a quick change without studio specs (it runs the
+quality gate where it is configured; check it with `/workflows:verify`), any single specialist under
+`/agents:*`, `/workflows:bugfix` (it commits; you open the PR) and `/workflows:hotfix` (it opens the
+PR into the default branch) for fixes, and `/harness:ask` or `/harness:improve` for the harness
+itself. The `/utils:*` commands work at any time.
 
 ---
 
@@ -194,7 +207,7 @@ Things to know when you run it:
 - **Who does what.** The developer sub-agent implements from the `## Tasks` checklist in `STATE.md`
   and writes the tests and the test report. The reviewer and security-scanner sub-agents run in
   parallel on the same diff. Every gate stays in your session.
-- **How the quality gate runs.** The developer agent runs `.claude/scripts/quality-gate.sh --base
+- **How the quality gate runs** (section 9). The developer agent runs `.claude/scripts/quality-gate.sh --base
   <base-branch>` in a loop: fix the cause, at most 3 failing runs, `--mutation` on its last run only.
   Your session then re-runs it without `--mutation`, and that run replaces `## Quality gate` in
   `test-specs/test-report.md`. At step 6 it runs again if review or runtime fixes changed the code.
@@ -317,9 +330,66 @@ Things to know when you run it:
 
 ---
 
-## 9. Release — `/workflows:release`
+## 9. Quality gate — `quality-gate.sh`
 
-![Release workflow — security scanner and release manager in parallel fed by deploy notes, CRITICAL STOP, quality gates, release confirmation STOP, version bump and changelog, optional deployment guide, commit, tag and optional tracker STOP](diagrams/ai-dev-harness/09-release.png)
+![Quality gate — the settings read with the base commit's stricter limits, the change id, the eight checks, a verdict of PASS, PASS (partial), NOT CONFIGURED or FAIL, where each workflow runs it, the hard rules, and where its result is kept](diagrams/ai-dev-harness/09-quality-gate.png)
+
+The script is [`.claude/scripts/quality-gate.sh`](../../.claude/scripts/quality-gate.sh); its
+coverage, complexity and CRAP engine is `quality-metrics.py`. It gives one PASS or FAIL for the
+change, with the numbers, and judges only what the change touched. Legacy code a change touches only
+has to not get worse, so a bug fix never turns into a rewrite.
+
+```bash
+.claude/scripts/quality-gate.sh --base <ref> [--mutation]   # measure the change since <ref>
+.claude/scripts/quality-gate.sh --baseline                  # snapshot the whole codebase
+```
+
+| Check | Set in `hooks.env` | Fails when |
+|---|---|---|
+| gate-config | Always on | A check would run blind. Otherwise it warns on each `hooks.env`, `.gitattributes` and gate-file change, since loosening the gate needs your words |
+| build | `GATE_BUILD_CMD` | The command exits non-zero |
+| typecheck, lint | `TYPECHECK_CMD`, `LINT_CMD`, in each touched `PACKAGE_DIRS` dir (a `PACKAGE_CMDS` entry overrides them there) | A command exits non-zero |
+| test | `GATE_TEST_CMD`, which should write `COVERAGE_REPORTS` | A test fails, or no coverage report came from this run |
+| metrics | `COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX` (needs python 3 and `pip install lizard`) | Too few changed lines ran under test, or a new or more complex function is over the complexity or CRAP limit |
+| suppressions | `SUPPRESSION_CHECK` (`block` or `warn`) | In `block` mode, the change silences a check or skips a test; `warn` lists each one for the reviewer |
+| test-removal | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | In `block` mode, the change removes or rewrites a test case or assertion |
+| mutation | `MUTATION_CMD`, `MUTATION_GLOBS`; only with `--mutation`, once everything else passed | The tool's threshold is missed; the result is kept for that exact change |
+
+Each check is skipped while its `hooks.env` value is blank.
+
+Things to know:
+
+- **Verdicts.** `PASS` and `PASS (partial: …)` exit 0; partial names a build or test step that is
+  not configured, so you run it by hand. `NOT CONFIGURED` means no gate values are set, and the
+  workflow falls back to its own verification. `FAIL` exits 1 and the workflow stops. A configured
+  check that cannot run counts as a FAIL.
+- **A change cannot loosen it for itself.** `hooks.env` is parsed as data, never run, and the base
+  commit's stricter limits, suppression mode and file lists are kept. After set-up, loosening a limit
+  needs your explicit approval and a line in `.ai/memory/decisions.md`; removing a check is refused.
+- **Change id.** The first output line is a hash of the changed source and test files, so you can
+  tell which code a recorded result measured. Full logs go under `.git/quality-gate/`.
+- **`--baseline`** measures the whole codebase and writes `.ai/reports/quality-baseline.md`. It
+  judges nothing; `/init-project` uses it to choose the limits, and re-running it shows the trend.
+- **At the commit STOP** you see the gate's table of touched functions with their complexity,
+  coverage and CRAP, so you can review structure and names instead of reading every line.
+
+Where it runs:
+
+| Where | How |
+|---|---|
+| `/init-project` | `--base HEAD~1` once, to prove the commands and report paths, then `--baseline` |
+| `/workflows:feature` | The developer sub-agent loops: fix the cause, at most 3 failing runs, one clean-up pass, `--mutation` on its last run. Your session re-runs it without `--mutation` and saves `## Quality gate` in `test-specs/test-report.md`; it runs again at the commit STOP if fixes changed the code |
+| Epic path | Each sub-feature in its worktree with `--base epic/<slug>`; Phase E once on the merged branch → `test-specs/quality-gate.md`; Phase F again if the code changed |
+| `/workflows:bugfix` | `--base <branch the fix started from>`, no `--mutation`, at most 3 failing runs; still failing → STOP before the review. The final run before the commit goes in `test-specs/test-report.md` |
+| `/workflows:hotfix` | `--base <default branch>` once, no `--mutation`; its output goes in the PR. A FAIL is fixed, or a person accepts it in the PR |
+| Ad hoc | `/agents:dev` and `/agents:qa` run it where it is configured; you can run `quality-gate.sh --base main` yourself |
+| `/workflows:release` | Not used: each changed sub-project's lint, test and build commands run instead |
+
+---
+
+## 10. Release — `/workflows:release`
+
+![Release workflow — security scanner and release manager in parallel fed by deploy notes, CRITICAL STOP, quality gates, release confirmation STOP, version bump and changelog, optional deployment guide, commit, tag and optional tracker STOP](diagrams/ai-dev-harness/10-release.png)
 
 Things to know when you run it:
 
@@ -344,9 +414,9 @@ Things to know when you run it:
 
 ---
 
-## 10. Hooks and guardrails
+## 11. Hooks and guardrails
 
-![Guardrails — nine hooks in a table of Claude Code event, hook script and effect, coloured BLOCK, WARN, REMIND, HINT or CONTEXT, with the hooks.env template defaults and the guardrails beyond hooks](diagrams/ai-dev-harness/10-guardrails.png)
+![Guardrails — nine hooks in a table of Claude Code event, hook script and effect, coloured BLOCK, WARN, REMIND, HINT or CONTEXT, with the hooks.env template defaults and the guardrails beyond hooks](diagrams/ai-dev-harness/11-guardrails.png)
 
 Hooks are registered in [`.claude/settings.json`](../../.claude/settings.json) and need `bash` on
 `PATH`. Every script sources [`.claude/hooks/hooks.env`](../../.claude/hooks/hooks.env) and skips any
@@ -381,9 +451,9 @@ Safeguards beyond hooks:
 
 ---
 
-## 11. Self-improvement — `/harness:improve`
+## 12. Self-improvement — `/harness:improve`
 
-![Self-improvement — plan and STOP, then per work package in parallel an author, critic, revise and recheck loop capped at two rounds, an integration audit, the verification block and a STOP before the commit, with the 13 invariants on the right](diagrams/ai-dev-harness/11-self-improvement.png)
+![Self-improvement — plan and STOP, then per work package in parallel an author, critic, revise and recheck loop capped at two rounds, an integration audit, the verification block and a STOP before the commit, with the 13 invariants on the right](diagrams/ai-dev-harness/12-self-improvement.png)
 
 The loop, from [`.ai/workflows/harness-improvement.md`](../../.ai/workflows/harness-improvement.md):
 
@@ -414,7 +484,7 @@ code questions to the right command.
 
 ---
 
-## 12. Cross-cutting concepts
+## 13. Cross-cutting concepts
 
 - **Scope.** Most commands and sub-agents first read `.ai/config/current-scope.md`. A
   `# Forced scope:` line wins; otherwise they infer backend, frontend or fullstack from the request
@@ -437,7 +507,7 @@ code questions to the right command.
 
 ---
 
-## 13. Which command do I use?
+## 14. Which command do I use?
 
 | I want to… | Run |
 |---|---|
@@ -485,7 +555,8 @@ export each page to its PNG from `docs/harness-docs/diagrams/ai-dev-harness/`:
 # macOS: /Applications/draw.io.app/Contents/MacOS/draw.io · Linux: drawio (under xvfb-run if headless)
 DRAWIO="/c/Program Files/draw.io/draw.io.exe"
 names=(01-architecture 02-agent-pattern 03-delivery-lifecycle 04-feature-workflow 05-epic-path
-       06-bug-fix 07-hotfix 08-runtime-verification 09-release 10-guardrails 11-self-improvement)
+       06-bug-fix 07-hotfix 08-runtime-verification 09-quality-gate 10-release 11-guardrails
+       12-self-improvement)
 for i in "${!names[@]}"; do
   "$DRAWIO" -x -f png -p $((i + 1)) -s 1.5 -b 20 -o "${names[$i]}.png" ai-dev-harness.drawio
 done
