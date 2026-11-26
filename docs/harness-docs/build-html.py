@@ -129,7 +129,7 @@ def convert(md):
             text = s[3:].strip()
             if text == 'Contents':  # the sidebar replaces the Markdown's own contents list
                 i += 1
-                while i < len(lines) and lines[i].strip() != '---':
+                while i < len(lines) and not lines[i].startswith('## ') and lines[i].strip() != '---':
                     i += 1
                 continue
             anchor = slug(text)

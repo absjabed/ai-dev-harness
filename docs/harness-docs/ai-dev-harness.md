@@ -1,71 +1,67 @@
-# AI Dev Harness — how the agent system works
+# How the AI Dev Harness works
 
-The AI Dev Harness is a layer on top of Claude Code that takes work from a requirement to a pull
-request. It has specialist agents (a persona per role, plus sub-agents that run in a fresh context),
-shared project knowledge in Markdown, workflows with human approval gates, and guardrails: hooks that
-block or warn on risky actions, and a quality gate that measures each change. This guide explains how
-the pieces fit together, with a diagram for each part.
+The AI Dev Harness sits on top of Claude Code and takes work from a requirement to a pull request.
+It has a specialist agent for each role, shared project knowledge in Markdown, workflows that stop
+for your approval at set points, and guardrails: hooks that block or warn on risky actions, and a
+quality gate that measures each change. Each part of the system has a diagram below.
 
-- **Audience:** developers, business analysts, testers, tech leads and release owners who use the
-  harness in a project, and whoever maintains the harness itself.
-- **Where it lives:** the knowledge layer in [`.ai/`](../../.ai/README.md), the execution layer in
-  [`.claude/`](../../.claude/README.md), and the full command list in [`COMMANDS.md`](../../COMMANDS.md).
-  For one entry per component, see [`../components.md`](../components.md).
-- **Diagrams:** the editable source is one multi-page draw.io file,
-  [`diagrams/ai-dev-harness/ai-dev-harness.drawio`](diagrams/ai-dev-harness/ai-dev-harness.drawio).
-  The PNGs are exported from it (see [Updating the diagrams](#updating-the-diagrams)).
+The guide is for developers, business analysts, testers, tech leads and release owners who use the
+harness in a project, and for whoever maintains the harness. The knowledge layer lives in
+[`.ai/`](../../.ai/README.md), the execution layer in [`.claude/`](../../.claude/README.md), and the
+full command list in [`COMMANDS.md`](../../COMMANDS.md). For one entry per component, see
+[`../components.md`](../components.md). All the diagrams come from one multi-page draw.io file,
+[`diagrams/ai-dev-harness/ai-dev-harness.drawio`](diagrams/ai-dev-harness/ai-dev-harness.drawio)
+(see [Updating the diagrams](#updating-the-diagrams)).
 
 ## Contents
 
-1. [Architecture — knowledge layer vs execution layer](#1-architecture--knowledge-layer-vs-execution-layer)
-2. [Agent pattern — command, persona, sub-agent](#2-agent-pattern--command-persona-sub-agent)
+1. [Architecture: knowledge and execution layers](#1-architecture-knowledge-and-execution-layers)
+2. [Agent pattern: command, persona and sub-agent](#2-agent-pattern-command-persona-and-sub-agent)
 3. [End-to-end delivery lifecycle](#3-end-to-end-delivery-lifecycle)
-4. [Feature workflow — `/workflows:feature`](#4-feature-workflow--workflowsfeature)
-5. [Epic path — Phases A–F](#5-epic-path--phases-af)
-6. [Bug fix — `/workflows:bugfix`](#6-bug-fix--workflowsbugfix)
-7. [Hotfix — `/workflows:hotfix`](#7-hotfix--workflowshotfix)
-8. [Runtime verification — `/workflows:verify`](#8-runtime-verification--workflowsverify)
-9. [Quality gate — `quality-gate.sh`](#9-quality-gate--quality-gatesh)
-10. [Release — `/workflows:release`](#10-release--workflowsrelease)
+4. [Feature workflow (`/workflows:feature`)](#4-feature-workflow-workflowsfeature)
+5. [Epic path, phases A to F](#5-epic-path-phases-a-to-f)
+6. [Bug fix (`/workflows:bugfix`)](#6-bug-fix-workflowsbugfix)
+7. [Hotfix (`/workflows:hotfix`)](#7-hotfix-workflowshotfix)
+8. [Runtime verification (`/workflows:verify`)](#8-runtime-verification-workflowsverify)
+9. [Quality gate (`quality-gate.sh`)](#9-quality-gate-quality-gatesh)
+10. [Release (`/workflows:release`)](#10-release-workflowsrelease)
 11. [Hooks and guardrails](#11-hooks-and-guardrails)
-12. [Self-improvement — `/harness:improve`](#12-self-improvement--harnessimprove)
-13. [Cross-cutting concepts](#13-cross-cutting-concepts)
+12. [Changing the harness (`/harness:improve`)](#12-changing-the-harness-harnessimprove)
+13. [Concepts that apply everywhere](#13-concepts-that-apply-everywhere)
 14. [Which command do I use?](#14-which-command-do-i-use)
 15. [Updating the diagrams](#updating-the-diagrams)
 
----
+## 1. Architecture: knowledge and execution layers
 
-## 1. Architecture — knowledge layer vs execution layer
+![Architecture: the .claude/ execution layer runs in a Claude Code session and @-includes the .ai/ knowledge layer; git, MCP servers, the browser and the product sit outside the harness](diagrams/ai-dev-harness/01-architecture.png)
 
-![Architecture — the .claude/ execution layer runs in a Claude Code session and @-includes the .ai/ knowledge layer; git, MCP servers, the browser and the product sit outside the harness](diagrams/ai-dev-harness/01-architecture.png)
-
-You type a slash command in a Claude Code session. The session runs files from `.claude/`, which
-pull in the Markdown in `.ai/` through `@`-includes. The same command therefore behaves correctly in
-every project once `.ai/` is filled in by `/init-project`.
+You type a slash command in a Claude Code session. The session runs files from `.claude/`, and
+those files pull in the Markdown in `.ai/` through `@`-includes. Once `/init-project` has filled in
+`.ai/` for a project, the same commands work there without changes.
 
 | Layer | Folder | Holds | Executes? |
 |---|---|---|---|
-| Knowledge | `.ai/` | Personas, workflow playbooks, standards, templates, project config and context, memory, and the artifacts each feature produces | No. Markdown only; it is read, never run |
+| Knowledge | `.ai/` | Personas, workflow playbooks, standards, templates, project config and context, memory, and the artifacts each feature produces | No. It is Markdown that agents read |
 | Execution | `.claude/` | Slash commands, sub-agents, hooks and `hooks.env`, `settings.json`, helper scripts, path-scoped rules, `HARNESS_VERSION` | Yes. Claude Code runs it |
 | Root files | `CLAUDE.md`, `AGENTS.md`, `COMMANDS.md`, `.mcp.json` | Per-session guidance, the method for non-Claude agents, the command list, the MCP servers | `CLAUDE.md` is loaded into every session |
 
-**Knowledge layer (`.ai/`)**
+The knowledge layer (`.ai/`):
 
 | Path | Purpose |
 |---|---|
 | [`.ai/agents/`](../../.ai/agents) | 16 personas: each role's responsibilities, method, output format and never-do list |
-| [`.ai/workflows/`](../../.ai/workflows) | 8 playbooks: the method each command follows |
+| [`.ai/workflows/`](../../.ai/workflows) | 8 playbooks, one for each workflow command's method |
 | [`.ai/standards/universal/`](../../.ai/standards/universal) | Portable principles: coding, API design, security baseline, testing, accessibility, UI/UX, frontend design, git workflow |
 | [`.ai/standards/project/`](../../.ai/standards/project) | Your stack's rules (`tech-specific.md`) and the design system under `frontend/design/`; the per-stack folders are reference only |
 | [`.ai/templates/`](../../.ai/templates) | 14 output templates, from `technical-spec.md` to `feature-state.md` |
 | [`.ai/config/`](../../.ai/config) | `project-config.md` (stack, commands, test environments, release deliverables), `branding.md`, `current-scope.md`, plus per-scope copies |
 | [`.ai/context/`](../../.ai/context) | `project-overview.md`, `architecture.md`, `business-rules.md`, plus per-scope copies |
-| [`.ai/memory/`](../../.ai/memory) | `decisions.md`, `learnings.md`, `design-taste.md`: append-only, committed |
+| [`.ai/memory/`](../../.ai/memory) | `decisions.md`, `learnings.md`, `design-taste.md`; append-only and committed |
 | [`.ai/features/`](../../.ai/features) | One folder per feature slug with its specs, reports, `STATE.md` and `deploy-notes.md` |
 | [`.ai/CUSTOMIZATION.md`](../../.ai/CUSTOMIZATION.md) | The 13 variability axes and the files and tokens each one owns |
 | `.ai/reports/`, `.ai/releases/<version>/` | Created on first use: standalone reports, `quality-baseline.md`, and each release's internal artifacts |
 
-**Execution layer (`.claude/`)**
+The execution layer (`.claude/`):
 
 | Path | Purpose |
 |---|---|
@@ -78,69 +74,64 @@ every project once `.ai/` is filled in by `/init-project`.
 | [`.claude/HARNESS_VERSION`](../../.claude/HARNESS_VERSION) | The template release a project was set up from |
 | `.claude/agent-memory/<agent>/` | Created on first run by the four sub-agents with `memory: project`; committed with the workflows' changes |
 
-The `examples/` folder holds both layers filled in for a fictional project. It is a reference for
-what a configured file looks like and is not part of the running harness.
+The `examples/` folder has both layers filled in for a fictional project. Use it to see what a
+configured file looks like; the running harness never reads it.
 
-**Optional integrations.** [`.mcp.json`](../../.mcp.json) ships three MCP servers: `atlassian`
-(remote, OAuth, no secret in the file), `figma-bridge` and `playwright` (both started with `npx`). You
-authenticate once with `/mcp`. Tools are granted per command: `/ba` can take a Jira issue key as its
-input, `/agents:pm` and `/utils:standup` (both load `pm-agent.md`) can enrich status from
-Jira, and `/workflows:release` can transition released Jira issues behind a STOP. For UI checks, Claude in Chrome is the default driver (start Claude
-Code with `--chrome`), Playwright MCP is the fallback, then the project's e2e command. A read-only
-database MCP server is optional and added by `/init-project`. Every step that uses an integration is
-conditional: with no server connected, the harness falls back to the manual path, and a check that
-cannot run is reported as NOT RUN.
+[`.mcp.json`](../../.mcp.json) ships three optional MCP servers: `atlassian` (remote, OAuth, with no
+secret in the file), and `figma-bridge` and `playwright`, both started with `npx`. You authenticate
+once with `/mcp`. Each command gets only the tools it needs: `/ba` can take a Jira issue key as its
+input, `/agents:pm` and `/utils:standup` (both load `pm-agent.md`) can pull status from Jira, and
+`/workflows:release` can transition released Jira issues after a STOP. UI checks use Claude in Chrome
+by default (start Claude Code with `--chrome`), then Playwright MCP, then the project's e2e command.
+`/init-project` can add an optional read-only database MCP server. When a server isn't connected, the
+harness falls back to the manual path, and a check that can't run is reported as NOT RUN.
 
----
+## 2. Agent pattern: command, persona and sub-agent
 
-## 2. Agent pattern — command, persona, sub-agent
+![Agent pattern: one row per persona, showing the command that @-includes it, the persona file, and the sub-agent that loads it, with notes on who spawns sub-agents](diagrams/ai-dev-harness/02-agent-pattern.png)
 
-![Agent pattern — one row per persona: the command that @-includes it, the persona file, and the sub-agent that loads it, with callouts on who spawns sub-agents](diagrams/ai-dev-harness/02-agent-pattern.png)
+An agent is defined in up to four places:
 
-An agent is defined and reached in up to four ways:
+1. The persona, `.ai/agents/<name>-agent.md`, holds the behaviour: responsibilities, method, output
+   format and what never to do. You can't run a persona on its own.
+2. A command under `.claude/commands/` `@`-includes the persona plus the standards, templates or
+   playbook it needs, and adds scope detection, the `allowed-tools` line and the task. You run it as
+   `/name <arguments>`.
+3. A sub-agent, `.claude/agents/<name>.md`, loads the same persona with an `@`-include and sets its
+   own `tools`, `model`, `effort`, `maxTurns` and `memory`. Workflow commands spawn it as a Task agent
+   with a fresh context; you never type a sub-agent's name.
+4. The `orchestrator` sub-agent may delegate to `developer`, `reviewer`, `security-scanner` and
+   `qa-runner` (its `tools` line). No command spawns it.
 
-1. **Persona** — `.ai/agents/<name>-agent.md` holds the behaviour: responsibilities, method, output
-   format and what never to do. You cannot run a persona on its own.
-2. **Command** — a file under `.claude/commands/` `@`-includes the persona plus the standards,
-   templates or playbook it needs. It adds scope detection, the `allowed-tools` line and the task.
-   You run it as `/name <arguments>`.
-3. **Sub-agent** — `.claude/agents/<name>.md` loads the same persona with an `@`-include in its body,
-   and sets its own `tools`, `model`, `effort`, `maxTurns` and `memory`. Workflow commands spawn it as
-   a Task agent with a fresh context. You never type a sub-agent's name.
-4. **Orchestrator** — the `orchestrator` sub-agent may delegate to `developer`, `reviewer`,
-   `security-scanner` and `qa-runner` (its `tools` line). No command spawns it.
+Behaviour is written once, in the persona. `/agents:review` and the `reviewer` sub-agent both load
+`reviewer-agent.md`, which owns the review method and the BLOCKER / WARNING / SUGGESTION / PRAISE
+vocabulary. The sub-agent file adds only scope loading, its memory folder and the output it returns,
+so editing the persona changes both paths. This is invariant 2 in
+[`harness-improvement.md`](../../.ai/workflows/harness-improvement.md).
 
-**Defer to the persona.** Behaviour is written once. `/agents:review` and the `reviewer` sub-agent
-both load `reviewer-agent.md`, which owns the review method and the BLOCKER / WARNING / SUGGESTION /
-PRAISE vocabulary. The sub-agent file adds only scope loading, its memory folder and the output it
-returns. To change how reviews work, you edit the persona once and both paths follow. This is
-invariant 2 in [`harness-improvement.md`](../../.ai/workflows/harness-improvement.md).
+Some commands load a playbook instead of a persona: `/workflows:hotfix` loads `hotfix-process.md`,
+`/workflows:release` loads `release-process.md` and `/workflows:verify` loads
+`runtime-verification.md`. Most utilities load nothing.
 
-Some commands load a playbook instead of a persona: `/workflows:hotfix` loads
-`hotfix-process.md`, `/workflows:release` loads `release-process.md`, `/workflows:verify` loads
-`runtime-verification.md`, and the utilities mostly load nothing.
+Sub-agent settings worth knowing:
 
-**Notable sub-agent settings**
-
-- `reviewer` — `model: haiku`, `permissionMode: plan`, tools `Read, Bash` only. It saves its report
-  through Bash; it has no Write or Edit tool for the project.
-- `critic` — `model: inherit`, `effort: high`, tools `Read, Bash`: read-only, used to break authored
-  harness changes.
-- `security-scanner` — `model: sonnet`, `effort: high`, tools `Read, Bash, Write`; it writes only the
-  report it is asked for.
-- `release-manager` — `model: sonnet`, `maxTurns: 30`.
-- `qa-runner` — Playwright MCP browser tools in its `tools` line. It declines runtime verification,
-  which runs in your session.
-- `memory: project` on `reviewer`, `security-scanner`, `critic` and `harness-engineer`: each keeps
-  `.claude/agent-memory/<agent>/MEMORY.md`, reads it before the work and ends with a `Memory:` line.
-- Read-only commands: `/agents:review`, `/agents:security`, `/harness:ask`, `/utils:status` and
-  `/utils:docs-serve` set `disallowed-tools: Write, Edit, MultiEdit, NotebookEdit`.
-
----
+- `reviewer` runs on `model: haiku` with `permissionMode: plan` and only the `Read` and `Bash`
+  tools. It saves its report through Bash and has no Write or Edit tool for the project.
+- `critic` uses `model: inherit` and `effort: high` with `Read` and `Bash`. It is read-only, and its
+  job is to break proposed harness changes.
+- `security-scanner` runs on `model: sonnet` with `effort: high` and `Read`, `Bash` and `Write`. It
+  writes only the report it is asked for.
+- `release-manager` runs on `model: sonnet` with `maxTurns: 30`.
+- `qa-runner` has the Playwright MCP browser tools. It turns down runtime verification, which runs in
+  your session.
+- `reviewer`, `security-scanner`, `critic` and `harness-engineer` have `memory: project`. Each keeps
+  `.claude/agent-memory/<agent>/MEMORY.md`, reads it before starting and ends with a `Memory:` line.
+- `/agents:review`, `/agents:security`, `/harness:ask`, `/utils:status` and `/utils:docs-serve` are
+  read-only: they set `disallowed-tools: Write, Edit, MultiEdit, NotebookEdit`.
 
 ## 3. End-to-end delivery lifecycle
 
-![Delivery lifecycle — Jira issue, /ba, /qa, /workflows:feature, pull request, /workflows:release and deploy left to right, the artifacts each stage writes, the Fix version hand-offs from requirement-spec.md to deploy-notes.md and on to the release, and the other entry points](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
+![Delivery lifecycle: Jira issue, /ba, /qa, /workflows:feature, pull request, /workflows:release and deploy from left to right, the artifacts each stage writes, the Fix version hand-offs from requirement-spec.md to deploy-notes.md and on to the release, and the other entry points](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
 
 The standard path for a ticket:
 
@@ -159,184 +150,171 @@ Jira issue (key + Fix version)      → read through the Atlassian MCP server wh
   … deploy: people or CI; the agent never deploys and is blocked from production hosts …
 ```
 
-Key points:
+How the stages connect:
 
-- **People decide at every stage.** `/ba` and `/qa` are interviews. `/workflows:feature` stops at
-  the spec, the design (UI only) and the commit; `/workflows:release` stops on a CRITICAL finding,
-  before it finalizes, and before any Jira update. Reviewing and merging the pull request, and
-  the deploy, are done by people.
-- **The quality gate runs inside the change workflows** (section 9): feature, epic, bug fix and
-  hotfix. Its final run is kept in `test-specs/test-report.md` (`test-specs/quality-gate.md` for an
-  epic, the PR for a hotfix). The release does not run it; it runs each changed sub-project's lint,
-  test and build commands.
-- **Studios produce, workflows consume.** `/workflows:feature` never writes stories, epic
-  breakdowns or test specs. If they are missing it stops and tells you to run `/ba` and `/qa`.
-- **One folder per feature.** Everything lands under `.ai/features/<slug>/`, which is the hand-off
-  surface between BA, QA and development.
-- **Fix version flows through.** `/ba` records it in the spec's `## Source issue` block (from
-  Jira, from you, or `unknown — to be confirmed`). Each change copies it into `deploy-notes.md`.
-- **Deploy notes feed the release.** Feature, bugfix and hotfix each write `deploy-notes.md`, even
-  when there is no deploy impact. `/workflows:release` selects them by fix version.
-- **Branding.** Every document except `STATE.md` and `deploy-notes.md` opens with the header from
+- People make the decisions. `/ba` and `/qa` are interviews. `/workflows:feature` stops at the spec,
+  the design (UI only) and the commit. `/workflows:release` stops on a CRITICAL finding, before it
+  finalizes, and before any Jira update. People review and merge the pull request and run the deploy.
+- The quality gate (section 9) runs inside the feature, epic, bug fix and hotfix workflows. Its final
+  run is kept in `test-specs/test-report.md`, in `test-specs/quality-gate.md` for an epic, and in the
+  PR for a hotfix. The release doesn't run it; it runs each changed sub-project's lint, test and
+  build commands instead.
+- `/workflows:feature` never writes stories, epic breakdowns or test specs. Those come from `/ba` and
+  `/qa`, and if they are missing the workflow stops and tells you to run them.
+- Everything for a feature lands under `.ai/features/<slug>/`, so BA, QA and development hand work
+  to each other through that one folder.
+- `/ba` records the Fix version in the spec's `## Source issue` block, taking it from Jira, from you,
+  or writing `unknown — to be confirmed`. Each change copies it into `deploy-notes.md`.
+- Feature, bug fix and hotfix each write `deploy-notes.md`, even when nothing needs deploying.
+  `/workflows:release` picks them up by Fix version.
+- Every document except `STATE.md` and `deploy-notes.md` opens with the header from
   `.ai/templates/artifact-header.md`.
 
-Other ways in: `/agents:dev "<change>"` for a quick change without studio specs (it runs the
-quality gate where it is configured; check it with `/workflows:verify`), any single specialist under
-`/agents:*`, `/workflows:bugfix` (it commits; you open the PR) and `/workflows:hotfix` (it opens the
-PR into the default branch) for fixes, and `/harness:ask` or `/harness:improve` for the harness
-itself. The `/utils:*` commands work at any time.
+There are other ways in. `/agents:dev "<change>"` makes a quick change without studio specs; it runs
+the quality gate where one is configured, and you can check the result with `/workflows:verify`. Any
+single specialist is available under `/agents:*`. For fixes, `/workflows:bugfix` commits and leaves
+the PR to you, and `/workflows:hotfix` opens a PR into the default branch. `/harness:ask` and
+`/harness:improve` work on the harness itself, and the `/utils:*` commands work at any time.
 
----
+## 4. Feature workflow (`/workflows:feature`)
 
-## 4. Feature workflow — `/workflows:feature`
+![Feature workflow: the single feature path from the input checks through the technical spec, design gate, developer sub-agent, quality gate, parallel review and security, deploy notes, runtime verification and the commit STOP](diagrams/ai-dev-harness/04-feature-workflow.png)
 
-![Feature workflow — single feature path from the input checks through the technical spec, design gate, developer sub-agent, quality gate, parallel review and security, deploy notes, runtime verification and the commit STOP](diagrams/ai-dev-harness/04-feature-workflow.png)
+The command is [`.claude/commands/workflows/feature.md`](../../.claude/commands/workflows/feature.md)
+and the playbook is [`.ai/workflows/feature-development.md`](../../.ai/workflows/feature-development.md).
 
-The command is [`.claude/commands/workflows/feature.md`](../../.claude/commands/workflows/feature.md);
-the playbook is [`.ai/workflows/feature-development.md`](../../.ai/workflows/feature-development.md).
+When you run it:
 
-Things to know when you run it:
-
-- **It decides single vs epic from what `/ba` wrote.** `epic-breakdown.md` present means the epic
-  path (section 5). It does not re-analyse your request.
-- **STOP gates:** missing BA/QA inputs; step 2, approve the technical spec (and answer one question:
-  per-task atomic commits, default off); step 2a, approve the design Artifact, with the Architect's
-  approval as well (UI features only); step 4, a quality gate that still fails; step 6, confirm the
-  commit.
-- **Who does what.** The developer sub-agent implements from the `## Tasks` checklist in `STATE.md`
-  and writes the tests and the test report. The reviewer and security-scanner sub-agents run in
-  parallel on the same diff. Every gate stays in your session.
-- **How the quality gate runs** (section 9). The developer agent runs `.claude/scripts/quality-gate.sh --base
-  <base-branch>` in a loop: fix the cause, at most 3 failing runs, `--mutation` on its last run only.
-  Your session then re-runs it without `--mutation`, and that run replaces `## Quality gate` in
-  `test-specs/test-report.md`. At step 6 it runs again if review or runtime fixes changed the code.
-  `NOT CONFIGURED` falls back to manual verification; `PASS (partial: …)` means the named build or
-  tests were run by hand.
-- **Step 5a** writes `deploy-notes.md` before the commit STOP, so the file rides the same commit.
-- **Step 5b** runs runtime verification in your session (section 8) and writes
+- It picks the single or epic path from what `/ba` wrote. If `epic-breakdown.md` exists, it takes the
+  epic path (section 5); it doesn't re-analyse your request.
+- It stops for you when the BA or QA inputs are missing; at step 2, to approve the technical spec and
+  answer one question (per-task atomic commits, off by default); at step 2a, for UI features, to
+  approve the design Artifact, which the Architect approves too; at step 4, if the quality gate still
+  fails; and at step 6, to confirm the commit.
+- The developer sub-agent implements the `## Tasks` checklist in `STATE.md` and writes the tests and
+  the test report. The reviewer and security-scanner sub-agents then run in parallel on the same
+  diff. Every gate stays in your session.
+- The developer agent runs `.claude/scripts/quality-gate.sh --base <base-branch>` in a loop (section
+  9): it fixes the cause each time, stops after 3 failing runs, and adds `--mutation` on its last run
+  only. Your session then re-runs the gate without `--mutation`, and that run replaces
+  `## Quality gate` in `test-specs/test-report.md`. At step 6 it runs again if review or runtime fixes
+  changed the code. `NOT CONFIGURED` falls back to manual verification, and `PASS (partial: …)` means
+  the named build or tests were run by hand.
+- Step 5a writes `deploy-notes.md` before the commit STOP, so the file goes into the same commit.
+- Step 5b runs runtime verification in your session (section 8) and writes
   `test-specs/e2e-report.md`.
-- **What blocks the commit.** Unresolved CRITICAL security findings, and any runtime FAIL or NOT RUN
-  that you have not accepted in your own words (recorded in `STATE.md`).
-- **Resume.** `STATE.md` is updated after every step, at every STOP and before every Task spawn. On
-  a re-run, the workflow checks that each phase marked done has its file on disk, re-runs any that
-  do not, and continues from `## Next action`.
+- The commit is blocked by unresolved CRITICAL security findings, and by any runtime FAIL or NOT RUN
+  that you haven't accepted in your own words. Your acceptance is recorded in `STATE.md`.
+- `STATE.md` is updated after every step, at every STOP and before every Task spawn. If you re-run
+  the command, it checks that each phase marked done has its file on disk, re-runs any that don't,
+  and continues from `## Next action`.
 
----
+## 5. Epic path, phases A to F
 
-## 5. Epic path — Phases A–F
-
-![Epic path — Phases A to F, with parallel developer sub-agents in git worktrees per dependency group, sequential merge, integrated quality gate, parallel review and security, and the PR STOP](diagrams/ai-dev-harness/05-epic-path.png)
+![Epic path: phases A to F, with parallel developer sub-agents in git worktrees for each dependency group, merges in order, one quality gate run on the merged branch, parallel review and security, and the PR STOP](diagrams/ai-dev-harness/05-epic-path.png)
 
 | Phase | What happens |
 |---|---|
-| A — Validate inputs | Reads `epic-breakdown.md`; checks every sub-feature has `requirement-spec.md`, `user-stories.md` and `test-specs.md` (missing → STOP); **STOP** to confirm the sub-features and dependency groups |
-| B — UI/UX design gate | `/agents:design` and its approval loop for each UI sub-feature, before any autonomous work |
-| C — Epic branch | Creates `epic/<slug>`, commits the planning artifacts under `.ai/features/<slug>/`, pushes |
-| D — Parallel implementation | Per dependency group: one git worktree per sub-feature under `.worktrees/`, one developer sub-agent each, all at once; the next group waits for this one |
-| E — Sequential merge | Merges each sub-feature branch into `epic/<slug>` in dependency order, re-verifies, removes the worktree; then runs the quality gate once on the integrated branch → `test-specs/quality-gate.md` |
-| F — Final review and PR | Reviewer and security scanner in parallel on the full epic diff; runtime verification once; final gate if code changed; `pr-description.md`; **STOP** to confirm the PR |
+| A. Validate inputs | Reads `epic-breakdown.md` and checks every sub-feature has `requirement-spec.md`, `user-stories.md` and `test-specs.md` (missing → STOP). Then a **STOP** to confirm the sub-features and dependency groups |
+| B. UI/UX design | `/agents:design` and its approval loop for each UI sub-feature, before any autonomous work starts |
+| C. Epic branch | Creates `epic/<slug>`, commits the planning artifacts under `.ai/features/<slug>/` and pushes |
+| D. Parallel build | For each dependency group, one git worktree per sub-feature under `.worktrees/` and one developer sub-agent each, all at once. The next group waits for this one |
+| E. Merge in order | Merges each sub-feature branch into `epic/<slug>` in dependency order, re-verifies and removes the worktree. Then runs the quality gate once on the merged branch → `test-specs/quality-gate.md` |
+| F. Final review and PR | Reviewer and security scanner in parallel on the whole epic diff, runtime verification once, a final gate run if the code changed, then `pr-description.md` and a **STOP** to confirm the PR |
 
-- Worktrees only see committed files, so Phase C must commit the planning artifacts first. Add
+- Worktrees only see committed files, which is why phase C commits the planning artifacts first. Add
   `.worktrees/` to the project's `.gitignore`.
 - Each developer agent writes its technical spec, test report and deploy notes inside its worktree
-  and commits them on `feature/<slug>/<sub>`, with `quality-gate.sh --base epic/<slug>`.
-- The epic `STATE.md` lives in the main working tree. Only the parent session edits it; it tracks
-  each sub-feature as pending, in progress, implemented or merged.
+  and commits them on `feature/<slug>/<sub>`, running `quality-gate.sh --base epic/<slug>`.
+- The epic's `STATE.md` lives in the main working tree, and only the parent session edits it. It
+  tracks each sub-feature as pending, in progress, implemented or merged.
 - After a crash, the workflow reuses a worktree only if it is valid and clean. It never deletes or
-  force-recreates a sub-feature branch, and never force-removes a dirty worktree; in doubt it stops
-  and asks you.
-- A gate still failing in Phase E stops for your direction or explicit acceptance.
+  recreates a sub-feature branch by force, and never force-removes a worktree with changes in it.
+  When in doubt, it stops and asks you.
+- If the gate still fails in phase E, the workflow stops until you give direction or accept it.
 
----
+## 6. Bug fix (`/workflows:bugfix`)
 
-## 6. Bug fix — `/workflows:bugfix`
+![Bug fix workflow: reproduce, root cause, guard, fix, quality gate, blast radius, deploy notes, a reviewer sub-agent with a BLOCKER loop, runtime verification of the original bug, a final gate run and the commit](diagrams/ai-dev-harness/06-bug-fix.png)
 
-![Bug fix workflow — reproduce, root cause, guard, fix, quality gate, blast radius, deploy notes, reviewer sub-agent with a BLOCKER loop, runtime verification of the original bug, final gate and commit](diagrams/ai-dev-harness/06-bug-fix.png)
+When you run it:
 
-Things to know when you run it:
-
-- **Guard the fix first:** a failing test where the scope has a test runner, a re-runnable manual
-  reproduction where it has none.
-- **Quality gate:** `quality-gate.sh --base <branch the fix started from>`, no `--mutation`, at most
-  3 failing runs. Still failing → STOP before the review. Its ratchet means legacy code you touch
-  only has to not get worse.
-- **Deploy notes (step 6a)** go to `.ai/features/<slug>/deploy-notes.md`, where the slug is the
-  branch name minus `fix/`. The fix version comes from the spec; if there is none the workflow asks
-  you once, and writes `unknown — to be confirmed` if nobody knows.
-- **Review gate (step 7):** a `reviewer` sub-agent checks the fix addresses the root cause and also
-  reads the new deploy notes. BLOCKER findings must be fixed and re-reviewed before the commit.
-- **Runtime verification (step 7a)** first proves the original failure now behaves, then checks
+- It guards the fix first: with a failing test where the scope has a test runner, or with a manual
+  reproduction you can re-run where it has none.
+- The quality gate runs as `quality-gate.sh --base <branch the fix started from>`, without
+  `--mutation`, for at most 3 failing runs. If it still fails, the workflow stops before the review.
+  Legacy code you touch only has to not get worse.
+- Step 6a writes the deploy notes to `.ai/features/<slug>/deploy-notes.md`, where the slug is the
+  branch name minus `fix/`. The Fix version comes from the spec. If there is none, the workflow asks
+  you once and writes `unknown — to be confirmed` if nobody knows.
+- At step 7, a `reviewer` sub-agent checks that the fix addresses the root cause, and reads the new
+  deploy notes too. BLOCKER findings must be fixed and re-reviewed before the commit.
+- Step 7a runs runtime verification. It first checks that the original failure is gone, then checks
   what the blast-radius step flagged. A FAIL or NOT RUN blocks the commit unless you accept it.
-- **Before the commit** the gate runs once more on the final code, and that run is saved under
-  `## Quality gate` in `test-specs/test-report.md` and shown with the review verdict. The commit uses
-  a `fix:` prefix and includes the deploy notes, test report, e2e report and any
-  `.claude/agent-memory/` changes.
+- Before the commit, the gate runs once more on the final code. That run is saved under
+  `## Quality gate` in `test-specs/test-report.md` and shown with the review verdict. The commit
+  message starts with `fix:`, and the commit includes the deploy notes, the test report, the e2e
+  report and any `.claude/agent-memory/` changes.
 
----
+## 7. Hotfix (`/workflows:hotfix`)
 
-## 7. Hotfix — `/workflows:hotfix`
+![Hotfix workflow: branch from the default branch, minimal change, guard, a single quality gate run, deploy notes, reviewer sub-agent, smoke check STOP, PR and forward-port, then the deploy and post-mortem by people](diagrams/ai-dev-harness/07-hotfix.png)
 
-![Hotfix workflow — branch from the default branch, minimal change, guard, single quality-gate run, deploy notes, reviewer sub-agent, smoke check STOP, PR and forward-port, then human deploy and post-mortem](diagrams/ai-dev-harness/07-hotfix.png)
+When you run it:
 
-Things to know when you run it:
+- It branches from the default branch (production), never from a feature branch, as `fix/` or
+  `hotfix/` plus the ticket and a slug.
+- The gate runs once, as `quality-gate.sh --base <default branch>` without `--mutation`, and its
+  output goes in the PR. A FAIL is either fixed or accepted by a person in the PR. If review or smoke
+  check fixes change the code, the gate runs again.
+- Step 4a commits the deploy notes with the fix before the review, so the reviewer sees them.
+- At step 5, a `reviewer` sub-agent reviews `git diff <default>...HEAD`, and BLOCKERs must be
+  resolved before the PR. A person can approve skipping the review only for a one-line revert during
+  a live outage, and that approval is recorded in the PR.
+- Step 5a is a smoke check of one broken journey or request against a non-production environment.
+  The agent proposes it in one line and waits for your yes. Skipping it also needs your approval,
+  recorded in the PR.
+- Step 6 opens a PR into the default branch, then forward-ports the fix to the development and
+  `release/*` branches. People or CI run the deploy and the post-mortem (within 48 hours); the agent
+  is blocked from production hosts.
 
-- **Branch from the default branch** (production), never from a feature branch, as `fix/` or
-  `hotfix/` plus ticket and slug.
-- **One gate run:** `quality-gate.sh --base <default branch>` once, no `--mutation`. Its output goes
-  in the PR. A FAIL is fixed or explicitly accepted by a person in the PR; if review or smoke fixes
-  change the code, the gate runs again.
-- **Deploy notes (step 4a)** are committed with the fix before the review, so the reviewer sees them.
-- **Review gate (step 5):** a `reviewer` sub-agent on `git diff <default>...HEAD`. BLOCKERs must be
-  resolved before the PR. It may be skipped only for a one-line revert during a live outage, with a
-  person's approval recorded in the PR, never silently.
-- **Smoke check (step 5a):** one broken journey or request against a non-production environment.
-  The agent proposes it in one line and waits for your yes. Skipping it also needs your explicit
-  approval, recorded in the PR.
-- **Land it (step 6):** a PR into the default branch, then forward-port to the development and
-  `release/*` branches. The deploy and the post-mortem (within 48 hours) are done by people or CI; the
-  agent is blocked from production hosts.
+## 8. Runtime verification (`/workflows:verify`)
 
----
-
-## 8. Runtime verification — `/workflows:verify`
-
-![Runtime verification — called by feature, bugfix, hotfix and verify; checks Test environments, plans API, UI and DB levels, asks once, preflights, runs, reports and gates on FAIL or NOT RUN](diagrams/ai-dev-harness/08-runtime-verification.png)
+![Runtime verification: called by feature, bugfix, hotfix and verify; checks the test environments, plans API, UI and DB checks, asks once, runs a preflight, runs the checks, reports, and blocks on FAIL or NOT RUN](diagrams/ai-dev-harness/08-runtime-verification.png)
 
 The playbook is [`.ai/workflows/runtime-verification.md`](../../.ai/workflows/runtime-verification.md).
-`/workflows:feature` (step 5b, or epic Phase F step 0a), `/workflows:bugfix` (step 7a) and
-`/workflows:hotfix` (step 5a, smoke only) call it; `/workflows:verify` runs it on demand for ad-hoc
-work or a `/agents:dev` change, and never commits.
+`/workflows:feature` calls it at step 5b (or epic phase F step 0a), `/workflows:bugfix` at step 7a,
+and `/workflows:hotfix` at step 5a for its smoke check. `/workflows:verify` runs it on demand for
+ad-hoc work or an `/agents:dev` change, and never commits.
 
-Things to know when you run it:
+When you run it:
 
-- **It runs in your session, not a sub-agent**, so you confirm the plan, do any login, approve the
-  browser's site prompts and decide on failures.
-- **Test environments** in `.ai/config/project-config.md` must be filled in. If not, it stops and
-  says which values are missing; it never guesses a URL.
-- **Plan, then one STOP.** It proposes API, UI and DB checks from the diff and the feature's specs,
-  shows what it will not check, and asks you once to run or edit the plan.
-- **Drivers:** UI checks use Claude in Chrome, then Playwright MCP, then the project's e2e command,
-  else NOT RUN. Claude in Chrome opens a new tab and first checks a test account is signed in. DB
-  checks are `SELECT` only through a read-only database MCP server, or NOT RUN.
-- **Credentials:** a token command substituted inline in each request, or an environment variable
-  exported before you start Claude Code. It never prints, stores or commits a token, and never types a
-  password.
-- **Report:** `test-specs/e2e-report.md` for a feature, or `.ai/reports/e2e-<date>-<slug>.md`. Every
-  planned check is PASS, FAIL or NOT RUN, on observed evidence only. Screenshots stay local and
-  git-ignored.
-- **Gate:** a FAIL or a planned check that did not run blocks the commit unless you accept it, in
-  your words, recorded in `STATE.md` and the PR.
+- It runs in your session rather than in a sub-agent, because you confirm the plan, do any login,
+  approve the browser's site prompts and decide what to do about failures.
+- It needs the Test environments in `.ai/config/project-config.md`. If they are missing, it stops and
+  says which values to fill in. It never guesses a URL.
+- It proposes API, UI and DB checks from the diff and the feature's specs, lists what it won't check,
+  and asks you once to run or edit the plan.
+- UI checks use Claude in Chrome, then Playwright MCP, then the project's e2e command; with none of
+  them, the checks are NOT RUN. Claude in Chrome opens a new tab and first checks that a test account
+  is signed in. DB checks are `SELECT` only, through a read-only database MCP server, or NOT RUN.
+- For credentials, it substitutes a token command inline in each request, or uses an environment
+  variable you exported before starting Claude Code. It never prints, stores or commits a token, and
+  never types a password.
+- It writes `test-specs/e2e-report.md` for a feature, or `.ai/reports/e2e-<date>-<slug>.md`
+  otherwise. Every planned check is marked PASS, FAIL or NOT RUN, based only on what it observed.
+  Screenshots stay local and git-ignored.
+- A FAIL, or a planned check that didn't run, blocks the commit unless you accept it in your own
+  words. The acceptance is recorded in `STATE.md` and the PR.
 
----
+## 9. Quality gate (`quality-gate.sh`)
 
-## 9. Quality gate — `quality-gate.sh`
+![Quality gate: the settings read with the base commit's stricter limits, the change id, the eight checks, a verdict of PASS, PASS (partial), NOT CONFIGURED or FAIL, where each workflow runs it, the hard rules, and where its result is kept](diagrams/ai-dev-harness/09-quality-gate.png)
 
-![Quality gate — the settings read with the base commit's stricter limits, the change id, the eight checks, a verdict of PASS, PASS (partial), NOT CONFIGURED or FAIL, where each workflow runs it, the hard rules, and where its result is kept](diagrams/ai-dev-harness/09-quality-gate.png)
-
-The script is [`.claude/scripts/quality-gate.sh`](../../.claude/scripts/quality-gate.sh); its
-coverage, complexity and CRAP engine is `quality-metrics.py`. It gives one PASS or FAIL for the
-change, with the numbers, and judges only what the change touched. Legacy code a change touches only
-has to not get worse, so a bug fix never turns into a rewrite.
+The script is [`.claude/scripts/quality-gate.sh`](../../.claude/scripts/quality-gate.sh), and
+`quality-metrics.py` computes its coverage, complexity and CRAP numbers. It gives one PASS or FAIL
+for the change, with the numbers, and judges only the code the change touched. Legacy code that a
+change touches only has to not get worse, so a bug fix doesn't turn into a rewrite.
 
 ```bash
 .claude/scripts/quality-gate.sh --base <ref> [--mutation]   # measure the change since <ref>
@@ -345,166 +323,154 @@ has to not get worse, so a bug fix never turns into a rewrite.
 
 | Check | Set in `hooks.env` | Fails when |
 |---|---|---|
-| gate-config | Always on | A check would run blind. Otherwise it warns on each `hooks.env`, `.gitattributes` and gate-file change, since loosening the gate needs your words |
+| gate-config | Always on | A check would run blind. Otherwise it warns on each `hooks.env`, `.gitattributes` and gate-file change, because loosening the gate needs your approval |
 | build | `GATE_BUILD_CMD` | The command exits non-zero |
 | typecheck, lint | `TYPECHECK_CMD`, `LINT_CMD`, in each touched `PACKAGE_DIRS` dir (a `PACKAGE_CMDS` entry overrides them there) | A command exits non-zero |
-| test | `GATE_TEST_CMD`, which should write `COVERAGE_REPORTS` | A test fails, or no coverage report came from this run |
+| test | `GATE_TEST_CMD`, which should write `COVERAGE_REPORTS` | A test fails, or this run produced no coverage report |
 | metrics | `COVERAGE_MIN`, `COMPLEXITY_MAX`, `CRAP_MAX` (needs python 3 and `pip install lizard`) | Too few changed lines ran under test, or a new or more complex function is over the complexity or CRAP limit |
 | suppressions | `SUPPRESSION_CHECK` (`block` or `warn`) | In `block` mode, the change silences a check or skips a test; `warn` lists each one for the reviewer |
 | test-removal | `SUPPRESSION_CHECK`, `TEST_ASSERTION_PATTERNS` | In `block` mode, the change removes or rewrites a test case or assertion |
-| mutation | `MUTATION_CMD`, `MUTATION_GLOBS`; only with `--mutation`, once everything else passed | The tool's threshold is missed; the result is kept for that exact change |
+| mutation | `MUTATION_CMD`, `MUTATION_GLOBS`; only with `--mutation`, after everything else passed | The tool's threshold is missed. The result is kept for that exact change |
 
-Each check is skipped while its `hooks.env` value is blank.
+A check is skipped while its `hooks.env` value is blank.
 
-Things to know:
-
-- **Verdicts.** `PASS` and `PASS (partial: …)` exit 0; partial names a build or test step that is
-  not configured, so you run it by hand. `NOT CONFIGURED` means no gate values are set, and the
-  workflow falls back to its own verification. `FAIL` exits 1 and the workflow stops. A configured
-  check that cannot run counts as a FAIL.
-- **A change cannot loosen it for itself.** `hooks.env` is parsed as data, never run, and the base
-  commit's stricter limits, suppression mode and file lists are kept. After set-up, loosening a limit
-  needs your explicit approval and a line in `.ai/memory/decisions.md`; removing a check is refused.
-- **Change id.** The first output line is a hash of the changed source and test files, so you can
-  tell which code a recorded result measured. Full logs go under `.git/quality-gate/`.
-- **`--baseline`** measures the whole codebase and writes `.ai/reports/quality-baseline.md`. It
-  judges nothing; `/init-project` uses it to choose the limits, and re-running it shows the trend.
-- **At the commit STOP** you see the gate's table of touched functions with their complexity,
-  coverage and CRAP, so you can review structure and names instead of reading every line.
+- `PASS` and `PASS (partial: …)` exit 0. A partial pass names a build or test step that isn't
+  configured, so you run it by hand. `NOT CONFIGURED` means no gate values are set, and the workflow
+  falls back to its own verification. `FAIL` exits 1 and the workflow stops. A configured check that
+  can't run counts as a FAIL.
+- A change can't loosen the gate for itself. The gate reads `hooks.env` as data and never runs it,
+  and it keeps the base commit's stricter limits, suppression mode and file lists. After set-up,
+  loosening a limit needs your explicit approval and a line in `.ai/memory/decisions.md`. Removing a
+  check is refused.
+- The first line of output is the change id, a hash of the changed source and test files. It tells
+  you which code a recorded result measured. Full logs go under `.git/quality-gate/`.
+- `--baseline` measures the whole codebase and writes `.ai/reports/quality-baseline.md`. It judges
+  nothing. `/init-project` uses it to choose the limits, and running it again later shows the trend.
+- At the commit STOP you see the gate's table of touched functions with their complexity, coverage
+  and CRAP, so you can review structure and names without reading every line.
 
 Where it runs:
 
 | Where | How |
 |---|---|
 | `/init-project` | `--base HEAD~1` once, to prove the commands and report paths, then `--baseline` |
-| `/workflows:feature` | The developer sub-agent loops: fix the cause, at most 3 failing runs, one clean-up pass, `--mutation` on its last run. Your session re-runs it without `--mutation` and saves `## Quality gate` in `test-specs/test-report.md`; it runs again at the commit STOP if fixes changed the code |
-| Epic path | Each sub-feature in its worktree with `--base epic/<slug>`; Phase E once on the merged branch → `test-specs/quality-gate.md`; Phase F again if the code changed |
-| `/workflows:bugfix` | `--base <branch the fix started from>`, no `--mutation`, at most 3 failing runs; still failing → STOP before the review. The final run before the commit goes in `test-specs/test-report.md` |
-| `/workflows:hotfix` | `--base <default branch>` once, no `--mutation`; its output goes in the PR. A FAIL is fixed, or a person accepts it in the PR |
-| Ad hoc | `/agents:dev` and `/agents:qa` run it where it is configured; you can run `quality-gate.sh --base main` yourself |
-| `/workflows:release` | Not used: each changed sub-project's lint, test and build commands run instead |
+| `/workflows:feature` | The developer sub-agent loops: it fixes the cause, stops after 3 failing runs, does one clean-up pass, and adds `--mutation` on its last run. Your session re-runs it without `--mutation` and saves `## Quality gate` in `test-specs/test-report.md`. It runs again at the commit STOP if fixes changed the code |
+| Epic path | Each sub-feature in its worktree with `--base epic/<slug>`. Phase E runs it once on the merged branch → `test-specs/quality-gate.md`, and phase F again if the code changed |
+| `/workflows:bugfix` | `--base <branch the fix started from>`, no `--mutation`, at most 3 failing runs. If it still fails, the workflow stops before the review. The final run before the commit goes in `test-specs/test-report.md` |
+| `/workflows:hotfix` | `--base <default branch>` once, no `--mutation`. Its output goes in the PR. A FAIL is fixed, or a person accepts it in the PR |
+| Ad hoc | `/agents:dev` and `/agents:qa` run it where it is configured. You can also run `quality-gate.sh --base main` yourself |
+| `/workflows:release` | Not used. The release runs each changed sub-project's lint, test and build commands instead |
 
----
+## 10. Release (`/workflows:release`)
 
-## 10. Release — `/workflows:release`
+![Release workflow: security scanner and release manager in parallel, fed by deploy notes, a CRITICAL STOP, quality gates, the release confirmation STOP, version bump and changelog, the optional deployment guide, commit, tag and the optional Jira STOP](diagrams/ai-dev-harness/10-release.png)
 
-![Release workflow — security scanner and release manager in parallel fed by deploy notes, CRITICAL STOP, quality gates, release confirmation STOP, version bump and changelog, optional deployment guide, commit, tag and optional Jira STOP](diagrams/ai-dev-harness/10-release.png)
+When you run it:
 
-Things to know when you run it:
-
-- **Step 1 runs two sub-agents in parallel:** `security-scanner` on `git diff <last tag>..HEAD` with
-  a dependency audit, and `release-manager`, which writes release notes, migration plan, rollback
-  plan and deployment checklist to `.ai/releases/<version>/` from the deploy notes whose fix version
-  matches.
-- **CRITICAL findings stop the release.** HIGH findings are shown and you decide whether to go on.
-- **Step 2** runs each changed sub-project's lint, test and build commands from its project-config.
-  `quality-gate.sh` is not part of the release path.
-- **Step 3 STOP:** you see the security verdict, artifact paths, the deploy notes in scope (and any
-  with no deploy impact or an unknown fix version), the gate results, and what step 4 will do with the
-  deployment guide.
-- **Step 4** bumps each manifest (fix → patch, feat → minor, breaking → major) and updates
-  `CHANGELOG.md`. If the deployment guide is switched on in `project-config.md` → Release deliverables,
-  it creates or merges `docs/release/<version>/deployment-guide-<version>.md`, regenerates the Word
-  copy with `.claude/scripts/md-to-docx.py` if that is on, and refreshes `docs/release/README.md`. An
-  existing guide is merged, never overwritten.
-- **Then** one commit (`chore(release): bump version to <version>`) and `git tag <version>`. If the
-  Atlassian MCP server is connected, a last STOP shows the issues, transition and comment before
-  anything is sent. The workflow never pushes or deploys.
-
----
+- Step 1 runs two sub-agents in parallel. `security-scanner` checks `git diff <last tag>..HEAD` and
+  audits dependencies. `release-manager` writes the release notes, migration plan, rollback plan and
+  deployment checklist to `.ai/releases/<version>/` from the deploy notes whose Fix version matches.
+- A CRITICAL finding stops the release. HIGH findings are shown, and you decide whether to go on.
+- Step 2 runs each changed sub-project's lint, test and build commands from its project-config.
+  `quality-gate.sh` isn't part of the release.
+- At the step 3 STOP you see the security verdict, the artifact paths, the deploy notes in scope
+  (plus any with no deploy impact or an unknown Fix version), the gate results, and what step 4 will
+  do with the deployment guide.
+- Step 4 bumps each manifest (fix → patch, feat → minor, breaking → major) and updates
+  `CHANGELOG.md`. If the deployment guide is switched on under Release deliverables in
+  `project-config.md`, it creates or merges `docs/release/<version>/deployment-guide-<version>.md`,
+  regenerates the Word copy with `.claude/scripts/md-to-docx.py` if that is on, and refreshes
+  `docs/release/README.md`. An existing guide is merged, never overwritten.
+- It ends with one commit (`chore(release): bump version to <version>`) and `git tag <version>`. If
+  the Atlassian MCP server is connected, a last STOP shows the issues, the transition and the comment
+  before anything is sent to Jira. The workflow never pushes or deploys.
 
 ## 11. Hooks and guardrails
 
-![Guardrails — nine hooks in a table of Claude Code event, hook script and effect, coloured BLOCK, WARN, REMIND, HINT or CONTEXT, with the hooks.env template defaults and the guardrails beyond hooks](diagrams/ai-dev-harness/11-guardrails.png)
+![Guardrails: nine hooks in a table of Claude Code event, hook script and effect, coloured BLOCK, WARN, REMIND, HINT or CONTEXT, with the hooks.env template defaults and the guardrails beyond hooks](diagrams/ai-dev-harness/11-guardrails.png)
 
 Hooks are registered in [`.claude/settings.json`](../../.claude/settings.json) and need `bash` on
-`PATH`. Every script sources [`.claude/hooks/hooks.env`](../../.claude/hooks/hooks.env) and skips any
-check whose value is blank or `"off"`, so an unconfigured template blocks nothing. Exit code 2 blocks
-the tool call and Claude reads the stderr; exit 0 allows it, and a warning reaches Claude only as
-`additionalContext` JSON on stdout. The Stop reminder goes to you as a `systemMessage`.
+`PATH`. Every script sources [`.claude/hooks/hooks.env`](../../.claude/hooks/hooks.env) and skips
+any check whose value is blank or `"off"`, so an unconfigured template blocks nothing. Exit code 2
+blocks the tool call, and Claude reads the stderr. Exit 0 allows it, and a warning reaches Claude
+only as `additionalContext` JSON on stdout. The Stop reminder reaches you as a `systemMessage`.
 
 | Hook | Behaviour |
 |---|---|
-| `pre-tool-use.sh` (PreToolUse: Edit, Write, MultiEdit) | **Blocks** edits to `MIGRATIONS_GLOB` files, and with `SUPPRESSION_CHECK=block` an edit that adds a suppression or skipped test. Warns on `.env` files, production config and `SENSITIVE_CONFIG_GLOBS`; notes edits to `hooks.env` |
+| `pre-tool-use.sh` (PreToolUse: Edit, Write, MultiEdit) | **Blocks** edits to `MIGRATIONS_GLOB` files and, with `SUPPRESSION_CHECK=block`, an edit that adds a suppression or skipped test. Warns on `.env` files, production config and `SENSITIVE_CONFIG_GLOBS`, and notes edits to `hooks.env` |
 | `git-guard.sh` (PreToolUse: Bash) | **Blocks** `git push --force` and `git reset --hard` with no override, pushes to `PROTECTED_BRANCHES`, and `DEPLOY_CMD` aimed at `PROD_STAGE`. Warns on a push from a branch outside `WORK_BRANCH_PREFIXES` |
 | `e2e-guard.sh` (PreToolUse: Bash, PowerShell, Claude in Chrome, Playwright) | **Blocks** HTTP clients and browser tool calls that name a host in `E2E_FORBIDDEN_HOSTS` |
-| `post-tool-use.sh` (PostToolUse: Edit, Write, MultiEdit) | Warns: type-check and lint of the edited package, tenant isolation, frontend env, design tokens, TDD nudge, suppressions in `warn` mode |
-| `post-tool-batch.sh` (PostToolBatch) | Warns: full type-check of a package dir when two or more of its files changed in one batch |
-| `post-tool-failure.sh` (PostToolUseFailure: Edit, Write, Bash) | Hint: classifies a failed call (type, lint, migration, missing module) and passes a fix hint to Claude as context |
+| `post-tool-use.sh` (PostToolUse: Edit, Write, MultiEdit) | Warns about type-check and lint results for the edited package, tenant isolation, frontend env use, design tokens, a TDD nudge, and suppressions in `warn` mode |
+| `post-tool-batch.sh` (PostToolBatch) | Warns with a full type-check of a package dir when two or more of its files changed in one batch |
+| `post-tool-failure.sh` (PostToolUseFailure: Edit, Write, Bash) | Classifies a failed call (type, lint, migration, missing module) and passes Claude a fix hint as context |
 | `stop-check.sh` (Stop) | Reminds you of uncommitted tracked changes on a work branch |
 | `user-prompt-context.sh` (UserPromptSubmit) | Adds the current branch and scope before each prompt |
-| `compact-restore.sh` (SessionStart, compact) | Re-injects branch, scope, the in-progress feature or epic, `STATE.md` phase and next action, and the last 5 commits |
+| `compact-restore.sh` (SessionStart, compact) | Re-injects the branch, scope, the feature or epic in progress, its `STATE.md` phase and next action, and the last 5 commits |
 
-To change a guardrail, edit `.claude/hooks/hooks.env`, not the scripts.
+To change a guardrail, edit `.claude/hooks/hooks.env` rather than the scripts.
 
-Safeguards beyond hooks:
+Other safeguards:
 
-- `quality-gate.sh` measures every change at the workflows' verify steps; a FAIL stops the workflow.
-  It keeps the base commit's stricter limits, so a change cannot loosen them for itself.
-- Least privilege in frontmatter: `reviewer` and `critic` have no Write or Edit tool, and five
-  commands disallow writes.
-- `/agents:devops` is advise-only by default. `.claude/scripts/devops-mode.sh on | off | status`
-  rewrites its `allowed-tools` line; in execute mode each command still needs your approval.
-- STOP gates in every workflow, and every outward write (Jira update, PR) is shown and confirmed
-  first. MCP tools are granted per command, and `.mcp.json` holds no secrets.
+- `quality-gate.sh` measures every change at the workflows' verify steps, and a FAIL stops the
+  workflow. It keeps the base commit's stricter limits, so a change can't loosen them for itself.
+- Frontmatter grants each agent the fewest tools it needs: `reviewer` and `critic` have no Write or
+  Edit tool, and five commands disallow writes.
+- `/agents:devops` only advises by default. `.claude/scripts/devops-mode.sh on | off | status`
+  rewrites its `allowed-tools` line, and in execute mode each command still needs your approval.
+- Every workflow has STOP gates, and every outward write (a Jira update, a PR) is shown to you and
+  confirmed first. MCP tools are granted per command, and `.mcp.json` holds no secrets.
 
----
+## 12. Changing the harness (`/harness:improve`)
 
-## 12. Self-improvement — `/harness:improve`
+![Self-improvement: plan and STOP, then for each work package in parallel an author, critic, revise and recheck loop capped at two rounds, an integration audit, the verification block and a STOP before the commit, with the 13 invariants on the right](diagrams/ai-dev-harness/12-self-improvement.png)
 
-![Self-improvement — plan and STOP, then per work package in parallel an author, critic, revise and recheck loop capped at two rounds, an integration audit, the verification block and a STOP before the commit, with the 13 invariants on the right](diagrams/ai-dev-harness/12-self-improvement.png)
+The loop comes from [`.ai/workflows/harness-improvement.md`](../../.ai/workflows/harness-improvement.md):
 
-The loop, from [`.ai/workflows/harness-improvement.md`](../../.ai/workflows/harness-improvement.md):
-
-1. **Plan** — restate the goal and split it into work packages with disjoint file sets. **STOP**:
-   you confirm the plan before any edit.
-2. **Author** — one `harness-engineer` sub-agent per package, in parallel. Shell changes are run for
-   real (`bash -n` and smoke runs in a throwaway git repo).
-3. **Critique** — one read-only `critic` per package verifies every claim itself and grades findings
+1. Plan. It restates the goal and splits it into work packages that touch separate files, then
+   **STOPs** so you can confirm the plan before any edit.
+2. Author. One `harness-engineer` sub-agent per package works in parallel. Shell changes are run for
+   real, with `bash -n` and smoke runs in a throwaway git repo.
+3. Critique. One read-only `critic` per package checks every claim itself and grades its findings
    CRITICAL, MAJOR or MINOR.
-4. **Revise** — a `harness-engineer` fixes every CRITICAL and MAJOR finding, or rebuts it with
-   evidence.
-5. **Recheck** — a fresh `critic` confirms the fixes. At most two rounds, then **STOP** and you decide.
-6. **Integrate** — one critic audits the whole change: file ownership, cross-file contracts, the
-   mirror invariant, `bash -n`, broken references, and the doc inventories with their counts.
-7. **Verify and land** — run the verification block, show the diff summary, then **STOP**. It commits
-   only on your approval, on a `feature/` branch. A template release also bumps `HARNESS_VERSION`
-   and the `docs/index.html` sidebar version and is tagged `v<version>`. Lessons go to
+4. Revise. A `harness-engineer` fixes every CRITICAL and MAJOR finding, or rebuts it with evidence.
+5. Recheck. A fresh `critic` confirms the fixes. After two rounds it **STOPs** and you decide.
+6. Integrate. One critic audits the whole change: who owns which file, contracts between files, the
+   mirror invariant, `bash -n`, broken references, and the counts in the doc inventories.
+7. Verify and land. It runs the verification block, shows the diff summary and **STOPs**. It commits
+   only with your approval, on a `feature/` branch. A template release also bumps `HARNESS_VERSION`
+   and the sidebar version in `docs/index.html`, and is tagged `v<version>`. Lessons go to
    `.ai/memory/learnings.md`.
 
-The playbook has 13 numbered rules: 8 invariants (two-layer split, three-layer agent pattern,
-template genericness, inert-safety, gate integrity, mirror invariant, docs inventories, tool least
-privilege) and 5 integration rules (no secrets in config, per-command grants, outward writes behind
-gates, optional by default, agents never authenticate). Breaking any of them is a CRITICAL defect.
+The playbook has 13 numbered rules. Eight are invariants: the two-layer split, the three-layer agent
+pattern, keeping the template generic, inert-safety, gate integrity, the mirror invariant, the docs
+inventories and least privilege for tools. Five are integration rules: no secrets in config,
+per-command grants, outward writes behind gates, integrations optional by default, and agents never
+authenticate. Breaking any of them is a CRITICAL defect.
 
-For questions rather than changes, `/harness:ask <question>` is read-only. It uses
-`harness-guide-agent.md`, answers from the repo's own files, cites the paths, and redirects product
+To ask about the harness without changing it, use `/harness:ask <question>`, which is read-only. It
+uses `harness-guide-agent.md`, answers from the repo's own files, cites the paths, and points product
 code questions to the right command.
 
----
+## 13. Concepts that apply everywhere
 
-## 13. Cross-cutting concepts
-
-- **Scope.** Most commands and sub-agents first read `.ai/config/current-scope.md`. A
-  `# Forced scope:` line wins; otherwise they infer backend, frontend or fullstack from the request
-  and load only that scope's config, context and standards. Force a scope with `/utils:scope`.
-- **Branding.** `.ai/config/branding.md` and `.ai/templates/artifact-header.md` put your header on
-  every generated document, except `STATE.md` and `deploy-notes.md`.
-- **Workflow state.** `STATE.md`, from `.ai/templates/feature-state.md`, is what makes the feature
-  and epic workflows resumable; `compact-restore.sh` prints its next action after compaction.
-- **Memory.** `.ai/memory/decisions.md`, `learnings.md` (add with `/utils:learn`) and
+- Scope. Most commands and sub-agents first read `.ai/config/current-scope.md`. A `# Forced scope:`
+  line wins; otherwise they infer backend, frontend or fullstack from the request and load only that
+  scope's config, context and standards. Force a scope with `/utils:scope`.
+- Branding. `.ai/config/branding.md` and `.ai/templates/artifact-header.md` put your header on every
+  generated document except `STATE.md` and `deploy-notes.md`.
+- Workflow state. `STATE.md`, built from `.ai/templates/feature-state.md`, is what lets the feature
+  and epic workflows resume. `compact-restore.sh` prints its next action after a compaction.
+- Memory. `.ai/memory/decisions.md`, `learnings.md` (add to it with `/utils:learn`) and
   `design-taste.md`, plus `.claude/agent-memory/<agent>/` for the sub-agents with `memory: project`.
-  All are committed.
-- **Path-scoped rules.** A `.md` file under `.claude/rules/` with `paths:` frontmatter loads only when
-  Claude touches a matching file; `_example-area.md` is an inert example.
-- **Model and effort.** Set per sub-agent in the frontmatter of `.claude/agents/*.md`, and per
+  All of it is committed.
+- Path-scoped rules. A `.md` file under `.claude/rules/` with `paths:` frontmatter loads only when
+  Claude touches a matching file. `_example-area.md` is an inert example.
+- Model and effort. These are set per sub-agent in the frontmatter of `.claude/agents/*.md`, and per
   command in `.claude/commands/**`.
-- **Template tokens.** `{{TOKENS}}` and `> [FILL IN: …]` blocks are filled by `/init-project`, which
-  also records `HARNESS_VERSION`.
-- **Other agents.** [`AGENTS.md`](../../AGENTS.md) carries the same method for non-Claude agents; see
-  [`../portability.md`](../portability.md).
-
----
+- Template tokens. `/init-project` fills the `{{TOKENS}}` and `> [FILL IN: …]` blocks and records
+  `HARNESS_VERSION`.
+- Other agents. [`AGENTS.md`](../../AGENTS.md) carries the same method for agents other than Claude;
+  see [`../portability.md`](../portability.md).
 
 ## 14. Which command do I use?
 
@@ -538,14 +504,12 @@ code questions to the right command.
 | Ask how the harness works | `/harness:ask "<question>"` |
 | Change the harness itself | `/harness:improve "<change>"` |
 
-Full arguments and outputs: [`COMMANDS.md`](../../COMMANDS.md).
-
----
+[`COMMANDS.md`](../../COMMANDS.md) lists every command's arguments and outputs.
 
 ## Updating the diagrams
 
-Edit `diagrams/ai-dev-harness/ai-dev-harness.drawio` in the draw.io desktop app or in VS Code with
-the "Draw.io Integration" extension. It is one uncompressed file with one page per diagram. Then
+Edit `diagrams/ai-dev-harness/ai-dev-harness.drawio` in the draw.io desktop app, or in VS Code with
+the "Draw.io Integration" extension. It is one uncompressed file with a page for each diagram. Then
 export each page to its PNG from `docs/harness-docs/diagrams/ai-dev-harness/`:
 
 ```bash
@@ -561,10 +525,10 @@ for i in "${!names[@]}"; do
 done
 ```
 
-Update the diagrams and this guide whenever a harness change adds, renames or removes a command,
-agent, hook or workflow step.
+When a harness change adds, renames or removes a command, agent, hook or workflow step, update the
+diagrams and this guide in the same change.
 
-This guide is also published as [`docs/how-it-works.html`](../how-it-works.html), linked from the
-setup guide. That page is generated: after editing this file, run
-`python docs/harness-docs/build-html.py` (`--check` reports whether the page is out of date) and
-commit both files together.
+This guide is also published as [`docs/how-it-works.html`](../how-it-works.html), which the setup
+guide links to. That page is generated from this file, so after editing it run
+`python docs/harness-docs/build-html.py` and commit both files together. `--check` tells you whether
+the page is out of date.
