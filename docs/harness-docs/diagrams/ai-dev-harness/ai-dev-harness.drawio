@@ -4,7 +4,7 @@
       <root>
         <mxCell id="p1c0" />
         <mxCell id="p1c1" parent="p1c0" />
-        <mxCell id="p1c2" value="Architecture — knowledge layer vs execution layer" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
+        <mxCell id="p1c2" value="Architecture: knowledge layer vs execution layer" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p1c3" value="Read top to bottom: &lt;b&gt;you&lt;/b&gt; type a command in a &lt;b&gt;Claude Code session&lt;/b&gt;, which runs the &lt;b&gt;.claude/&lt;/b&gt; execution layer; that layer &lt;b&gt;@-includes&lt;/b&gt; the Markdown in &lt;b&gt;.ai/&lt;/b&gt; and writes its artifacts back there. Grey boxes along the bottom are &lt;b&gt;outside the harness&lt;/b&gt;." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
@@ -19,22 +19,22 @@
         <mxCell id="p1c6" value="&lt;b&gt;Claude Code session&lt;/b&gt;&lt;br&gt;loads CLAUDE.md · expands @-includes · fires hook events · spawns sub-agents" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
           <mxGeometry x="60" y="224" width="720" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p1c8" value="&lt;b&gt;.claude/&lt;/b&gt; — Execution layer" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f0f6fc;strokeColor=#6c8ebf;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
+        <mxCell id="p1c8" value="&lt;b&gt;.claude/&lt;/b&gt;: Execution layer" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f0f6fc;strokeColor=#6c8ebf;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
           <mxGeometry x="40" y="330" width="760" height="434" as="geometry" />
         </mxCell>
-        <mxCell id="p1c9" value="&lt;b&gt;.ai/&lt;/b&gt; — Knowledge layer, Markdown only" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f3f9f1;strokeColor=#82b366;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
+        <mxCell id="p1c9" value="&lt;b&gt;.ai/&lt;/b&gt;: Knowledge layer, Markdown only" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f3f9f1;strokeColor=#82b366;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p1c1">
           <mxGeometry x="880" y="140" width="780" height="624" as="geometry" />
         </mxCell>
         <mxCell id="p1c10" value="&lt;b&gt;settings.json&lt;/b&gt;&lt;br&gt;registers each hook script on its event&lt;br&gt;and tool matcher" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="60" y="380" width="350" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c11" value="&lt;b&gt;commands/&lt;/b&gt; — 27 slash commands&lt;br&gt;studios · agents:* · workflows:*&lt;br&gt;utils:* · harness:*" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c11" value="&lt;b&gt;commands/&lt;/b&gt;: 27 slash commands&lt;br&gt;studios · agents:* · workflows:*&lt;br&gt;utils:* · harness:*" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="430" y="380" width="350" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c12" value="&lt;b&gt;hooks/&lt;/b&gt; — 9 hook scripts&lt;br&gt;hooks.env: the one config every hook sources" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c12" value="&lt;b&gt;hooks/&lt;/b&gt;: 9 hook scripts&lt;br&gt;hooks.env: the one config every hook sources" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="60" y="476" width="350" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c13" value="&lt;b&gt;agents/&lt;/b&gt; — 8 sub-agents&lt;br&gt;fresh context and own tool list&lt;br&gt;spawned as Task agents" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c13" value="&lt;b&gt;agents/&lt;/b&gt;: 8 sub-agents&lt;br&gt;fresh context and own tool list&lt;br&gt;spawned as Task agents" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="430" y="476" width="350" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p1c14" value="&lt;b&gt;rules/&lt;/b&gt;&lt;br&gt;path-scoped rules: load only when Claude&lt;br&gt;reads or edits a matching file" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
@@ -61,13 +61,13 @@
         <mxCell id="p1c21" value="&lt;b&gt;memory/&lt;/b&gt;&lt;br&gt;decisions · learnings · design-taste&lt;br&gt;(append-only, committed)" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="1280" y="284" width="360" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c22" value="&lt;b&gt;agents/&lt;/b&gt; — 16 personas&lt;br&gt;role, method, output format, never-do list" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c22" value="&lt;b&gt;agents/&lt;/b&gt;: 16 personas&lt;br&gt;role, method, output format, never-do list" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="900" y="380" width="360" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c23" value="&lt;b&gt;workflows/&lt;/b&gt; — 8 playbooks&lt;br&gt;the method each command follows" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c23" value="&lt;b&gt;workflows/&lt;/b&gt;: 8 playbooks&lt;br&gt;the method each command follows" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="1280" y="380" width="360" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p1c24" value="&lt;b&gt;templates/&lt;/b&gt; — 14 output templates&lt;br&gt;specs · reports · deploy notes · STATE.md" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
+        <mxCell id="p1c24" value="&lt;b&gt;templates/&lt;/b&gt;: 14 output templates&lt;br&gt;specs · reports · deploy notes · STATE.md" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
           <mxGeometry x="900" y="476" width="360" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p1c25" value="&lt;b&gt;branding/&lt;/b&gt;&lt;br&gt;logo for the branded artifact header" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p1c1">
@@ -152,7 +152,7 @@
       <root>
         <mxCell id="p2c0" />
         <mxCell id="p2c1" parent="p2c0" />
-        <mxCell id="p2c2" value="Agent pattern — command, persona, sub-agent" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p2c1">
+        <mxCell id="p2c2" value="Agent pattern: command, persona, sub-agent" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p2c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p2c3" value="Each row is one persona. A &lt;b&gt;command&lt;/b&gt; (blue) @-includes the &lt;b&gt;persona&lt;/b&gt; (green) where the behaviour lives; a &lt;b&gt;sub-agent&lt;/b&gt; (purple), where one exists, loads the same persona into a fresh context. Commands and sub-agents add scope, tools and the task, never their own rules." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p2c1">
@@ -382,10 +382,10 @@
       <root>
         <mxCell id="p3c0" />
         <mxCell id="p3c1" parent="p3c0" />
-        <mxCell id="p3c2" value="End-to-end delivery lifecycle — commands and the artifacts they hand off" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
+        <mxCell id="p3c2" value="End-to-end delivery lifecycle: commands and the artifacts they hand off" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
           <mxGeometry x="40" y="20" width="1500" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="p3c3" value="Read left to right, once per ticket. Each stage reads what the one before it wrote under .ai/features/&amp;lt;slug&amp;gt;/. /workflows:feature &lt;b&gt;consumes&lt;/b&gt; the /ba and /qa artifacts — it never writes them and stops if they are missing." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
+        <mxCell id="p3c3" value="Read left to right, once per ticket. Each stage reads what the one before it wrote under .ai/features/&amp;lt;slug&amp;gt;/. /workflows:feature &lt;b&gt;consumes&lt;/b&gt; the /ba and /qa artifacts, it never writes them and stops if they are missing." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
           <mxGeometry x="40" y="60" width="1880" height="24" as="geometry" />
         </mxCell>
         <mxCell id="p3c4" value="&lt;b&gt;Stage&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f7f7;strokeColor=#bbbbbb;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
@@ -394,10 +394,10 @@
         <mxCell id="p3c5" value="&lt;b&gt;Jira issue&lt;/b&gt;&lt;br&gt;issue key + Fix version&lt;br&gt;(Atlassian MCP, read-only)" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
           <mxGeometry x="56" y="142" width="240" height="108" as="geometry" />
         </mxCell>
-        <mxCell id="p3c6" value="&lt;b&gt;/ba — BA Studio&lt;/b&gt;&lt;br&gt;interviews you:&lt;br&gt;single feature or epic?" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
+        <mxCell id="p3c6" value="&lt;b&gt;/ba: BA Studio&lt;/b&gt;&lt;br&gt;interviews you:&lt;br&gt;single feature or epic?" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
           <mxGeometry x="324" y="142" width="240" height="108" as="geometry" />
         </mxCell>
-        <mxCell id="p3c7" value="&lt;b&gt;/qa — QA Studio&lt;/b&gt;&lt;br&gt;interviews the tester:&lt;br&gt;test spec per feature" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
+        <mxCell id="p3c7" value="&lt;b&gt;/qa: QA Studio&lt;/b&gt;&lt;br&gt;interviews the tester:&lt;br&gt;test spec per feature" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
           <mxGeometry x="592" y="142" width="240" height="108" as="geometry" />
         </mxCell>
         <mxCell id="p3c8" value="&lt;b&gt;/workflows:feature&lt;/b&gt;&lt;br&gt;spec → design → build →&lt;br&gt;quality gate → review ∥ security&lt;br&gt;→ runtime checks → commit" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
@@ -481,10 +481,10 @@
         <mxCell id="p3c47" value="&lt;b&gt;/workflows:hotfix &quot;&amp;lt;issue&amp;gt;&quot;&lt;/b&gt;&lt;br&gt;branch from the default branch → minimal fix →&lt;br&gt;quality gate → review → smoke check → PR&lt;br&gt;+ forward-port · writes deploy-notes.md" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p3c1">
           <mxGeometry x="988" y="898" width="446" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p3c48" value="&lt;b&gt;Harness maintenance&lt;/b&gt;&lt;br&gt;&lt;b&gt;/harness:ask&lt;/b&gt; — read-only Q&amp;amp;A, cites files&lt;br&gt;&lt;b&gt;/harness:improve&lt;/b&gt; — author → critic →&lt;br&gt;revise → recheck loop (page 12)" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p3c1">
+        <mxCell id="p3c48" value="&lt;b&gt;Harness maintenance&lt;/b&gt;&lt;br&gt;&lt;b&gt;/harness:ask&lt;/b&gt;, read-only Q&amp;amp;A, cites files&lt;br&gt;&lt;b&gt;/harness:improve&lt;/b&gt;, author → critic →&lt;br&gt;revise → recheck loop (page 12)" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p3c1">
           <mxGeometry x="1454" y="898" width="446" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p3c49" value="&lt;b&gt;Utilities (any time)&lt;/b&gt;&lt;br&gt;/utils:status · standup · changelog · docs · docs-serve · scope · learn — /agents:architect · design · qa · review · security · devops · pm · release-manager for single-specialist runs" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p3c1">
+        <mxCell id="p3c49" value="&lt;b&gt;Utilities (any time)&lt;/b&gt;&lt;br&gt;/utils:status · standup · changelog · docs · docs-serve · scope · learn, /agents:architect · design · qa · review · security · devops · pm · release-manager for single-specialist runs" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p3c1">
           <mxGeometry x="56" y="1024" width="1844" height="60" as="geometry" />
         </mxCell>
         <mxCell id="p3c50" value="&lt;i&gt;Legend:&lt;/i&gt; yellow = studio that interviews you · blue = harness command · grey = outside the harness · orange = Markdown artifact · dashed = data hand-off" style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p3c1">
@@ -547,7 +547,7 @@
       <root>
         <mxCell id="p4c0" />
         <mxCell id="p4c1" parent="p4c0" />
-        <mxCell id="p4c2" value="Feature workflow — single feature (/workflows:feature)" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c2" value="Feature workflow: single feature (/workflows:feature)" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p4c3" value="Read down the spine. &lt;b&gt;Decisions&lt;/b&gt; branch right, &lt;b&gt;STOP exits&lt;/b&gt; go left, and orange notes are the files each step writes under .ai/features/&amp;lt;slug&amp;gt;/. Sub-agents (purple) only implement or review; every gate stays in your session." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -559,19 +559,19 @@
         <mxCell id="p4c5" value="&lt;b&gt;Step 0&lt;/b&gt;&lt;br&gt;STATE.md exists?" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="490" y="210" width="220" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p4c7" value="&lt;b&gt;Resume&lt;/b&gt; — trust but verify&lt;br&gt;check each done phase's artifact on disk&lt;br&gt;re-run any phase whose file is missing&lt;br&gt;continue from ## Next action" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
+        <mxCell id="p4c7" value="&lt;b&gt;Resume&lt;/b&gt;: trust but verify&lt;br&gt;check each done phase's artifact on disk&lt;br&gt;re-run any phase whose file is missing&lt;br&gt;continue from ## Next action" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="215" width="320" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p4c9" value="&lt;b&gt;Step 1&lt;/b&gt;&lt;br&gt;BA/QA inputs present?&lt;br&gt;&lt;font style='font-size:10px'&gt;requirement-spec ·&lt;/font&gt;&lt;br&gt;&lt;font style='font-size:10px'&gt;user-stories · test-specs&lt;/font&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="450" y="350" width="300" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="p4c11" value="&lt;b&gt;STOP — inputs missing&lt;/b&gt;&lt;br&gt;run /ba &amp;lt;slug&amp;gt; and&lt;br&gt;/qa &amp;lt;slug&amp;gt; first" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c11" value="&lt;b&gt;STOP: inputs missing&lt;/b&gt;&lt;br&gt;run /ba &amp;lt;slug&amp;gt; and&lt;br&gt;/qa &amp;lt;slug&amp;gt; first" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="40" y="370" width="320" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p4c13" value="&lt;b&gt;Step 2&lt;/b&gt;&lt;br&gt;epic-breakdown.md&lt;br&gt;exists?" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="480" y="520" width="240" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p4c15" value="Epic path — page 5" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c15" value="Epic path: page 5" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="545" width="320" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p4c17" value="Create STATE.md from feature-state.md · mode: single" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -583,7 +583,7 @@
         <mxCell id="p4c21" value="technical-specs/" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="774" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p4c23" value="&lt;b&gt;2 · STOP — approve tech spec&lt;/b&gt;&lt;br&gt;shown with the BA/QA artifacts&lt;br&gt;ask once: atomic commits?&lt;br&gt;(default off)" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c23" value="&lt;b&gt;2 · STOP: approve tech spec&lt;/b&gt;&lt;br&gt;shown with the BA/QA artifacts&lt;br&gt;ask once: atomic commits?&lt;br&gt;(default off)" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="380" y="870" width="440" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p4c25" value="&lt;b&gt;2a · UI surface?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -592,7 +592,7 @@
         <mxCell id="p4c27" value="&lt;b&gt;2a · /agents:design&lt;/b&gt;&lt;br&gt;UX → visual design → Artifact preview&lt;br&gt;→ design-system + accessibility check" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="1015" width="320" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="p4c29" value="&lt;b&gt;STOP — approve design&lt;/b&gt;&lt;br&gt;you approve the Artifact;&lt;br&gt;the Architect approves too&lt;br&gt;→ design/design-spec.md" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c29" value="&lt;b&gt;STOP: approve design&lt;/b&gt;&lt;br&gt;you approve the Artifact;&lt;br&gt;the Architect approves too&lt;br&gt;→ design/design-spec.md" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="1125" width="320" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p4c31" value="&lt;b&gt;3 · Create branch&lt;/b&gt; feature/&amp;lt;slug&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -610,10 +610,10 @@
         <mxCell id="p4c40" value="&lt;b&gt;gate FAIL?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="510" y="1570" width="180" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="p4c42" value="&lt;b&gt;STOP — gate failed&lt;/b&gt;&lt;br&gt;go on only on your direction&lt;br&gt;or each failure accepted" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c42" value="&lt;b&gt;STOP: gate failed&lt;/b&gt;&lt;br&gt;go on only on your direction&lt;br&gt;or each failure accepted" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="40" y="1565" width="320" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p4c44" value="&lt;b&gt;5 · Review &amp;amp; security gate&lt;/b&gt; — spawn both on one diff" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c44" value="&lt;b&gt;5 · Review &amp;amp; security gate&lt;/b&gt;: spawn both on one diff" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="400" y="1690" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p4c46" value="&lt;b&gt;∥ parallel&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f2fa;strokeColor=#9673a6;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -631,16 +631,16 @@
         <mxCell id="p4c54" value="deploy-notes.md (unbranded)" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="2004" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p4c56" value="&lt;b&gt;5b · Runtime verification&lt;/b&gt; — page 8&lt;br&gt;in this session: propose API · UI · DB checks,&lt;br&gt;ask once, run them against the test environment" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
+        <mxCell id="p4c56" value="&lt;b&gt;5b · Runtime verification&lt;/b&gt;: page 8&lt;br&gt;in this session: propose API · UI · DB checks,&lt;br&gt;ask once, run them against the test environment" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
           <mxGeometry x="400" y="2100" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p4c58" value="test-specs/e2e-report.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="2120" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p4c60" value="&lt;b&gt;6 · STOP — confirm commit&lt;/b&gt;&lt;br&gt;gate re-run if the code changed&lt;br&gt;CRITICAL · FAIL · NOT RUN block&lt;br&gt;unless you accept each one" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c60" value="&lt;b&gt;6 · STOP: confirm commit&lt;/b&gt;&lt;br&gt;gate re-run if the code changed&lt;br&gt;CRITICAL · FAIL · NOT RUN block&lt;br&gt;unless you accept each one" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="380" y="2220" width="440" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p4c62" value="&lt;b&gt;Commit&lt;/b&gt; — one conventional commit (default)&lt;br&gt;or confirm the per-task commits&lt;br&gt;includes .claude/agent-memory/ changes" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
+        <mxCell id="p4c62" value="&lt;b&gt;Commit&lt;/b&gt;: one conventional commit (default)&lt;br&gt;or confirm the per-task commits&lt;br&gt;includes .claude/agent-memory/ changes" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
           <mxGeometry x="400" y="2360" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p4c64" value="&lt;b&gt;7 · PR description&lt;/b&gt; · STATE.md marked complete" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
@@ -649,7 +649,7 @@
         <mxCell id="p4c66" value="pr-description.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="860" y="2489" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p4c68" value="Done — Next action: None" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
+        <mxCell id="p4c68" value="Done. Next action: None" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p4c1">
           <mxGeometry x="440" y="2580" width="320" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p4c70" value="&lt;b&gt;.ai/features/&amp;lt;slug&amp;gt;/STATE.md&lt;/b&gt;&lt;br&gt;mode · current phase · phases · tasks&lt;br&gt;decisions · blockers · next action&lt;br&gt;updated after every step, at every STOP and&lt;br&gt;before every Task spawn · never branded" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p4c1">
@@ -691,7 +691,7 @@
         <mxCell id="p4c16" value="yes" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c13" target="p4c15">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p4c18" value="no — single feature" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c13" target="p4c17">
+        <mxCell id="p4c18" value="no: single feature" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c13" target="p4c17">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p4c20" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c17" target="p4c19">
@@ -712,7 +712,7 @@
         <mxCell id="p4c30" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c27" target="p4c29">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p4c32" value="no — no UI" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c25" target="p4c31">
+        <mxCell id="p4c32" value="no: no UI" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c25" target="p4c31">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p4c33" value="both approved" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="p4c1" source="p4c29" target="p4c31">
@@ -804,7 +804,7 @@
       <root>
         <mxCell id="p5c0" />
         <mxCell id="p5c1" parent="p5c0" />
-        <mxCell id="p5c2" value="Epic path — Phases A–F, one worktree per sub-feature" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c2" value="Epic path: phases A to F, one worktree per sub-feature" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p5c3" value="When epic-breakdown.md exists, /workflows:feature runs &lt;b&gt;six phases&lt;/b&gt;. Sub-features in one &lt;b&gt;dependency group&lt;/b&gt; are built in parallel, each by a developer sub-agent in its own git worktree, then merged into &lt;b&gt;epic/&amp;lt;slug&amp;gt;&lt;/b&gt; one by one before a single review and PR." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
@@ -813,28 +813,28 @@
         <mxCell id="p5c4" value="Epic: epic-breakdown.md exists" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="440" y="120" width="320" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="p5c5" value="&lt;b&gt;Phase A — Validate inputs&lt;/b&gt;&lt;br&gt;read epic-breakdown.md: sub-features (slug, scope,&lt;br&gt;dependencies) and the dependency groups" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c5" value="&lt;b&gt;Phase A: Validate inputs&lt;/b&gt;&lt;br&gt;read epic-breakdown.md: sub-features (slug, scope,&lt;br&gt;dependencies) and the dependency groups" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="210" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p5c7" value="&lt;b&gt;every sub-feature&lt;/b&gt;&lt;br&gt;has its three specs?" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="480" y="330" width="240" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p5c9" value="&lt;b&gt;STOP — specs missing&lt;/b&gt;&lt;br&gt;run /ba and /qa first" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c9" value="&lt;b&gt;STOP: specs missing&lt;/b&gt;&lt;br&gt;run /ba and /qa first" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="40" y="340" width="320" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="p5c11" value="&lt;b&gt;A4 · STOP — confirm the plan&lt;/b&gt;&lt;br&gt;sub-features and dependency groups" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c11" value="&lt;b&gt;A4 · STOP: confirm the plan&lt;/b&gt;&lt;br&gt;sub-features and dependency groups" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="380" y="470" width="440" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="p5c13" value="&lt;b&gt;Phase B — UI/UX design gate&lt;/b&gt;&lt;br&gt;each UI sub-feature: /agents:design and its&lt;br&gt;approval loop, finished before Phase D" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c13" value="&lt;b&gt;Phase B: UI/UX design gate&lt;/b&gt;&lt;br&gt;each UI sub-feature: /agents:design and its&lt;br&gt;approval loop, finished before Phase D" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="580" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p5c15" value="&amp;lt;sub&amp;gt;/design/design-spec.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="860" y="600" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p5c17" value="&lt;b&gt;Phase C — Create the epic branch&lt;/b&gt;&lt;br&gt;epic/&amp;lt;slug&amp;gt; from base · commit .ai/features/&amp;lt;slug&amp;gt;/&lt;br&gt;planning artifacts · push" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c17" value="&lt;b&gt;Phase C: Create the epic branch&lt;/b&gt;&lt;br&gt;epic/&amp;lt;slug&amp;gt; from base · commit .ai/features/&amp;lt;slug&amp;gt;/&lt;br&gt;planning artifacts · push" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="700" width="400" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p5c19" value="&lt;b&gt;Phase D — per dependency group&lt;/b&gt;&lt;br&gt;.worktrees/ in .gitignore · one worktree each:&lt;br&gt;git worktree add -b feature/&amp;lt;slug&amp;gt;/&amp;lt;sub&amp;gt;&lt;br&gt;.worktrees/&amp;lt;sub&amp;gt; epic/&amp;lt;slug&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c19" value="&lt;b&gt;Phase D: per dependency group&lt;/b&gt;&lt;br&gt;.worktrees/ in .gitignore · one worktree each:&lt;br&gt;git worktree add -b feature/&amp;lt;slug&amp;gt;/&amp;lt;sub&amp;gt;&lt;br&gt;.worktrees/&amp;lt;sub&amp;gt; epic/&amp;lt;slug&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="820" width="400" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p5c21" value="&lt;b&gt;∥ parallel&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f2fa;strokeColor=#9673a6;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
@@ -852,10 +852,10 @@
         <mxCell id="p5c28" value="Wait for the whole group to finish · update STATE.md" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="1160" width="400" height="54" as="geometry" />
         </mxCell>
-        <mxCell id="p5c33" value="&lt;b&gt;Phase E — Sequential merge&lt;/b&gt;, in dependency order&lt;br&gt;merge each sub-feature branch into epic/&amp;lt;slug&amp;gt;&lt;br&gt;resolve conflicts · re-verify · git worktree remove" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c33" value="&lt;b&gt;Phase E: Sequential merge&lt;/b&gt;, in dependency order&lt;br&gt;merge each sub-feature branch into epic/&amp;lt;slug&amp;gt;&lt;br&gt;resolve conflicts · re-verify · git worktree remove" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="1260" width="400" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p5c35" value="&lt;b&gt;Integrated gate&lt;/b&gt; — after git worktree prune&lt;br&gt;quality-gate.sh --base &amp;lt;base-branch&amp;gt;, no --mutation" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c35" value="&lt;b&gt;Integrated gate&lt;/b&gt;: after git worktree prune&lt;br&gt;quality-gate.sh --base &amp;lt;base-branch&amp;gt;, no --mutation" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="1380" width="400" height="64" as="geometry" />
         </mxCell>
         <mxCell id="p5c37" value="test-specs/quality-gate.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
@@ -864,10 +864,10 @@
         <mxCell id="p5c39" value="&lt;b&gt;gate FAIL, or a&lt;/b&gt;&lt;br&gt;&lt;b&gt;sub-feature failing?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="470" y="1490" width="260" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p5c41" value="&lt;b&gt;STOP — your call&lt;/b&gt;&lt;br&gt;direct the fix, or accept&lt;br&gt;each failure" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c41" value="&lt;b&gt;STOP: your call&lt;/b&gt;&lt;br&gt;direct the fix, or accept&lt;br&gt;each failure" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="40" y="1495" width="320" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p5c43" value="&lt;b&gt;Phase F — Final review&lt;/b&gt; — both on the full epic diff" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c43" value="&lt;b&gt;Phase F: Final review&lt;/b&gt;, both on the full epic diff" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="1630" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p5c45" value="&lt;b&gt;∥ parallel&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f2fa;strokeColor=#9673a6;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
@@ -879,28 +879,28 @@
         <mxCell id="p5c48" value="&lt;b&gt;security-scanner&lt;/b&gt;&lt;br&gt;sonnet · writes its report only&lt;br&gt;CRITICAL · HIGH · MEDIUM · LOW&lt;br&gt;→ security-report.md" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="610" y="1774" width="230" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p5c50" value="&lt;b&gt;0a · Runtime verification, once&lt;/b&gt; — page 8&lt;br&gt;on the integrated epic/&amp;lt;slug&amp;gt; branch, covering&lt;br&gt;every sub-feature's journeys" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
+        <mxCell id="p5c50" value="&lt;b&gt;0a · Runtime verification, once&lt;/b&gt;: page 8&lt;br&gt;on the integrated epic/&amp;lt;slug&amp;gt; branch, covering&lt;br&gt;every sub-feature's journeys" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="1924" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p5c53" value="test-specs/e2e-report.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="860" y="1944" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p5c55" value="&lt;b&gt;0b · Final gate&lt;/b&gt; — re-run if fixes changed the code" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c55" value="&lt;b&gt;0b · Final gate&lt;/b&gt;: re-run if fixes changed the code" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="2040" width="400" height="54" as="geometry" />
         </mxCell>
-        <mxCell id="p5c57" value="&lt;b&gt;1 · PR description&lt;/b&gt; — sub-features, tests, gaps" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c57" value="&lt;b&gt;1 · PR description&lt;/b&gt;: sub-features, tests, gaps" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="2140" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p5c59" value="pr-description.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="860" y="2149" width="230" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="p5c61" value="&lt;b&gt;2 · STOP — confirm the PR&lt;/b&gt;&lt;br&gt;CRITICAL findings resolved first&lt;br&gt;FAIL / NOT RUN only if accepted" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c61" value="&lt;b&gt;2 · STOP: confirm the PR&lt;/b&gt;&lt;br&gt;CRITICAL findings resolved first&lt;br&gt;FAIL / NOT RUN only if accepted" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="380" y="2240" width="440" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p5c63" value="&lt;b&gt;3 · Create the PR&lt;/b&gt; epic/&amp;lt;slug&amp;gt; → base branch&lt;br&gt;after committing .claude/agent-memory/" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
           <mxGeometry x="400" y="2370" width="400" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p5c65" value="Done — STATE.md: epic complete" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
+        <mxCell id="p5c65" value="Done. STATE.md: epic complete" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p5c1">
           <mxGeometry x="440" y="2480" width="320" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p5c67" value="&lt;b&gt;Epic STATE.md&lt;/b&gt; (main working tree)&lt;br&gt;one ## Tasks line per sub-feature with its group:&lt;br&gt;pending → in progress → implemented → merged&lt;br&gt;the parent updates it per phase, group and merge;&lt;br&gt;spawned agents never edit it" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p5c1">
@@ -1070,7 +1070,7 @@
       <root>
         <mxCell id="p6c0" />
         <mxCell id="p6c1" parent="p6c0" />
-        <mxCell id="p6c2" value="Bug fix — /workflows:bugfix" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
+        <mxCell id="p6c2" value="Bug fix: /workflows:bugfix" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p6c3" value="Fix causes, not symptoms. The spine follows &lt;b&gt;.ai/workflows/bug-fixing.md&lt;/b&gt;: guard the fix, verify with the quality gate, record deploy notes, then a &lt;b&gt;reviewer&lt;/b&gt; sub-agent and runtime checks of the original bug before the commit." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
@@ -1088,7 +1088,7 @@
         <mxCell id="p6c9" value="&lt;b&gt;3 · Guard the fix&lt;/b&gt;&lt;br&gt;a failing test where the scope has a test runner,&lt;br&gt;a re-runnable manual reproduction where it has none" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
           <mxGeometry x="400" y="430" width="400" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p6c11" value="&lt;b&gt;4 · Fix&lt;/b&gt; — the minimal change at the root cause" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
+        <mxCell id="p6c11" value="&lt;b&gt;4 · Fix&lt;/b&gt;: the minimal change at the root cause" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="400" y="550" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p6c13" value="&lt;b&gt;5 · Verify&lt;/b&gt;&lt;br&gt;quality-gate.sh --base &amp;lt;start branch&amp;gt;, no --mutation&lt;br&gt;gate loop: fix the cause, at most 3 failing runs" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
@@ -1097,7 +1097,7 @@
         <mxCell id="p6c15" value="&lt;b&gt;still FAIL?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="510" y="770" width="180" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="p6c17" value="&lt;b&gt;STOP — gate still fails&lt;/b&gt;&lt;br&gt;show the user before review" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
+        <mxCell id="p6c17" value="&lt;b&gt;STOP: gate still fails&lt;/b&gt;&lt;br&gt;show the user before review" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="40" y="770" width="320" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p6c19" value="&lt;b&gt;6 · Assess blast radius&lt;/b&gt;&lt;br&gt;callers · shared contracts · per-tenant impact" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
@@ -1118,7 +1118,7 @@
         <mxCell id="p6c29" value="&lt;b&gt;Fix the BLOCKERs&lt;/b&gt;&lt;br&gt;then re-run the reviewer" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
           <mxGeometry x="860" y="1248" width="320" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p6c32" value="&lt;b&gt;7a · Runtime verification&lt;/b&gt; — page 8&lt;br&gt;first the original failure must now pass, then&lt;br&gt;the checks the blast radius flagged" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
+        <mxCell id="p6c32" value="&lt;b&gt;7a · Runtime verification&lt;/b&gt;: page 8&lt;br&gt;first the original failure must now pass, then&lt;br&gt;the checks the blast radius flagged" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
           <mxGeometry x="400" y="1360" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p6c34" value="test-specs/e2e-report.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
@@ -1127,7 +1127,7 @@
         <mxCell id="p6c36" value="&lt;b&gt;FAIL or&lt;/b&gt;&lt;br&gt;&lt;b&gt;NOT RUN?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="500" y="1480" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p6c38" value="&lt;b&gt;STOP — blocks the commit&lt;/b&gt;&lt;br&gt;unless you accept each one" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
+        <mxCell id="p6c38" value="&lt;b&gt;STOP: blocks the commit&lt;/b&gt;&lt;br&gt;unless you accept each one" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p6c1">
           <mxGeometry x="40" y="1485" width="320" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p6c40" value="&lt;b&gt;Final gate run&lt;/b&gt; on the final code&lt;br&gt;shown to you with the review verdict" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p6c1">
@@ -1235,7 +1235,7 @@
       <root>
         <mxCell id="p7c0" />
         <mxCell id="p7c1" parent="p7c0" />
-        <mxCell id="p7c2" value="Hotfix — /workflows:hotfix" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
+        <mxCell id="p7c2" value="Hotfix: /workflows:hotfix" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p7c3" value="An urgent production fix: &lt;b&gt;fast, minimal, safe&lt;/b&gt;. It branches from the default branch, still gets deploy notes, a &lt;b&gt;reviewer&lt;/b&gt; and a smoke check, and lands through a PR. Yellow steps after landing are done by people or CI, never by the agent." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
@@ -1247,7 +1247,7 @@
         <mxCell id="p7c5" value="&lt;b&gt;1 · Branch from the default branch&lt;/b&gt; (production)&lt;br&gt;fix/ or hotfix/ + ticket + slug, never from a feature" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
           <mxGeometry x="400" y="210" width="400" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p7c7" value="&lt;b&gt;2 · Minimal change only&lt;/b&gt; — no refactors, no cleanup" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
+        <mxCell id="p7c7" value="&lt;b&gt;2 · Minimal change only&lt;/b&gt;: no refactors, no cleanup" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
           <mxGeometry x="400" y="320" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p7c9" value="&lt;b&gt;3 · Guard the fix&lt;/b&gt;&lt;br&gt;failing test, or a manual reproduction" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
@@ -1271,10 +1271,10 @@
         <mxCell id="p7c21" value="&lt;b&gt;Resolve the BLOCKERs&lt;/b&gt;&lt;br&gt;before the PR is opened" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
           <mxGeometry x="860" y="878" width="320" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p7c24" value="&lt;b&gt;5a · STOP — confirm smoke plan&lt;/b&gt;&lt;br&gt;one line: the broken journey or&lt;br&gt;request, non-production only" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
+        <mxCell id="p7c24" value="&lt;b&gt;5a · STOP: confirm smoke plan&lt;/b&gt;&lt;br&gt;one line: the broken journey or&lt;br&gt;request, non-production only" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
           <mxGeometry x="380" y="990" width="440" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p7c26" value="&lt;b&gt;5a · Smoke check&lt;/b&gt; — page 8&lt;br&gt;one level, a handful of checks" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
+        <mxCell id="p7c26" value="&lt;b&gt;5a · Smoke check&lt;/b&gt;: page 8&lt;br&gt;one level, a handful of checks" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
           <mxGeometry x="400" y="1120" width="400" height="64" as="geometry" />
         </mxCell>
         <mxCell id="p7c28" value="test-specs/e2e-report.md" style="shape=note;backgroundOutline=1;size=10;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
@@ -1283,7 +1283,7 @@
         <mxCell id="p7c30" value="&lt;b&gt;FAIL or&lt;/b&gt;&lt;br&gt;&lt;b&gt;NOT RUN?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
           <mxGeometry x="500" y="1230" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p7c32" value="&lt;b&gt;STOP — blocks step 6&lt;/b&gt;&lt;br&gt;unless you accept it" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
+        <mxCell id="p7c32" value="&lt;b&gt;STOP: blocks step 6&lt;/b&gt;&lt;br&gt;unless you accept it" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
           <mxGeometry x="40" y="1235" width="320" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p7c34" value="&lt;b&gt;Gate again&lt;/b&gt; if review or smoke fixes changed code" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p7c1">
@@ -1292,7 +1292,7 @@
         <mxCell id="p7c36" value="&lt;b&gt;6 · Land it&lt;/b&gt;&lt;br&gt;commit .claude/agent-memory/ · open a PR into the&lt;br&gt;default branch · forward-port to dev and release/*" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
           <mxGeometry x="400" y="1460" width="400" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p7c38" value="&lt;b&gt;7 · Deploy with monitoring&lt;/b&gt; — a human or CI&lt;br&gt;follow deploy-notes.md · watch logs and metrics" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
+        <mxCell id="p7c38" value="&lt;b&gt;7 · Deploy with monitoring&lt;/b&gt;: a human or CI&lt;br&gt;follow deploy-notes.md · watch logs and metrics" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
           <mxGeometry x="400" y="1580" width="400" height="64" as="geometry" />
         </mxCell>
         <mxCell id="p7c40" value="&lt;b&gt;8 · Post-mortem within 48 hours&lt;/b&gt;&lt;br&gt;root cause · why it was missed · prevention" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p7c1">
@@ -1388,7 +1388,7 @@
       <root>
         <mxCell id="p8c0" />
         <mxCell id="p8c1" parent="p8c0" />
-        <mxCell id="p8c2" value="Runtime verification — API · UI · DB checks against a running system" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
+        <mxCell id="p8c2" value="Runtime verification: API · UI · DB checks against a running system" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p8c3" value="Four workflows call &lt;b&gt;.ai/workflows/runtime-verification.md&lt;/b&gt;. It runs in &lt;b&gt;your session&lt;/b&gt;, not a sub-agent: the agent proposes checks from the change, asks once, runs them against the test environment and writes an e2e report. A FAIL or a planned check that did not run blocks the commit." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
@@ -1406,13 +1406,13 @@
         <mxCell id="p8c7" value="&lt;b&gt;/workflows:verify&lt;/b&gt;&lt;br&gt;on demand · ad-hoc work" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="890" y="120" width="260" height="54" as="geometry" />
         </mxCell>
-        <mxCell id="p8c8" value="Runs in this session — you confirm, log in, decide" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
+        <mxCell id="p8c8" value="Runs in this session: you confirm, log in, decide" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="400" y="234" width="400" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p8c13" value="&lt;b&gt;Test environments&lt;/b&gt;&lt;br&gt;filled in?" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="480" y="330" width="240" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="p8c15" value="&lt;b&gt;STOP — values missing&lt;/b&gt;&lt;br&gt;say which ones; never&lt;br&gt;guess a URL" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
+        <mxCell id="p8c15" value="&lt;b&gt;STOP: values missing&lt;/b&gt;&lt;br&gt;say which ones; never&lt;br&gt;guess a URL" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="40" y="335" width="320" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p8c17" value="&lt;b&gt;1 · Plan&lt;/b&gt; from the diff + requirement-spec,&lt;br&gt;test-specs and deploy-notes: propose levels" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
@@ -1421,16 +1421,16 @@
         <mxCell id="p8c19" value="&lt;b&gt;Levels&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f7f7;strokeColor=#bbbbbb;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="230" y="580" width="740" height="160" as="geometry" />
         </mxCell>
-        <mxCell id="p8c21" value="&lt;b&gt;API&lt;/b&gt; — endpoints, contracts,&lt;br&gt;validation, auth, tenancy&lt;br&gt;happy path · 400 · 401 · 403&lt;br&gt;404 · 409 · response shape" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c21" value="&lt;b&gt;API&lt;/b&gt;: endpoints, contracts,&lt;br&gt;validation, auth, tenancy&lt;br&gt;happy path · 400 · 401 · 403&lt;br&gt;404 · 409 · response shape" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="250" y="630" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p8c22" value="&lt;b&gt;UI&lt;/b&gt; — pages, forms, routing,&lt;br&gt;client state, styling&lt;br&gt;test-specs journeys · states&lt;br&gt;console errors · failed calls" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c22" value="&lt;b&gt;UI&lt;/b&gt;: pages, forms, routing,&lt;br&gt;client state, styling&lt;br&gt;test-specs journeys · states&lt;br&gt;console errors · failed calls" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="490" y="630" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p8c23" value="&lt;b&gt;DB&lt;/b&gt; — schema, migrations,&lt;br&gt;data access, tenant filters&lt;br&gt;rows written · tenant key set&lt;br&gt;migration recorded" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c23" value="&lt;b&gt;DB&lt;/b&gt;: schema, migrations,&lt;br&gt;data access, tenant filters&lt;br&gt;rows written · tenant key set&lt;br&gt;migration recorded" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="730" y="630" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p8c24" value="&lt;b&gt;1 · STOP — ask once&lt;/b&gt;&lt;br&gt;run as proposed, or edit the plan&lt;br&gt;(no runtime surface: confirm too)" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
+        <mxCell id="p8c24" value="&lt;b&gt;1 · STOP: ask once&lt;/b&gt;&lt;br&gt;run as proposed, or edit the plan&lt;br&gt;(no runtime surface: confirm too)" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="380" y="780" width="440" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p8c26" value="&lt;b&gt;2 · Preflight&lt;/b&gt;&lt;br&gt;targets from Test environments only · health URL&lt;br&gt;(down → offer the start command) · a test token&lt;br&gt;from a token command or an env var set at launch" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
@@ -1439,13 +1439,13 @@
         <mxCell id="p8c28" value="&lt;b&gt;3 · Run&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f0f6fc;strokeColor=#6c8ebf;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="230" y="1040" width="740" height="160" as="geometry" />
         </mxCell>
-        <mxCell id="p8c30" value="&lt;b&gt;API&lt;/b&gt; — one curl per check&lt;br&gt;the token stays a variable&lt;br&gt;another tenant's record must&lt;br&gt;be refused: a leak is CRITICAL" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c30" value="&lt;b&gt;API&lt;/b&gt;: one curl per check&lt;br&gt;the token stays a variable&lt;br&gt;another tenant's record must&lt;br&gt;be refused: a leak is CRITICAL" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="250" y="1090" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p8c31" value="&lt;b&gt;UI&lt;/b&gt; — Claude in Chrome →&lt;br&gt;Playwright → e2e command&lt;br&gt;→ NOT RUN · new tab only&lt;br&gt;test account signed in?" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c31" value="&lt;b&gt;UI&lt;/b&gt;: Claude in Chrome →&lt;br&gt;Playwright → e2e command&lt;br&gt;→ NOT RUN · new tab only&lt;br&gt;test account signed in?" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="490" y="1090" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p8c32" value="&lt;b&gt;DB&lt;/b&gt; — SELECT only, through&lt;br&gt;a read-only DB MCP server&lt;br&gt;none configured → NOT RUN&lt;br&gt;ids and counts only" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
+        <mxCell id="p8c32" value="&lt;b&gt;DB&lt;/b&gt;: SELECT only, through&lt;br&gt;a read-only DB MCP server&lt;br&gt;none configured → NOT RUN&lt;br&gt;ids and counts only" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="730" y="1090" width="220" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p8c33" value="&lt;b&gt;4 · Report&lt;/b&gt; → e2e report, every check PASS,&lt;br&gt;FAIL or NOT RUN, on observed evidence only&lt;br&gt;clean up test data through the API" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
@@ -1460,7 +1460,7 @@
         <mxCell id="p8c39" value="&lt;b&gt;Your call&lt;/b&gt;&lt;br&gt;fix the cause and re-run the failed&lt;br&gt;checks, or accept each one (STATE.md + PR)" style="rounded=1;arcSize=8;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
           <mxGeometry x="860" y="1372" width="320" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p8c42" value="Gate passes — the commit STOP shows the summary" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
+        <mxCell id="p8c42" value="Gate passes: the commit STOP shows the summary" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p8c1">
           <mxGeometry x="400" y="1500" width="400" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p8c45" value="&lt;b&gt;Why in your session&lt;/b&gt;&lt;br&gt;you confirm the plan, do any login, approve the&lt;br&gt;browser's site prompts and decide on failures.&lt;br&gt;The qa-runner sub-agent declines this work." style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p8c1">
@@ -1561,7 +1561,7 @@
       <root>
         <mxCell id="qgc0" />
         <mxCell id="qgc1" parent="qgc0" />
-        <mxCell id="qgc2" value="Quality gate — .claude/scripts/quality-gate.sh" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
+        <mxCell id="qgc2" value="Quality gate: .claude/scripts/quality-gate.sh" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
           <mxGeometry x="40" y="20" width="1400" height="40" as="geometry" />
         </mxCell>
         <mxCell id="qgc3" value="One PASS or FAIL for the change, with the numbers. Read down the spine; the green boxes say where each workflow runs it. It judges only what the change touched, so legacy code it touches only has to not get worse." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
@@ -1573,10 +1573,10 @@
         <mxCell id="qgc5" value="&lt;b&gt;Read the settings&lt;/b&gt;&lt;br&gt;hooks.env is parsed as data, never run · the base commit's stricter limits, suppression mode and file lists are kept, so a change cannot loosen them for itself" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="60" y="176" width="580" height="66" as="geometry" />
         </mxCell>
-        <mxCell id="qgc6" value="&lt;b&gt;Change id&lt;/b&gt; — a hash of the changed source and test files, printed first: two runs with the same id measured the same code" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc6" value="&lt;b&gt;Change id&lt;/b&gt;: a hash of the changed source and test files, printed first; two runs with the same id measured the same code" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="60" y="266" width="580" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="qgc9" value="&lt;b&gt;Checks&lt;/b&gt; — each one skipped while its hooks.env value is blank" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f7f7;strokeColor=#bbbbbb;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
+        <mxCell id="qgc9" value="&lt;b&gt;Checks&lt;/b&gt;: each one skipped while its hooks.env value is blank" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f7f7;strokeColor=#bbbbbb;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
           <mxGeometry x="40" y="340" width="620" height="560" as="geometry" />
         </mxCell>
         <mxCell id="qgc10" value="&lt;b&gt;gate-config&lt;/b&gt; · always on&lt;br&gt;&lt;i&gt;fails when:&lt;/i&gt; a check would run blind; else it WARNs on each hooks.env, .gitattributes or gate-file change" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
@@ -1624,25 +1624,25 @@
         <mxCell id="qgc37" value="&lt;b&gt;Where it runs&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f7f7;strokeColor=#bbbbbb;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="qgc1">
           <mxGeometry x="680" y="110" width="640" height="640" as="geometry" />
         </mxCell>
-        <mxCell id="qgc38" value="&lt;b&gt;Set-up — /init-project&lt;/b&gt;&lt;br&gt;--base HEAD~1 once, to prove the commands and report paths · --baseline writes .ai/reports/quality-baseline.md to choose the limits (it judges nothing)" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc38" value="&lt;b&gt;Set-up: /init-project&lt;/b&gt;&lt;br&gt;--base HEAD~1 once, to prove the commands and report paths · --baseline writes .ai/reports/quality-baseline.md to choose the limits (it judges nothing)" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="146" width="600" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="qgc39" value="&lt;b&gt;Feature — /workflows:feature&lt;/b&gt;&lt;br&gt;developer sub-agent: fix the cause, at most 3 failing runs, one clean-up pass, --mutation on its last run · your session re-runs it without --mutation and saves ## Quality gate in test-report.md · again at the commit STOP if fixes changed the code" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc39" value="&lt;b&gt;Feature: /workflows:feature&lt;/b&gt;&lt;br&gt;developer sub-agent: fix the cause, at most 3 failing runs, one clean-up pass, --mutation on its last run · your session re-runs it without --mutation and saves ## Quality gate in test-report.md · again at the commit STOP if fixes changed the code" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="224" width="600" height="80" as="geometry" />
         </mxCell>
         <mxCell id="qgc40" value="&lt;b&gt;Epic path&lt;/b&gt;&lt;br&gt;each sub-feature in its worktree with --base epic/&amp;lt;slug&amp;gt; · Phase E runs it once on the merged branch → test-specs/quality-gate.md · Phase F again if the code changed" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="318" width="600" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="qgc41" value="&lt;b&gt;Bug fix — /workflows:bugfix&lt;/b&gt;&lt;br&gt;--base &amp;lt;branch the fix started from&amp;gt;, no --mutation, at most 3 failing runs; still failing → STOP before the review · the final run before the commit goes in test-report.md" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc41" value="&lt;b&gt;Bug fix: /workflows:bugfix&lt;/b&gt;&lt;br&gt;--base &amp;lt;branch the fix started from&amp;gt;, no --mutation, at most 3 failing runs; still failing → STOP before the review · the final run before the commit goes in test-report.md" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="396" width="600" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="qgc42" value="&lt;b&gt;Hotfix — /workflows:hotfix&lt;/b&gt;&lt;br&gt;--base &amp;lt;default branch&amp;gt; once, no --mutation · its output goes in the PR · a FAIL is fixed, or a person accepts it in the PR" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc42" value="&lt;b&gt;Hotfix: /workflows:hotfix&lt;/b&gt;&lt;br&gt;--base &amp;lt;default branch&amp;gt; once, no --mutation · its output goes in the PR · a FAIL is fixed, or a person accepts it in the PR" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="474" width="600" height="64" as="geometry" />
         </mxCell>
         <mxCell id="qgc43" value="&lt;b&gt;Ad hoc&lt;/b&gt;&lt;br&gt;/agents:dev and /agents:qa run it where it is configured · run it yourself: quality-gate.sh --base main" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="552" width="600" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="qgc44" value="&lt;b&gt;Release — not used&lt;/b&gt;&lt;br&gt;/workflows:release runs each changed sub-project's lint, test and build commands instead" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
+        <mxCell id="qgc44" value="&lt;b&gt;Release: not used&lt;/b&gt;&lt;br&gt;/workflows:release runs each changed sub-project's lint, test and build commands instead" style="rounded=1;arcSize=8;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
           <mxGeometry x="700" y="630" width="600" height="52" as="geometry" />
         </mxCell>
         <mxCell id="qgc45" value="&lt;b&gt;Hard rules&lt;/b&gt;&lt;br&gt;a configured check that cannot run is a FAIL · never weaken a check to pass · after set-up, loosening a limit needs your words and a decisions.md entry · removing a check is refused" style="rounded=1;arcSize=8;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="qgc1">
@@ -1722,7 +1722,7 @@
       <root>
         <mxCell id="p9c0" />
         <mxCell id="p9c1" parent="p9c0" />
-        <mxCell id="p9c2" value="Release — /workflows:release &amp;lt;version&amp;gt;" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c2" value="Release: /workflows:release &amp;lt;version&amp;gt;" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p9c3" value="The security scan and the release artifacts run &lt;b&gt;in parallel&lt;/b&gt;, fed by every &lt;b&gt;deploy-notes.md&lt;/b&gt; whose fix version matches. Nothing is bumped, tagged or written under docs/release/ until you confirm at the &lt;b&gt;STOP&lt;/b&gt;. The deployment guide is optional." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
@@ -1755,13 +1755,13 @@
         <mxCell id="p9c19" value="&lt;b&gt;CRITICAL&lt;/b&gt;&lt;br&gt;&lt;b&gt;findings?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="500" y="610" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p9c21" value="&lt;b&gt;STOP — resolve CRITICAL&lt;/b&gt;&lt;br&gt;findings before going on" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c21" value="&lt;b&gt;STOP: resolve CRITICAL&lt;/b&gt;&lt;br&gt;findings before going on" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="40" y="615" width="320" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p9c23" value="&lt;b&gt;2 · Quality gates&lt;/b&gt; per changed sub-project&lt;br&gt;its lint, test and build commands" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p9c1">
           <mxGeometry x="400" y="740" width="400" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p9c25" value="&lt;b&gt;3 · STOP — confirm the release&lt;/b&gt;&lt;br&gt;security verdict · artifact paths&lt;br&gt;deploy notes · gate results&lt;br&gt;what step 4 does with the guide" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c25" value="&lt;b&gt;3 · STOP: confirm the release&lt;/b&gt;&lt;br&gt;security verdict · artifact paths&lt;br&gt;deploy notes · gate results&lt;br&gt;what step 4 does with the guide" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="380" y="850" width="440" height="100" as="geometry" />
         </mxCell>
         <mxCell id="p9c27" value="&lt;b&gt;4 · Finalize&lt;/b&gt;&lt;br&gt;bump each manifest (fix → patch, feat → minor,&lt;br&gt;BREAKING → major) · CHANGELOG.md (Keep a Changelog)" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p9c1">
@@ -1776,16 +1776,16 @@
         <mxCell id="p9c33" value="&lt;b&gt;5 · Commit&lt;/b&gt; chore(release): bump version to &amp;lt;version&amp;gt;&lt;br&gt;with the guide .md + .docx and .claude/agent-memory/" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p9c1">
           <mxGeometry x="400" y="1250" width="400" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="p9c36" value="&lt;b&gt;6 · Tag&lt;/b&gt; — git tag &amp;lt;version&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c36" value="&lt;b&gt;6 · Tag&lt;/b&gt;: git tag &amp;lt;version&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="400" y="1360" width="400" height="54" as="geometry" />
         </mxCell>
         <mxCell id="p9c38" value="&lt;b&gt;Jira (Atlassian MCP)&lt;/b&gt;&lt;br&gt;&lt;b&gt;connected?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="490" y="1460" width="220" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p9c40" value="&lt;b&gt;7 · STOP — Jira update&lt;/b&gt;&lt;br&gt;show issues, transition and&lt;br&gt;comment; apply on yes" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c40" value="&lt;b&gt;7 · STOP: Jira update&lt;/b&gt;&lt;br&gt;show issues, transition and&lt;br&gt;comment; apply on yes" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="860" y="1460" width="320" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p9c42" value="Done — no push, no deploy" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
+        <mxCell id="p9c42" value="Done. No push, no deploy" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p9c1">
           <mxGeometry x="440" y="1590" width="320" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p9c45" value="&lt;b&gt;Guide only after the STOP&lt;/b&gt;&lt;br&gt;an agent asked only for the internal artifacts&lt;br&gt;stops there and writes nothing under docs/release/" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p9c1">
@@ -1889,7 +1889,7 @@
         <mxCell id="p9c41" value="yes" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="p9c1" source="p9c38" target="p9c40">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="p9c43" value="no — skip" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p9c1" source="p9c38" target="p9c42">
+        <mxCell id="p9c43" value="no: skip" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p9c1" source="p9c38" target="p9c42">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p9c44" value="" style="endArrow=block;endFill=1;html=1;strokeColor=#555555;strokeWidth=1.5;fontSize=11;fontFamily=Helvetica;labelBackgroundColor=#ffffff;edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="p9c1" source="p9c40" target="p9c42">
@@ -1907,7 +1907,7 @@
       <root>
         <mxCell id="p10c0" />
         <mxCell id="p10c1" parent="p10c0" />
-        <mxCell id="p10c2" value="Guardrails — nine hooks, one config" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p10c1">
+        <mxCell id="p10c2" value="Guardrails: nine hooks, one config" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p10c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p10c3" value='Each row is one hook: the &lt;b&gt;Claude Code event&lt;/b&gt; that fires it, the &lt;b&gt;script&lt;/b&gt; in .claude/hooks/, and its &lt;b&gt;effect&lt;/b&gt;. Every script sources &lt;b&gt;hooks.env&lt;/b&gt; and skips any check whose value is blank or "off", so the template blocks nothing until you opt in.' style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p10c1">
@@ -2088,7 +2088,7 @@
       <root>
         <mxCell id="p11c0" />
         <mxCell id="p11c1" parent="p11c0" />
-        <mxCell id="p11c2" value="Self-improvement — /harness:improve" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
+        <mxCell id="p11c2" value="Self-improvement: /harness:improve" style="text;fontSize=22;fontStyle=1;fontColor=#1f4e79;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="40" y="20" width="1200" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p11c3" value="Changes to the harness itself go through &lt;b&gt;.ai/workflows/harness-improvement.md&lt;/b&gt;: plan disjoint work packages, then per package an &lt;b&gt;author → critic → revise → recheck&lt;/b&gt; loop, one integration audit, and a final &lt;b&gt;STOP&lt;/b&gt; before anything lands. The critic checks the invariants on the right." style="text;fontSize=12;fontColor=#555555;align=left;verticalAlign=top;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
@@ -2100,7 +2100,7 @@
         <mxCell id="p11c5" value="&lt;b&gt;1 · Plan&lt;/b&gt;&lt;br&gt;restate the goal · work packages with disjoint files&lt;br&gt;per package: files, behaviour, invariants, tests?&lt;br&gt;examples/ present? if not, skip mirror steps" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="420" y="210" width="400" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p11c7" value="&lt;b&gt;1 · STOP — confirm the plan&lt;/b&gt;&lt;br&gt;before any edit" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
+        <mxCell id="p11c7" value="&lt;b&gt;1 · STOP: confirm the plan&lt;/b&gt;&lt;br&gt;before any edit" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="400" y="340" width="440" height="70" as="geometry" />
         </mxCell>
         <mxCell id="p11c9" value="&lt;b&gt;∥ parallel&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#f7f2fa;strokeColor=#9673a6;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
@@ -2109,16 +2109,16 @@
         <mxCell id="p11c10" value="&lt;b&gt;Work package 1&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#ffffff;strokeColor=#c3abd0;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="60" y="500" width="540" height="490" as="geometry" />
         </mxCell>
-        <mxCell id="p11c11" value="&lt;b&gt;2 · Author — harness-engineer&lt;/b&gt;&lt;br&gt;edits only its package's files&lt;br&gt;smoke-tests shell changes in a&lt;br&gt;throwaway git repo" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c11" value="&lt;b&gt;2 · Author: harness-engineer&lt;/b&gt;&lt;br&gt;edits only its package's files&lt;br&gt;smoke-tests shell changes in a&lt;br&gt;throwaway git repo" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="80" y="550" width="260" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p11c13" value="&lt;b&gt;3 · Critique — critic&lt;/b&gt;&lt;br&gt;read-only, fresh context&lt;br&gt;verifies every claim itself&lt;br&gt;CRITICAL · MAJOR · MINOR" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c13" value="&lt;b&gt;3 · Critique: critic&lt;/b&gt;&lt;br&gt;read-only, fresh context&lt;br&gt;verifies every claim itself&lt;br&gt;CRITICAL · MAJOR · MINOR" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="80" y="666" width="260" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p11c15" value="&lt;b&gt;CRITICAL or&lt;/b&gt;&lt;br&gt;&lt;b&gt;MAJOR?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="110" y="782" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p11c17" value="&lt;b&gt;4 · Revise&lt;/b&gt; — engineer&lt;br&gt;&lt;b&gt;5 · Recheck&lt;/b&gt; — fresh critic&lt;br&gt;at most 2 rounds" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c17" value="&lt;b&gt;4 · Revise&lt;/b&gt;: engineer&lt;br&gt;&lt;b&gt;5 · Recheck&lt;/b&gt;: fresh critic&lt;br&gt;at most 2 rounds" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="380" y="789" width="200" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p11c20" value="&lt;b&gt;STOP&lt;/b&gt; after 2&lt;br&gt;rounds: you decide" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
@@ -2127,28 +2127,28 @@
         <mxCell id="p11c22" value="&lt;b&gt;Work package n&lt;/b&gt;" style="rounded=1;arcSize=2;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontSize=14;fillColor=#ffffff;strokeColor=#c3abd0;fontColor=#333333;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="640" y="500" width="540" height="490" as="geometry" />
         </mxCell>
-        <mxCell id="p11c23" value="&lt;b&gt;2 · Author — harness-engineer&lt;/b&gt;&lt;br&gt;edits only its package's files&lt;br&gt;smoke-tests shell changes in a&lt;br&gt;throwaway git repo" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c23" value="&lt;b&gt;2 · Author: harness-engineer&lt;/b&gt;&lt;br&gt;edits only its package's files&lt;br&gt;smoke-tests shell changes in a&lt;br&gt;throwaway git repo" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="660" y="550" width="260" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p11c25" value="&lt;b&gt;3 · Critique — critic&lt;/b&gt;&lt;br&gt;read-only, fresh context&lt;br&gt;verifies every claim itself&lt;br&gt;CRITICAL · MAJOR · MINOR" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c25" value="&lt;b&gt;3 · Critique: critic&lt;/b&gt;&lt;br&gt;read-only, fresh context&lt;br&gt;verifies every claim itself&lt;br&gt;CRITICAL · MAJOR · MINOR" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="660" y="666" width="260" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p11c27" value="&lt;b&gt;CRITICAL or&lt;/b&gt;&lt;br&gt;&lt;b&gt;MAJOR?&lt;/b&gt;" style="rhombus;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="690" y="782" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="p11c29" value="&lt;b&gt;4 · Revise&lt;/b&gt; — engineer&lt;br&gt;&lt;b&gt;5 · Recheck&lt;/b&gt; — fresh critic&lt;br&gt;at most 2 rounds" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c29" value="&lt;b&gt;4 · Revise&lt;/b&gt;: engineer&lt;br&gt;&lt;b&gt;5 · Recheck&lt;/b&gt;: fresh critic&lt;br&gt;at most 2 rounds" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="960" y="789" width="200" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p11c32" value="&lt;b&gt;STOP&lt;/b&gt; after 2&lt;br&gt;rounds: you decide" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="960" y="895" width="200" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="p11c34" value="&lt;b&gt;6 · Integration audit&lt;/b&gt; — one critic, the whole change&lt;br&gt;file ownership · cross-file contracts · mirror invariant&lt;br&gt;bash -n · broken references · doc inventories + counts" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c34" value="&lt;b&gt;6 · Integration audit&lt;/b&gt;: one critic, the whole change&lt;br&gt;file ownership · cross-file contracts · mirror invariant&lt;br&gt;bash -n · broken references · doc inventories + counts" style="rounded=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="420" y="1050" width="400" height="76" as="geometry" />
         </mxCell>
         <mxCell id="p11c37" value="&lt;b&gt;7 · Verification block&lt;/b&gt;&lt;br&gt;bash -n · executable bits · token grep · examples/ cmp&lt;br&gt;git diff --stat · index.html version = HARNESS_VERSION" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="420" y="1170" width="400" height="76" as="geometry" />
         </mxCell>
-        <mxCell id="p11c39" value="&lt;b&gt;7 · STOP — land it?&lt;/b&gt;&lt;br&gt;diff summary, critic findings,&lt;br&gt;open questions · commit on yes" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
+        <mxCell id="p11c39" value="&lt;b&gt;7 · STOP: land it?&lt;/b&gt;&lt;br&gt;diff summary, critic findings,&lt;br&gt;open questions · commit on yes" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.06;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="400" y="1290" width="440" height="90" as="geometry" />
         </mxCell>
         <mxCell id="p11c41" value="&lt;b&gt;Commit&lt;/b&gt; on feature/&amp;lt;slug&amp;gt;, never the default branch&lt;br&gt;template release: bump HARNESS_VERSION and the&lt;br&gt;index.html sidebar, tag v&amp;lt;version&amp;gt;" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
@@ -2157,7 +2157,7 @@
         <mxCell id="p11c43" value="Append lessons to .ai/memory/learnings.md" style="rounded=1;arcSize=50;fillColor=#1f4e79;strokeColor=#1f4e79;fontColor=#ffffff;fontStyle=1;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;" vertex="1" parent="p11c1">
           <mxGeometry x="420" y="1540" width="400" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="p11c45" value="&lt;b&gt;Invariants — the critic's checklist&lt;/b&gt;&lt;br&gt;breaking one is a CRITICAL defect&lt;br&gt;1 · Two-layer split (.ai/ knows, .claude/ runs)&lt;br&gt;2 · Three-layer agent pattern&lt;br&gt;3 · Template genericness&lt;br&gt;4 · Inert-safety of every hook check&lt;br&gt;5 · Gate integrity: never weaken a gate&lt;br&gt;6 · Mirror invariant (while examples/ exists)&lt;br&gt;7 · Docs inventories stay true&lt;br&gt;8 · Tool least-privilege&lt;br&gt;&lt;b&gt;Integration rules&lt;/b&gt;&lt;br&gt;9 · No secrets in config&lt;br&gt;10 · Per-command MCP grants&lt;br&gt;11 · Outward writes sit behind gates&lt;br&gt;12 · Optional by default&lt;br&gt;13 · Agents never authenticate" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
+        <mxCell id="p11c45" value="&lt;b&gt;Invariants: the critic's checklist&lt;/b&gt;&lt;br&gt;breaking one is a CRITICAL defect&lt;br&gt;1 · Two-layer split (.ai/ knows, .claude/ runs)&lt;br&gt;2 · Three-layer agent pattern&lt;br&gt;3 · Template genericness&lt;br&gt;4 · Inert-safety of every hook check&lt;br&gt;5 · Gate integrity: never weaken a gate&lt;br&gt;6 · Mirror invariant (while examples/ exists)&lt;br&gt;7 · Docs inventories stay true&lt;br&gt;8 · Tool least-privilege&lt;br&gt;&lt;b&gt;Integration rules&lt;/b&gt;&lt;br&gt;9 · No secrets in config&lt;br&gt;10 · Per-command MCP grants&lt;br&gt;11 · Outward writes sit behind gates&lt;br&gt;12 · Optional by default&lt;br&gt;13 · Agents never authenticate" style="rounded=1;arcSize=8;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
           <mxGeometry x="1280" y="120" width="380" height="260" as="geometry" />
         </mxCell>
         <mxCell id="p11c46" value="&lt;b&gt;/harness:ask &amp;lt;question&amp;gt;&lt;/b&gt;&lt;br&gt;read-only Q&amp;amp;A (harness-guide-agent): answers&lt;br&gt;from the repo's own files, cites paths, sends&lt;br&gt;product questions to the right command" style="rounded=1;arcSize=8;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;html=1;whiteSpace=wrap;fontFamily=Helvetica;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;spacingRight=6;" vertex="1" parent="p11c1">
