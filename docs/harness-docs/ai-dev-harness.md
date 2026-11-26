@@ -83,10 +83,9 @@ what a configured file looks like and is not part of the running harness.
 
 **Optional integrations.** [`.mcp.json`](../../.mcp.json) ships three MCP servers: `atlassian`
 (remote, OAuth, no secret in the file), `figma-bridge` and `playwright` (both started with `npx`). You
-authenticate once with `/mcp`. Tools are granted per command: `/ba` can take an issue key as its
-input, `/agents:pm` and `/utils:standup` (both load `pm-agent.md`) can enrich status from the
-tracker, and `/workflows:release` can transition
-released issues behind a STOP. For UI checks, Claude in Chrome is the default driver (start Claude
+authenticate once with `/mcp`. Tools are granted per command: `/ba` can take a Jira issue key as its
+input, `/agents:pm` and `/utils:standup` (both load `pm-agent.md`) can enrich status from
+Jira, and `/workflows:release` can transition released Jira issues behind a STOP. For UI checks, Claude in Chrome is the default driver (start Claude
 Code with `--chrome`), Playwright MCP is the fallback, then the project's e2e command. A read-only
 database MCP server is optional and added by `/init-project`. Every step that uses an integration is
 conditional: with no server connected, the harness falls back to the manual path, and a check that
@@ -141,12 +140,12 @@ Some commands load a playbook instead of a persona: `/workflows:hotfix` loads
 
 ## 3. End-to-end delivery lifecycle
 
-![Delivery lifecycle — tracker issue, /ba, /qa, /workflows:feature, pull request, /workflows:release and deploy left to right, the artifacts each stage writes, the Fix version hand-offs from requirement-spec.md to deploy-notes.md and on to the release, and the other entry points](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
+![Delivery lifecycle — Jira issue, /ba, /qa, /workflows:feature, pull request, /workflows:release and deploy left to right, the artifacts each stage writes, the Fix version hand-offs from requirement-spec.md to deploy-notes.md and on to the release, and the other entry points](diagrams/ai-dev-harness/03-delivery-lifecycle.png)
 
 The standard path for a ticket:
 
 ```text
-tracker issue (key + Fix version)   → optional tracker MCP server, read-only
+Jira issue (key + Fix version)      → read through the Atlassian MCP server when it is connected
 /ba <slug>                    → requirement-spec.md (with Fix version), user-stories.md, epic-breakdown.md for an epic
 /qa <slug>                    → test-specs.md (one per sub-feature for an epic)
 /workflows:feature <slug>     → STATE.md, technical-specs/, design/design-spec.md, test-specs/test-report.md
@@ -164,7 +163,7 @@ Key points:
 
 - **People decide at every stage.** `/ba` and `/qa` are interviews. `/workflows:feature` stops at
   the spec, the design (UI only) and the commit; `/workflows:release` stops on a CRITICAL finding,
-  before it finalizes, and before any tracker update. Reviewing and merging the pull request, and
+  before it finalizes, and before any Jira update. Reviewing and merging the pull request, and
   the deploy, are done by people.
 - **The quality gate runs inside the change workflows** (section 9): feature, epic, bug fix and
   hotfix. Its final run is kept in `test-specs/test-report.md` (`test-specs/quality-gate.md` for an
@@ -174,8 +173,8 @@ Key points:
   breakdowns or test specs. If they are missing it stops and tells you to run `/ba` and `/qa`.
 - **One folder per feature.** Everything lands under `.ai/features/<slug>/`, which is the hand-off
   surface between BA, QA and development.
-- **Fix version flows through.** `/ba` records it in the spec's `## Source issue` block (from the
-  tracker, from you, or `unknown — to be confirmed`). Each change copies it into `deploy-notes.md`.
+- **Fix version flows through.** `/ba` records it in the spec's `## Source issue` block (from
+  Jira, from you, or `unknown — to be confirmed`). Each change copies it into `deploy-notes.md`.
 - **Deploy notes feed the release.** Feature, bugfix and hotfix each write `deploy-notes.md`, even
   when there is no deploy impact. `/workflows:release` selects them by fix version.
 - **Branding.** Every document except `STATE.md` and `deploy-notes.md` opens with the header from
@@ -389,7 +388,7 @@ Where it runs:
 
 ## 10. Release — `/workflows:release`
 
-![Release workflow — security scanner and release manager in parallel fed by deploy notes, CRITICAL STOP, quality gates, release confirmation STOP, version bump and changelog, optional deployment guide, commit, tag and optional tracker STOP](diagrams/ai-dev-harness/10-release.png)
+![Release workflow — security scanner and release manager in parallel fed by deploy notes, CRITICAL STOP, quality gates, release confirmation STOP, version bump and changelog, optional deployment guide, commit, tag and optional Jira STOP](diagrams/ai-dev-harness/10-release.png)
 
 Things to know when you run it:
 
@@ -408,8 +407,8 @@ Things to know when you run it:
   it creates or merges `docs/release/<version>/deployment-guide-<version>.md`, regenerates the Word
   copy with `.claude/scripts/md-to-docx.py` if that is on, and refreshes `docs/release/README.md`. An
   existing guide is merged, never overwritten.
-- **Then** one commit (`chore(release): bump version to <version>`) and `git tag <version>`. If an
-  issue-tracker MCP server is connected, a last STOP shows the issues, transition and comment before
+- **Then** one commit (`chore(release): bump version to <version>`) and `git tag <version>`. If the
+  Atlassian MCP server is connected, a last STOP shows the issues, transition and comment before
   anything is sent. The workflow never pushes or deploys.
 
 ---
@@ -446,7 +445,7 @@ Safeguards beyond hooks:
   commands disallow writes.
 - `/agents:devops` is advise-only by default. `.claude/scripts/devops-mode.sh on | off | status`
   rewrites its `allowed-tools` line; in execute mode each command still needs your approval.
-- STOP gates in every workflow, and every outward write (tracker update, PR) is shown and confirmed
+- STOP gates in every workflow, and every outward write (Jira update, PR) is shown and confirmed
   first. MCP tools are granted per command, and `.mcp.json` holds no secrets.
 
 ---
@@ -564,3 +563,8 @@ done
 
 Update the diagrams and this guide whenever a harness change adds, renames or removes a command,
 agent, hook or workflow step.
+
+This guide is also published as [`docs/how-it-works.html`](../how-it-works.html), linked from the
+setup guide. That page is generated: after editing this file, run
+`python docs/harness-docs/build-html.py` (`--check` reports whether the page is out of date) and
+commit both files together.
